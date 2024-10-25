@@ -3,6 +3,7 @@
 import React from "react";
 import { useEffect } from "react";
 import * as THREE from "three";
+import styles from "./index.module.scss";
 
 export const Three: React.FC = () => {
   let canvas: HTMLElement;
@@ -77,7 +78,7 @@ export const Three: React.FC = () => {
   }, []);
   return (
     <>
-      <canvas id="canvas"></canvas>
+      <canvas id="canvas" className={styles.model}></canvas>
     </>
   );
 };
