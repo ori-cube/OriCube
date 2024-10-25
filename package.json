@@ -21,6 +21,7 @@
     "@types/three": "^0.169.0",
     "eslint": "^8",
     "eslint-config-next": "15.0.1",
+    "sass": "^1.80.4",
     "typescript": "^5"
   }
 }
