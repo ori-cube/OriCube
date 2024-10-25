@@ -1,6 +1,6 @@
 import styles from "./page.module.scss";
 import { Three } from "@/features/three";
-import { Flex, Text, Button } from "@radix-ui/themes";
+import { Button } from "@radix-ui/themes";
 
 export default function Home() {
   return (
