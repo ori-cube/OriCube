@@ -1,0 +1,11 @@
+@use "@/styles/variables" as *;
+
+.main {
+  height: 100vh;
+
+  .title {
+    font-size: 48px;
+    font-weight: bold;
+    color: $primary-color;
+  }
+}
