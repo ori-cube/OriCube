@@ -3,13 +3,18 @@
   height: 120px;
   box-shadow: 0px 10px 10px -5px rgba(0, 0, 0, 0.1);
   border-radius: 16px;
+
+  position: fixed;
+  bottom: 32px;
+  right: 50%;
+  transform: translateX(50%);
 }
 
 .controller {
-  position:inherit;
+  position: inherit;
   display: flex;
   align-items: center;
-  width: auto;
+  width: 100%;
   max-width: 500px;
   padding-left: 64px;
   padding-right: 64px;
