@@ -4,8 +4,6 @@ import React from 'react';
 import { Model } from '@/types/model';
 import { OrigamiDetail } from '@/components/OrigamiDetail';
 import { OrigamiTitle } from '@/components/OrigamiTitle';
-import { Three } from '@/components/three';
-
 
 // src/modelsから、urlで指定されたモデルのデータを取得する
 async function getModelData(id: string): Promise<Model | null> {
