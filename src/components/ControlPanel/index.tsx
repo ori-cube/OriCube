@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { ControlPanelPresenter } from "./presenter";
 
 interface ControlPanelProps {
@@ -16,8 +16,8 @@ interface ControlPanelProps {
 export const ControlPanel: React.FC<ControlPanelProps> = (
   props: ControlPanelProps
 ) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const duration = 10000; // 再生時間
+  const [isPlaying, setIsPlaying] = useState(true);
+  const duration = 2500; // 再生時間
 
   const sliderValueChanged = (value: number) => {
     props.setSliderValue(value);
@@ -31,7 +31,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     if (isPlaying) {
-      const interval = 100; // 100ミリ秒ごとに更新
+      const interval = 10; // 10ミリ秒ごとに更新
       const increment = props.maxArg / (duration / interval);
       intervalId = setInterval(() => {
         props.setSliderValue((prevProgress) => {
@@ -46,6 +46,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     }
     return () => clearInterval(intervalId); // クリーンアップ
   }, [isPlaying]);
+
+  useEffect(() => {
+    setIsPlaying(true);
+  }, [props.procedureIndex]);
 
   return (
     <ControlPanelPresenter
