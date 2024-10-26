@@ -1,0 +1,34 @@
+.origami_title {
+  position:relative;
+  top: 40px;
+  left: 80px;
+  @media (max-width: 768px) {
+    top: 16px;
+    left: 16px;
+  }
+}
+
+.title {
+  font-size: 32px;
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
+}
+
+.divider {
+  border-top: 1px solid #333;
+  width: 20%;
+  min-width: 200px;
+  @media (max-width: 768px) {
+    top: 16px;
+    left: 16px;
+    width: 90%;
+  }
+}
+
+.description {
+  font-size: 24px;
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+}
