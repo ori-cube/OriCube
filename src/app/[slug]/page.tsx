@@ -30,7 +30,7 @@ export default async function Page(props: { params: Params }) {
     <div>
       <OrigamiDetail modelData={modelData} />
       <OrigamiTitle title={modelData.name} description="hoge" />
-      {/* <Three model={modelData.procedure} /> */}
+      <Three model={modelData.procedure} />
     </div>
   );
 }
