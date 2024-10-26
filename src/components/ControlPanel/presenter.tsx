@@ -1,18 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react";
+// import { useState } from "react";
 import style from "./presenter.module.scss"
 import { Slider, Flex } from "@radix-ui/themes"
 import { HiMiniPlay } from "react-icons/hi2";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/Pagination"
 import { HiMiniArrowLeft, HiMiniArrowRight, HiEllipsisHorizontal } from "react-icons/hi2";
 
 
@@ -25,8 +16,8 @@ interface ControlPanelPresenterProps {
 }
 
 export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (props: ControlPanelPresenterProps) => {
-  const totalPageNum = 10
-  const page = 1
+  // const totalPageNum = 10
+  // const [page, setPage] = useState(1)
 
   const PaginationNext = () => {
     return(
@@ -62,6 +53,7 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (prop
       <Flex align="center" height="46px" justify="between" gap="4" className={style.controller}>
         {PaginationPrev()}
         {PaginationNum(2)}
+        {PaginationEllipsis()}
         {PaginationNext()}
       </Flex>
 
