@@ -1,0 +1,73 @@
+@use "@/styles/variables" as *;
+
+.pagination {
+  margin: auto;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.pagination_content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-left: 0;
+  gap: 1;
+}
+
+.pagination_item {
+  list-style: none
+}
+
+.pagination_prev_next {
+  gap: 0.25rem;
+  padding-left: 0.625rem;
+}
+
+.pagination_ellipsis {
+  // display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  // align-items: center;
+  // justify-content: center;
+  margin: 0 auto;
+}
+
+.pagination_span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.pagination_button {
+  height: 2.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border: 1px solid var($primary-color);
+  background-color: var($background-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.pagination_button:hover {
+  background-color: #a3a3a3;
+  color: $primary-color;
+}
+
+.pagination_button_active {
+  height: 2.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border: 1px solid var($primary-color);
+  background-color: #be2121;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

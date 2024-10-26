@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import React from "react";
 import { Model } from "@/types/model";
-import { OrigamiTitle } from "@/components/OrigamiTitle";
+import { OrigamiDetail } from "@/components/OrigamiDetail";
 
 // src/modelsから、urlで指定されたモデルのデータを取得する
 async function getModelData(id: string): Promise<Model | null> {
@@ -26,7 +26,7 @@ export default async function Page(props: { params: Params }) {
 
   return (
     <div>
-      <OrigamiTitle title={modelData.name} description="hoge" />
+      <OrigamiDetail modelData={modelData} />
     </div>
   );
 }
