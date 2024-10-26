@@ -28,7 +28,7 @@ export default async function Page(props: { params: Params }) {
   return (
     <div>
       <OrigamiTitle title={modelData.name} description="hoge" />
-      <Three model={modelData.procedure} />
+      <Three model={modelData.procedure} foldAngle={100} />
     </div>
   );
 }

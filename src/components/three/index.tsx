@@ -8,23 +8,22 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 type Props = {
   model: Procedure;
+  foldAngle: number;
 };
 
-export const Three: React.FC<Props> = ({ model }) => {
+export const Three: React.FC<Props> = ({ model, foldAngle }) => {
   let canvas: HTMLElement;
 
-  //   const [procedure, setProcedure] = useState(3);
+  //   const [methodId, setmethodId] = useState(3);
 
   //   const [boards, setBoards] = useState([
-  //     ...model[procedure.toString()].fixBoards,
-  //     ...model[procedure.toString()].moveBoards,
+  //     ...model[methodId.toString()].fixBoards,
+  //     ...model[methodId.toString()].moveBoards,
   //   ]);
 
-  const procedure = 3;
-  const boards = [
-    ...model[procedure.toString()].fixBoards,
-    ...model[procedure.toString()].moveBoards,
-  ];
+  const methodId = 2;
+  const procedure = model[methodId.toString()];
+  const boards: number[][][] = [...procedure.fixBoards];
 
   useEffect(() => {
     if (canvas) return;
@@ -69,34 +68,58 @@ export const Three: React.FC<Props> = ({ model }) => {
       side: THREE.BackSide,
     });
 
-    scene.children = scene.children.filter((child) => child.type === "Line");
-    for (let i = 0; i < boards.length; i++) {
-      const board = boards[i];
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute(
-        "position",
-        new THREE.BufferAttribute(new Float32Array(board.flat()), 3)
-      );
-      if (board.length >= 4) {
-        const indices = [];
-        for (let j = 0; j < board.length - 2; j++) {
-          indices.push(0, j + 1, j + 2);
+    const initOrigami = function () {
+      scene.children = scene.children.filter((child) => child.type === "Line");
+      for (let i = 0; i < boards.length; i++) {
+        const board = boards[i];
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(new Float32Array(board.flat()), 3)
+        );
+        if (board.length >= 4) {
+          const indices = [];
+          for (let j = 0; j < board.length - 2; j++) {
+            indices.push(0, j + 1, j + 2);
+          }
+          geometry.setIndex(indices);
         }
-        geometry.setIndex(indices);
+        const frontMesh = new THREE.Mesh(geometry, frontMaterial);
+        const backMesh = new THREE.Mesh(geometry, backMaterial);
+        scene.add(frontMesh);
+        scene.add(backMesh);
       }
-      const frontMesh = new THREE.Mesh(geometry, frontMaterial);
-      const backMesh = new THREE.Mesh(geometry, backMaterial);
-      scene.add(frontMesh);
-      scene.add(backMesh);
+    };
+
+    const theta = THREE.MathUtils.degToRad(foldAngle);
+    const rotateAxis = new THREE.Vector3(...procedure.rotateAxis[0])
+      .sub(new THREE.Vector3(...procedure.rotateAxis[1]))
+      .normalize();
+
+    const subNode = new THREE.Vector3(...procedure.rotateAxis[0]);
+    for (let i = 0; i < procedure.moveBoards.length; i++) {
+      const moveBoard = procedure.moveBoards[i];
+      const newBoard = [];
+      console.log(moveBoard[2]);
+      for (let j = 0; j < moveBoard.length; j++) {
+        const node = new THREE.Vector3(...moveBoard[j]);
+        const rotateNode = node.clone().sub(subNode);
+        rotateNode.applyAxisAngle(rotateAxis, theta);
+        rotateNode.add(subNode);
+        newBoard.push([rotateNode.x, rotateNode.y, rotateNode.z]);
+      }
+      boards.push(newBoard);
     }
 
-    // アニメーションループ
-    const animate = () => {
+    initOrigami();
+
+    // レンダリング
+    const render = () => {
       orbit.update();
       renderer.render(scene, camera);
-      requestAnimationFrame(animate);
+      requestAnimationFrame(render);
     };
-    animate();
+    render();
 
     window.addEventListener("resize", () => {
       sizes.width = window.innerWidth;
@@ -108,5 +131,9 @@ export const Three: React.FC<Props> = ({ model }) => {
     });
   }, []);
 
-  return <canvas id="canvas" className={styles.model}></canvas>;
+  return (
+    <div>
+      <canvas id="canvas" className={styles.model}></canvas>
+    </div>
+  );
 };
