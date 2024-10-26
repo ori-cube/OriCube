@@ -1,24 +1,31 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import { ControlPanelPresenter } from "./presenter";
 
 interface ControlPanelProps {
-  stepNum: number
-  value: number
-  setSliderValue: React.Dispatch<React.SetStateAction<number>>
-  maxArg: number
+  stepNum: number;
+  value: number;
+  setSliderValue: React.Dispatch<React.SetStateAction<number>>;
+  maxArg: number;
+  procedureIndex: number;
+  setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
+  procedureLength: number;
 }
 
-export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelProps) => {
+export const ControlPanel: React.FC<ControlPanelProps> = (
+  props: ControlPanelProps
+) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const duration = 10000; // 再生時間
 
   const sliderValueChanged = (value: number) => {
-    props.setSliderValue(value)
-  }
+    props.setSliderValue(value);
+  };
   const increaseValue = () => {
-    setIsPlaying((prevPlaying) => {return !prevPlaying}); // 再生状態にする
+    setIsPlaying((prevPlaying) => {
+      return !prevPlaying;
+    }); // 再生状態にする
   };
 
   useEffect(() => {
@@ -40,5 +47,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelPro
     return () => clearInterval(intervalId); // クリーンアップ
   }, [isPlaying]);
 
-  return <ControlPanelPresenter stepNum={props.stepNum} value={props.value} maxArg={props.maxArg} sliderValueChanged={sliderValueChanged} increaseValue={increaseValue}/>
-}
+  return (
+    <ControlPanelPresenter
+      stepNum={props.stepNum}
+      value={props.value}
+      maxArg={props.maxArg}
+      sliderValueChanged={sliderValueChanged}
+      increaseValue={increaseValue}
+      procedureIndex={props.procedureIndex}
+      setProcedureIndex={props.setProcedureIndex}
+      procedureLength={props.procedureLength}
+    />
+  );
+};

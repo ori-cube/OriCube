@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React from "react";
 import style from "./presenter.module.scss";
 import { Slider, Flex } from "@radix-ui/themes";
 import { HiMiniPlay } from "react-icons/hi2";
@@ -12,12 +12,14 @@ interface ControlPanelPresenterProps {
   maxArg: number;
   sliderValueChanged: (value: number) => void;
   increaseValue: () => void;
+  procedureIndex: number;
+  setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
+  procedureLength: number;
 }
 
 export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
   props: ControlPanelPresenterProps
 ) => {
-  const [page, setPage] = useState(1); //ここに現状のステップを入力すれば動きます。
   return (
     <div className={style.control_panel}>
       <Flex
@@ -41,10 +43,10 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
         />
       </Flex>
       <Pagination
-        currentPage={page}
-        limit={4}
-        count={10}
-        changePage={setPage}
+        currentPage={props.procedureIndex}
+        limit={props.procedureLength}
+        count={props.procedureLength}
+        changePage={props.setProcedureIndex}
       />
     </div>
   );

@@ -9,17 +9,21 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 type Props = {
   model: Procedure;
   foldAngle: number;
+  procedureIndex: number;
 };
 
-export const Three: React.FC<Props> = ({ model, foldAngle }) => {
+export const Three: React.FC<Props> = ({
+  model,
+  foldAngle,
+  procedureIndex,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
 
-  const methodId = 2;
-  const procedure = model[methodId.toString()];
+  const procedure = model[procedureIndex.toString()];
 
   // シーンの初期化
   useEffect(() => {
