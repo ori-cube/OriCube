@@ -1,15 +1,11 @@
 "use client";
 
-// import { useState } from "react";
+import { useState } from "react";
 import style from "./presenter.module.scss";
 import { Slider, Flex } from "@radix-ui/themes";
 import { HiMiniPlay } from "react-icons/hi2";
-// import {
-//   HiMiniArrowLeft,
-//   HiMiniArrowRight,
-//   HiEllipsisHorizontal,
-// } from "react-icons/hi2";
-
+// import { Pagination } from '@nextui-org/react';
+import { Pagination } from "../Pagination";
 interface ControlPanelPresenterProps {
   stepNum: number;
   value: number;
@@ -21,24 +17,7 @@ interface ControlPanelPresenterProps {
 export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
   props: ControlPanelPresenterProps
 ) => {
-  // const totalPageNum = 10
-  // const [page, setPage] = useState(1)
-
-  // const PaginationNext = () => {
-  //   return <HiMiniArrowRight size={16} />;
-  // };
-
-  // const PaginationPrev = () => {
-  //   return <HiMiniArrowLeft size={16} />;
-  // };
-
-  // const PaginationEllipsis = () => {
-  //   return <HiEllipsisHorizontal size={16} />;
-  // };
-
-  // const PaginationNum = (num: number) => {
-  //   return <div className={style.box}>{num}</div>;
-  // };
+  const [page, setPage] = useState(1); //ここに現状のステップを入力すれば動きます。
   return (
     <div className={style.control_panel}>
       <Flex
@@ -61,18 +40,12 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
           max={props.maxArg}
         />
       </Flex>
-      {/* <Flex
-        align="center"
-        height="46px"
-        justify="between"
-        gap="4"
-        className={style.controller}
-      >
-        {PaginationPrev()}
-        {PaginationNum(2)}
-        {PaginationEllipsis()}
-        {PaginationNext()}
-      </Flex> */}
+      <Pagination
+        currentPage={page}
+        limit={4}
+        count={10}
+        changePage={setPage}
+      />
     </div>
   );
 };
