@@ -8,6 +8,8 @@
   bottom: 32px;
   right: 50%;
   transform: translateX(50%);
+
+  background-color: white;
 }
 
 .controller {
@@ -19,6 +21,10 @@
   padding-right: 64px;
   padding-top: 32px;
   padding-bottom: 32px;
+}
+
+.slider {
+  width: 300px;
 }
 
 .box {
