@@ -7,10 +7,24 @@
 
 .search_box_sp {
   height: 26px;
-  width: 26px;
+  width: 50px;
   display: flex;
+  background-color: #1109ad;
+  color: #fff;
   align-items: center;
-  // @media (min-width: 768px) {
-  //   display: none;
-  // }
+  padding: 10px;
+  font-size: x-small;
+  transition: background-color 0.2s ease;
+  border-radius: 4px; // 角を丸くする
+  @media (max-width: 767px) {
+    display: none;
+  }
+
+  &:hover {
+    background-color: lighten(#1109ad, 20%); // 背景色を少し暗く
+  }
+
+  &:active {
+    background-color: darken(#1109ad, 20%); // 背景色を少し明るく
+  }
 }

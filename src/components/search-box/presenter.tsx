@@ -30,7 +30,7 @@ export const SearchBoxPresenter: React.FC<SearchBoxPresenterProps> = ({
     <>
       <div className={style.search_box}>
         <TextField.Root
-          placeholder="折り紙名を入力してください"
+          placeholder="おりがみのなまえを入力してください 例：つる"
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}>
           <TextField.Slot>
@@ -39,7 +39,8 @@ export const SearchBoxPresenter: React.FC<SearchBoxPresenterProps> = ({
         </TextField.Root>
       </div>
       <button className={style.search_box_sp} onClick={() => handleClick()}>
-        <HiMagnifyingGlass size={26} />
+        {/* <HiMagnifyingGlass size={26} /> */}
+        けんさく
       </button>
     </>
   );
