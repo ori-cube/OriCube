@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1",
+    "name": "ヨット",
+    "imageUrl": "https://placehold.jp/100x80.png",
+    "searchKeyword": ["よっと", "ヨット", "yot"]
+  },
+  {
+    "id": "2",
+    "name": "とらっく",
+    "imageUrl": "https://placehold.jp/100x80.png",
+    "searchKeyword": ["とらっく", "トラック"]
+  },
+  {
+    "id": "3",
+    "name": "つる",
+    "imageUrl": "https://placehold.jp/100x80.png",
+    "searchKeyword": ["鶴", "ツル", "つる"]
+  },
+  {
+    "id": "4",
+    "name": "はこ",
+    "imageUrl": "https://placehold.jp/100x80.png",
+    "searchKeyword": ["はこ", "ハコ", "箱"]
+  },
+  {
+    "id": "5",
+    "name": "ハート",
+    "imageUrl": "https://placehold.jp/100x80.png",
+    "searchKeyword": ["ハート", "はーと", "heart"]
+  },
+  {
+    "id": "6",
+    "name": "かみひこうき",
+    "imageUrl": "https://placehold.jp/100x80.png",
+    "searchKeyword": ["かみひこうき", "紙ひこうき", "紙飛行機"]
+  }
+]
