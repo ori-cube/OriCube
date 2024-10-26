@@ -8,12 +8,14 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 type Props = {
   model: Procedure;
+  color: string;
   foldAngle: number;
   procedureIndex: number;
 };
 
 export const Three: React.FC<Props> = ({
   model,
+  color,
   foldAngle,
   procedureIndex,
 }) => {
@@ -88,11 +90,11 @@ export const Three: React.FC<Props> = ({
     if (!scene) return;
 
     const frontMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0xff0000),
+      color: new THREE.Color(color),
       side: THREE.FrontSide,
     });
     const backMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0xa9a9a9),
+      color: new THREE.Color("#DFDFDF"),
       side: THREE.BackSide,
     });
 

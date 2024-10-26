@@ -1,5 +1,6 @@
 {
   "name": "ヨット",
+  "color": "#42C6FF",
   "procedure": {
     "1": {
       "description": "ななめに はんぶんに おる。",

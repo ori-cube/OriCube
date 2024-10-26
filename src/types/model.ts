@@ -1,5 +1,6 @@
 export type Model = {
   name: string;
+  color: string;
   procedure: Procedure;
 };
 
