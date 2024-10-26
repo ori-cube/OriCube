@@ -1,5 +1,5 @@
 import styles from "./page.module.scss";
-import { OrigamiList } from "@/features/OrigamiList";
+import { OrigamiList } from "@/components/OrigamiList";
 
 export default function Home() {
   return (

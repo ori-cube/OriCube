@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import styles from "./index.module.scss";
+import Image from "next/image";
 
 type Props = {
   id: string;
@@ -11,7 +12,7 @@ type Props = {
 export const OrigamiListItem: React.FC<Props> = ({ id, name, imageUrl }) => {
   return (
     <Link href={`/${id}`} className={styles.listItem}>
-      <img
+      <Image
         src={imageUrl}
         alt={`サムネイル: ${name}の折り紙画像`}
         width={100}
