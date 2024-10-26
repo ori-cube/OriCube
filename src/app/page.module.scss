@@ -1,11 +1,9 @@
 @use "@/styles/variables" as *;
 
 .main {
-  height: 100vh;
+  padding: 7rem 5rem 2rem 5rem;
 
-  .title {
-    font-size: 48px;
-    font-weight: bold;
-    color: $primary-color;
+  @media screen and (max-width: 768px) {
+    padding: 6rem 1rem 2rem 1rem;
   }
 }

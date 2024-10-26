@@ -1,0 +1,21 @@
+@use "@/styles/variables" as *;
+
+.listItem {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: $hover-color;
+  }
+
+  .image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 5 / 4;
+  }
+}
