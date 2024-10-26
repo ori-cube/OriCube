@@ -1,0 +1,13 @@
+@use "@/styles/variables" as *;
+
+.list {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  flex-direction: row;
+  gap: 2rem 1rem;
+
+  .listItem {
+    width: 100%;
+  }
+}
