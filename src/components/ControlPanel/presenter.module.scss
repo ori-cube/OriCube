@@ -6,7 +6,6 @@
 }
 
 .controller {
-  position:inherit;
   display: flex;
   align-items: center;
   width: auto;
@@ -18,6 +17,7 @@
 }
 
 .box {
-  width: 20px;
-  height: 20px;
+  display: flex;
+  align-items: center;
+  z-index: 1000;
 }
