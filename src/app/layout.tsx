@@ -3,8 +3,8 @@ import localFont from "next/font/local";
 import "@/styles/globals.scss";
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
-import { Header } from "@/components/header";
-import { SearchBox } from "@/components/search-box";
+import { Header } from "@/components/Header";
+import { SearchBox } from "@/components/SearchBox";
 
 const geistSans = localFont({
   src: "../assets/fonts/GeistVF.woff",
