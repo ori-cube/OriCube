@@ -53,7 +53,8 @@ export const Three: React.FC<Props> = ({
       10,
       1000
     );
-    camera.position.set(0, 0, 2).multiplyScalar(70);
+    camera.position.set(20, 70, 100); // 右斜め上からモデルを見るようにカメラ位置を設定
+    camera.lookAt(new THREE.Vector3(0, 0, 0)); // モデルの中心を見るようにカメラの向きを設定
     scene.add(camera);
     cameraRef.current = camera;
 

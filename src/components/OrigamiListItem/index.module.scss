@@ -8,14 +8,16 @@
   gap: 1rem;
   padding-bottom: 1rem;
   transition: background-color 0.2s;
+  border-radius: 0.5rem;
 
   &:hover {
     background-color: $hover-color;
   }
 
   .image {
-    width: 100%;
+    width: calc(100%);
     height: auto;
     aspect-ratio: 5 / 4;
+    border-radius: 0.5rem;
   }
 }
