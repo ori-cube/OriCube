@@ -22,10 +22,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
   const sliderValueChanged = (value: number) => {
     props.setSliderValue(value);
   };
-  const increaseValue = () => {
-    setIsPlaying((prevPlaying) => {
-      return !prevPlaying;
-    }); // 再生状態にする
+
+  const switchPlaying = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+    } else {
+      if (props.value >= props.maxArg) {
+        props.setSliderValue(0);
+      }
+      setIsPlaying(true);
+    }
   };
 
   useEffect(() => {
@@ -54,10 +60,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
   return (
     <ControlPanelPresenter
       stepNum={props.stepNum}
+      isPlaying={isPlaying}
       value={props.value}
       maxArg={props.maxArg}
       sliderValueChanged={sliderValueChanged}
-      increaseValue={increaseValue}
+      switchPlaying={switchPlaying}
       procedureIndex={props.procedureIndex}
       setProcedureIndex={props.setProcedureIndex}
       procedureLength={props.procedureLength}
