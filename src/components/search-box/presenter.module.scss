@@ -1,0 +1,16 @@
+.search_box {
+  width: 400px;
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.search_box_sp {
+  height: 26px;
+  width: 26px;
+  display: flex;
+  align-items: center;
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
