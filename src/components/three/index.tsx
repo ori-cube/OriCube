@@ -13,9 +13,11 @@ type Props = {
 export const Three: React.FC<Props> = ({ model }) => {
   let canvas: HTMLElement;
 
+  const [procedure, setProcedure] = useState(3);
+
   const [boards, setBoards] = useState([
-    ...model["1"].fixBoards,
-    ...model["1"].moveBoards,
+    ...model[procedure.toString()].fixBoards,
+    ...model[procedure.toString()].moveBoards,
   ]);
 
   useEffect(() => {
@@ -28,6 +30,8 @@ export const Three: React.FC<Props> = ({ model }) => {
       width: window.innerWidth,
       height: window.innerHeight,
     };
+
+    console.log(sizes);
 
     const camera = new THREE.PerspectiveCamera(
       40,
