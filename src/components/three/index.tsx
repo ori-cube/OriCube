@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import * as THREE from "three";
 import styles from "./index.module.scss";
 import { Procedure } from "@/types/model";
@@ -13,12 +13,18 @@ type Props = {
 export const Three: React.FC<Props> = ({ model }) => {
   let canvas: HTMLElement;
 
-  const [procedure, setProcedure] = useState(3);
+  //   const [procedure, setProcedure] = useState(3);
 
-  const [boards, setBoards] = useState([
+  //   const [boards, setBoards] = useState([
+  //     ...model[procedure.toString()].fixBoards,
+  //     ...model[procedure.toString()].moveBoards,
+  //   ]);
+
+  const procedure = 3;
+  const boards = [
     ...model[procedure.toString()].fixBoards,
     ...model[procedure.toString()].moveBoards,
-  ]);
+  ];
 
   useEffect(() => {
     if (canvas) return;
