@@ -1,4 +1,4 @@
-import { Flex, Box, Button } from "@radix-ui/themes";
+import { Flex } from "@radix-ui/themes";
 import Link from "next/link";
 import Image from "next/image";
 import style from "./presenter.module.scss";
