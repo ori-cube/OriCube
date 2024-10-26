@@ -4,8 +4,9 @@ import React from "react";
 import style from "./presenter.module.scss";
 import { Slider, Flex } from "@radix-ui/themes";
 import { HiMiniPlay } from "react-icons/hi2";
-// import { Pagination } from '@nextui-org/react';
 import { Pagination } from "../Pagination";
+import { IconButton } from "../IconButton";
+
 interface ControlPanelPresenterProps {
   stepNum: number;
   value: number;
@@ -30,16 +31,21 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
         gap="4"
         className={style.controller}
       >
-        <HiMiniPlay size={24} color="#1109ad" onClick={props.increaseValue} />
+        <IconButton
+          handleClick={props.increaseValue}
+          Icon={HiMiniPlay}
+          color="#1109ad"
+        />
         <Slider
           value={[props.value]}
           onValueChange={(value) => {
             props.sliderValueChanged(value[0]);
           }}
           defaultValue={[0]}
-          size="1"
+          size="2"
           min={0}
           max={props.maxArg}
+          className={style.slider}
         />
       </Flex>
       <Pagination
