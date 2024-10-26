@@ -2,9 +2,7 @@ import React from "react";
 import styles from "./index.module.scss";
 import { OrigamiListItem } from "../OrigamiListItem";
 
-type Props = {};
-
-export const OrigamiList: React.FC<Props> = () => {
+export const OrigamiList = () => {
   const items = [
     {
       id: "1",
@@ -36,9 +34,8 @@ export const OrigamiList: React.FC<Props> = () => {
   return (
     <li className={styles.list}>
       {items.map((item) => (
-        <ul className={styles.listItem}>
+        <ul className={styles.listItem} key={item.id}>
           <OrigamiListItem
-            key={item.id}
             id={item.id}
             name={item.name}
             imageUrl={item.imageUrl}
