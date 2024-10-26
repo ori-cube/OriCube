@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import React from "react";
 import { Model } from "@/types/model";
+import { OrigamiTitle } from "@/components/origami-title";
 
 // src/modelsから、urlで指定されたモデルのデータを取得する
 async function getModelData(id: string): Promise<Model | null> {
@@ -23,7 +24,11 @@ export default async function Page(props: { params: Params }) {
 
   if (!modelData) return <div>Model not found</div>;
 
-  return <div>Model: {modelData.name}</div>;
+  return (
+    <div>
+      <OrigamiTitle title={modelData.name} description="hoge" />
+    </div>
+  );
 }
 
 // ビルド時に動的ルートを生成
