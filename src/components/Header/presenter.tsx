@@ -1,14 +1,7 @@
-<<<<<<< HEAD
-import { Flex, Box, Button } from '@radix-ui/themes';
+import { Flex } from '@radix-ui/themes';
 import Link from 'next/link';
 import Image from 'next/image';
 import style from './presenter.module.scss';
-=======
-import { Flex } from "@radix-ui/themes";
-import Link from "next/link";
-import Image from "next/image";
-import style from "./presenter.module.scss";
->>>>>>> f9ed9809076f4d7b48686a86b33ee3ae67ac9682
 
 interface HeaderProps {
   title: string;
