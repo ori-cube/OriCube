@@ -15,11 +15,11 @@ async function getModelData(id: string): Promise<Model | null> {
   return null;
 }
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const { slug } = await params;
-  const modelData = await getModelData(slug);
+type Params = Promise<{ slug: string }>;
 
-  console.log(modelData);
+export default async function Page(props: { params: Params }) {
+  const { slug } = await props.params;
+  const modelData = await getModelData(slug);
 
   if (!modelData) return <div>Model not found</div>;
 
