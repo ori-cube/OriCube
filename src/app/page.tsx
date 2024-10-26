@@ -1,13 +1,10 @@
 import styles from "./page.module.scss";
-import { Three } from "@/features/three";
-import { Button } from "@radix-ui/themes";
+import { OrigamiList } from "@/components/OrigamiList";
 
 export default function Home() {
   return (
     <main className={styles.main}>
-      <h1 className={styles.title}>折り紙</h1>
-      <Button>Radix UI</Button>
-      <Three />
+      <OrigamiList />
     </main>
   );
 }
