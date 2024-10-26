@@ -25,3 +25,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
   return <div>Model: {modelData.name}</div>;
 }
+
+// ビルド時に動的ルートを生成
+export async function generateStaticParams() {
+  const modelsDir = path.join(process.cwd(), "src/models");
+  const fileNames = fs.readdirSync(modelsDir);
+  const paths = fileNames.map((fileName) => ({
+    params: { slug: fileName.replace(/\.json$/, "") },
+  }));
+
+  return paths;
+}
