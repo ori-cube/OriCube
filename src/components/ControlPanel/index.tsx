@@ -5,14 +5,15 @@ import { ControlPanelPresenter } from "./presenter";
 
 interface ControlPanelProps {
   stepNum: number
-  value: number
+  step: number
+  setStep: React.Dispatch<React.SetStateAction<number>>
+  sliderValue: number
   setSliderValue: React.Dispatch<React.SetStateAction<number>>
   maxArg: number
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [step, setStep] = useState(1) //ここに現状のステップを入力すれば動きます。
   const duration = 3000; // 再生時間
 
   const sliderValueChanged = (value: number) => {
@@ -41,5 +42,5 @@ export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelPro
     return () => clearInterval(intervalId); // クリーンアップ
   }, [isPlaying]);
 
-  return <ControlPanelPresenter step={step} setStep={setStep} stepNum={props.stepNum} value={props.value} maxArg={props.maxArg} isPlaying={isPlaying} sliderValueChanged={sliderValueChanged} increaseValue={increaseValue}/>
+  return <ControlPanelPresenter step={props.step} setStep={props.setStep} stepNum={props.stepNum} value={props.sliderValue} maxArg={props.maxArg} isPlaying={isPlaying} sliderValueChanged={sliderValueChanged} increaseValue={increaseValue}/>
 }

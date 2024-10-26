@@ -5,6 +5,7 @@ import style from "./presenter.module.scss"
 import { Slider, Flex } from "@radix-ui/themes"
 import { HiMiniPlay, HiMiniPause, HiOutlineArrowLeft, HiOutlineArrowRight } from "react-icons/hi2";
 import { Pagination } from "../Pagination";
+
 interface ControlPanelPresenterProps {
   step: number
   setStep: React.Dispatch<React.SetStateAction<number>>

@@ -1,15 +1,18 @@
-"use client"
-
-import { useState } from "react";
 import { ControlPanel } from "@/components/ControlPanel";
 import style from "./presenter.module.scss"
 
-export const OrigamiDetailPresenter: React.FC = () => {
-  const [sliderValue, setSliderValue] = useState(0) //折り紙の折る進行状況を保持
+interface OrigamiDetailPresenterProps {
+  step: number
+  setStep: React.Dispatch<React.SetStateAction<number>>
+  sliderValue: number
+  setSliderValue: React.Dispatch<React.SetStateAction<number>>
+  stepNum: number
+}
 
+export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = (props: OrigamiDetailPresenterProps) => {
   return(
     <div className={style.container}>
-      <ControlPanel stepNum={10} value={sliderValue} setSliderValue={setSliderValue} maxArg={180}/>
+      <ControlPanel stepNum={props.stepNum} step={props.step} setStep={props.setStep} sliderValue={props.sliderValue} setSliderValue={props.setSliderValue} maxArg={180}/>
     </div>
   )
 }
