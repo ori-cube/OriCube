@@ -15,7 +15,7 @@ interface ControlPanelPresenterProps {
 }
 
 export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (props: ControlPanelPresenterProps) => {
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(1) //ここに現状のステップを入力すれば動きます。
   return(
     <div className={style.control_panel}>
       <Flex align="center" height="46px" justify="between" gap="4" className={style.controller}>

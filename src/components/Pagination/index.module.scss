@@ -1,4 +1,67 @@
+@use "@/styles/variables" as *;
+
 .box {
-  width: 100px;
+  width: auto;
   height: 36px;
+  display: flex;
+  justify-content: center;
+  /* 水平方向中央 */
+  align-items: center;
+  font-size: 20px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 5px;
+  border: 1px solid black;
+  margin-left: 8px;
+  margin-right: 8px;
+}
+.box_active {
+  width: auto;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  /* 水平方向中央 */
+  align-items: center;
+  font-size: 20px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 5px;
+  background-color: $primary-color;
+  color: white;
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  /* 水平方向中央 */
+  align-items: center;
+}
+
+.icon {
+  display: flex;
+  justify-content: center;
+  /* 水平方向中央 */
+  align-items: center;
+  /* 垂直方向中央 */
+  width: auto;
+  height: 20px;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+.icon_disable {
+  display: flex;
+  justify-content: center;
+  /* 水平方向中央 */
+  align-items: center;
+  /* 垂直方向中央 */
+  width: auto;
+  height: 20px;
+  padding-left: 16px;
+  padding-right: 16px;
+  pointer-events: none;
 }

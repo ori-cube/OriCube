@@ -11,17 +11,17 @@ type Props = {
 
 export const Pagination = ({currentPage, limit, count, changePage }: Props) => {
   const PaginationPrev = () => {
-    return <HiOutlineArrowLeft size={16} />
+    return <HiOutlineArrowLeft size={16} className={(currentPage != 0)?(style.icon):(style.icon_disable)} onClick={() => (changePage((i) => {return i-1}))}/>
   }
   const PaginationNext = () => {
-    return <HiOutlineArrowRight size={16} />
+    return <HiOutlineArrowRight size={16} className={(currentPage != count)?(style.icon):(style.icon_disable)} onClick={() => (changePage((i) => {return i+1}))}/>
   }
   const PaginationDots = () => {
-    return <HiDotsHorizontal size={16} />
+    return <HiDotsHorizontal size={16} className={style.icon}/>
   }
   const PaginationNum = (i: number) => {
     return (
-      <div className={style.box} onClick={() => {changePage(i)}}>{i}</div>
+      <div className={(currentPage == i)?(style.box_active):(style.box)} onClick={() => {changePage(i)}}>{i}</div>
     )
   }
   const numList = []
@@ -49,10 +49,10 @@ export const Pagination = ({currentPage, limit, count, changePage }: Props) => {
     numList.push("...")
   }
   return(
-    <div>
+    <div className={style.pagination}>
       {PaginationPrev()}
       {
-        numList.map((i,key=i) => {
+        numList.map((i) => {
           if(typeof i === "number"){
             return PaginationNum(i)
           }else{
