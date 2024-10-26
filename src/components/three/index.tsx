@@ -15,44 +15,10 @@ export const Three: React.FC<Props> = ({ model, foldAngle }) => {
   let canvas: HTMLElement;
 
   const [methodId, setmethodId] = useState(2);
-
   const procedure = model[methodId.toString()];
-
-  const [boards, setBoards] = useState([...procedure.fixBoards]);
-
-  // renderer, scene, camera, orbitをStateで管理
-  const [renderer, setRenderer] = useState<THREE.WebGLRenderer>();
-  const [scene, setScene] = useState<THREE.Scene>();
-  const [camera, setCamera] = useState<THREE.PerspectiveCamera>();
-  const [orbit, setOrbit] = useState<OrbitControls>();
-
-  useEffect(() => {
-    const sizes = {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-
-    const initRenderer = new THREE.WebGLRenderer({
-      canvas: canvas || undefined,
-      antialias: true,
-      alpha: true,
-    });
-    initRenderer.setSize(sizes.width, sizes.height);
-    initRenderer.setPixelRatio(window.devicePixelRatio);
-
-    const initCamera = new THREE.PerspectiveCamera(
-      40,
-      sizes.width / sizes.height,
-      10,
-      1000
-    );
-    initCamera.position.set(0, 0, 2).multiplyScalar(70);
-    setCamera(initCamera);
-  }, []);
 
   useEffect(() => {
     if (canvas) return;
-    if (!camera) return;
     canvas = document.getElementById("canvas")!;
 
     const initScene = new THREE.Scene();
@@ -72,8 +38,16 @@ export const Three: React.FC<Props> = ({ model, foldAngle }) => {
     initRenderer.setSize(sizes.width, sizes.height);
     initRenderer.setPixelRatio(window.devicePixelRatio);
 
+    const initCamera = new THREE.PerspectiveCamera(
+      40,
+      sizes.width / sizes.height,
+      10,
+      1000
+    );
+    initCamera.position.set(0, 0, 2).multiplyScalar(70);
+
     // OrbitControlsの有効化
-    const initOrbit = new OrbitControls(camera, initRenderer.domElement);
+    const initOrbit = new OrbitControls(initCamera, initRenderer.domElement);
     initOrbit.enableDamping = true;
 
     // 板の描画
@@ -85,6 +59,8 @@ export const Three: React.FC<Props> = ({ model, foldAngle }) => {
       color: new THREE.Color(0xa9a9a9),
       side: THREE.BackSide,
     });
+
+    const boards = [...procedure.fixBoards];
 
     const initOrigami = function () {
       initScene.children = initScene.children.filter(
@@ -131,14 +107,15 @@ export const Three: React.FC<Props> = ({ model, foldAngle }) => {
       }
       newBoards.push(newBoard);
     }
-    setBoards([...procedure.fixBoards, ...newBoards]);
+
+    boards.push(...newBoards);
 
     initOrigami();
 
     // レンダリング
     const render = () => {
       initOrbit.update();
-      initRenderer.render(initScene, camera);
+      initRenderer.render(initScene, initCamera);
       requestAnimationFrame(render);
     };
     render();
@@ -146,16 +123,11 @@ export const Three: React.FC<Props> = ({ model, foldAngle }) => {
     window.addEventListener("resize", () => {
       sizes.width = window.innerWidth;
       sizes.height = window.innerHeight;
-      camera.aspect = sizes.width / sizes.height;
-      camera.updateProjectionMatrix();
+      initCamera.aspect = sizes.width / sizes.height;
+      initCamera.updateProjectionMatrix();
       initRenderer.setSize(sizes.width, sizes.height);
       initRenderer.setPixelRatio(window.devicePixelRatio);
     });
-
-    setRenderer(initRenderer);
-    setScene(initScene);
-    setCamera(camera);
-    setOrbit(initOrbit);
   }, [foldAngle]);
 
   return (
