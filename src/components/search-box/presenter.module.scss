@@ -1,3 +1,4 @@
+@use '@/styles/variables' as *;
 .search_box {
   width: 400px;
   @media (max-width: 767px) {
@@ -9,7 +10,7 @@
   height: 30px;
   width: 70px;
   display: flex;
-  background-color: #1109ad;
+  background-color: $primary_color;
   color: #fff;
   justify-content: center;
   align-items: center;
@@ -23,10 +24,10 @@
   }
 
   &:hover {
-    background-color: lighten(#1109ad, 20%);
+    background-color: lighten($primary_color, 20%);
   }
 
   &:active {
-    background-color: darken(#1109ad, 20%);
+    background-color: darken($primary_color, 20%);
   }
 }
