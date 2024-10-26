@@ -12,7 +12,8 @@ interface ControlPanelProps {
 
 export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const duration = 10000; // 再生時間
+  const [step, setStep] = useState(1) //ここに現状のステップを入力すれば動きます。
+  const duration = 3000; // 再生時間
 
   const sliderValueChanged = (value: number) => {
     props.setSliderValue(value)
@@ -40,5 +41,5 @@ export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelPro
     return () => clearInterval(intervalId); // クリーンアップ
   }, [isPlaying]);
 
-  return <ControlPanelPresenter stepNum={props.stepNum} value={props.value} maxArg={props.maxArg} sliderValueChanged={sliderValueChanged} increaseValue={increaseValue}/>
+  return <ControlPanelPresenter step={step} setStep={setStep} stepNum={props.stepNum} value={props.value} maxArg={props.maxArg} isPlaying={isPlaying} sliderValueChanged={sliderValueChanged} increaseValue={increaseValue}/>
 }

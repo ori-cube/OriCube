@@ -1,5 +1,5 @@
 import React from "react";
-import { HiOutlineArrowLeft, HiOutlineArrowRight,HiDotsHorizontal } from "react-icons/hi";
+import { HiOutlineArrowLeft, HiOutlineArrowRight, HiDotsHorizontal } from "react-icons/hi";
 import style from "./index.module.scss"
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 
 export const Pagination = ({currentPage, limit, count, changePage }: Props) => {
   const PaginationPrev = () => {
-    return <HiOutlineArrowLeft size={16} className={(currentPage != 0)?(style.icon):(style.icon_disable)} onClick={() => (changePage((i) => {return i-1}))}/>
+    return <HiOutlineArrowLeft size={16} className={(currentPage != 1)?(style.icon):(style.icon_disable)} onClick={() => (changePage((i) => {return i-1}))}/>
   }
   const PaginationNext = () => {
     return <HiOutlineArrowRight size={16} className={(currentPage != count)?(style.icon):(style.icon_disable)} onClick={() => (changePage((i) => {return i+1}))}/>
@@ -21,7 +21,7 @@ export const Pagination = ({currentPage, limit, count, changePage }: Props) => {
   }
   const PaginationNum = (i: number) => {
     return (
-      <div className={(currentPage == i)?(style.box_active):(style.box)} onClick={() => {changePage(i)}}>{i}</div>
+      <button className={(currentPage == i)?(style.box_active):(style.box)} onClick={() => {changePage(i)}}>{i}</button>
     )
   }
   const numList = []
@@ -52,11 +52,19 @@ export const Pagination = ({currentPage, limit, count, changePage }: Props) => {
     <div className={style.pagination}>
       {PaginationPrev()}
       {
-        numList.map((i) => {
+        numList.map((i, index) => {
           if(typeof i === "number"){
-            return PaginationNum(i)
+            return (
+              <div key={index}>
+                {PaginationNum(i)}
+              </div>
+            )
           }else{
-            return PaginationDots()
+            return (
+              <div key={index}>
+                {PaginationDots()}
+              </div>
+            )
           }
         })
       }
