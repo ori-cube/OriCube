@@ -1,7 +1,7 @@
-import React from 'react';
-import Link from 'next/link';
-import styles from './index.module.scss';
-import Image from 'next/image';
+import React from "react";
+import Link from "next/link";
+import styles from "./index.module.scss";
+import Image from "next/image";
 
 export type ListItemProps = {
   id?: string;
@@ -19,8 +19,8 @@ export const OrigamiListItem: React.FC<ListItemProps> = ({
       <Image
         src={imageUrl}
         alt={`サムネイル: ${name}の折り紙画像`}
-        width={100}
-        height={80}
+        width={500}
+        height={400}
         className={styles.image}
       />
       <p>{name}</p>

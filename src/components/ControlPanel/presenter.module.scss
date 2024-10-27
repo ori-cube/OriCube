@@ -1,3 +1,5 @@
+@use "@/styles/variables" as *;
+
 .control_panel {
   width: 500px;
   height: 120px;
@@ -34,6 +36,7 @@
 }
 
 .controller_container_sp {
+  margin-top: 16px;
   .slider {
     width: 300px;
   }
@@ -48,8 +51,18 @@
     width: 60%;
   }
 
-  .button_disable {
-    pointer-events: none;
-  }
   z-index: 1000;
+}
+
+.button_disable {
+  pointer-events: none;
+}
+
+.button {
+  width: 16px;
+  height: 16px;
+  &:hover {
+    color: red;
+    background-color: $hover-color;
+  }
 }

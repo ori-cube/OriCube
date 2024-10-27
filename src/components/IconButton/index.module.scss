@@ -13,3 +13,14 @@
     background-color: $hover-color;
   }
 }
+
+.button_disable {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  color: $hover-color;
+}
