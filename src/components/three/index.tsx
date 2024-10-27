@@ -135,6 +135,7 @@ export const Three: React.FC<Props> = ({
         boards.push(newBoard);
       }
     } else {
+      // 通常の折り方の場合
       const rotateAxis = new THREE.Vector3(...procedure.rotateAxis[0])
         .sub(new THREE.Vector3(...procedure.rotateAxis[1]))
         .normalize();
