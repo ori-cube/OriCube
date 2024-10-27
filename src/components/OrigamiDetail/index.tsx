@@ -1,12 +1,10 @@
-"use client"
-
-import { useState } from "react";
 import { OrigamiDetailPresenter } from "./presenter";
+import { Model } from "@/types/model";
 
-export const OrigamiDetail: React.FC = () => {
-  const [step, setStep] = useState(1) //今のステップ番号
-  const [sliderValue, setSliderValue] = useState(0) //折り紙の折る進行状況を保持
-  const stepNum = 10 //折り紙の折るステップの総数
+interface OrigamiDetailProps {
+  modelData: Model
+}
 
-  return <OrigamiDetailPresenter stepNum={stepNum} step={step} setStep={setStep} sliderValue={sliderValue} setSliderValue={setSliderValue}/>
+export const OrigamiDetail: React.FC<OrigamiDetailProps> = (props: OrigamiDetailProps) => {
+  return <OrigamiDetailPresenter modelData={props.modelData} />
 }
