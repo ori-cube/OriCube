@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import styles from "./index.module.scss";
-import { Procedure } from "@/types/model";
+import { Procedure, isConvolutionProcedure } from "@/types/model";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 type Props = {
@@ -103,21 +103,51 @@ export const Three: React.FC<Props> = ({
     // そのままの板と、回転後の板を保持
     const boards = [...procedure.fixBoards];
     const theta = THREE.MathUtils.degToRad(foldAngle);
-    const rotateAxis = new THREE.Vector3(...procedure.rotateAxis[0])
-      .sub(new THREE.Vector3(...procedure.rotateAxis[1]))
-      .normalize();
-    const subNode = new THREE.Vector3(...procedure.rotateAxis[0]);
 
-    for (let i = 0; i < procedure.moveBoards.length; i++) {
-      const moveBoard = procedure.moveBoards[i];
-      const newBoard = moveBoard.map((point) => {
-        const node = new THREE.Vector3(...point);
-        const rotateNode = node.clone().sub(subNode);
-        rotateNode.applyAxisAngle(rotateAxis, theta);
+    // 畳み込みの場合
+    if (isConvolutionProcedure(procedure)) {
+      const nodes = procedure.nodes.concat();
+      for (let i = 0; i < procedure.moveNodesIdx.length; i++) {
+        const moveNode = new THREE.Vector3(...nodes[procedure.moveNodesIdx[i]]);
+        const axis = new THREE.Vector3(...procedure.rotateAxes[i][0])
+          .sub(new THREE.Vector3(...procedure.rotateAxes[i][1]))
+          .normalize();
+        const subNode = new THREE.Vector3(...procedure.rotateAxes[i][0]);
+        const rotateNode = moveNode.clone().sub(subNode);
+        rotateNode.applyAxisAngle(axis, theta);
         rotateNode.add(subNode);
-        return [rotateNode.x, rotateNode.y, rotateNode.z];
-      });
-      boards.push(newBoard);
+        nodes[procedure.moveNodesIdx[i]] = [
+          rotateNode.x,
+          rotateNode.y,
+          rotateNode.z,
+        ];
+      }
+      for (let i = 0; i < procedure.boards.length; i++) {
+        const board = procedure.boards[i];
+        const newBoard = [];
+        for (let j = 0; j < board.length; j++) {
+          const node = new THREE.Vector3(...nodes[board[j]]);
+          newBoard.push([node.x, node.y, node.z]);
+        }
+        boards.push(newBoard);
+      }
+    } else {
+      const rotateAxis = new THREE.Vector3(...procedure.rotateAxis[0])
+        .sub(new THREE.Vector3(...procedure.rotateAxis[1]))
+        .normalize();
+      const subNode = new THREE.Vector3(...procedure.rotateAxis[0]);
+
+      for (let i = 0; i < procedure.moveBoards.length; i++) {
+        const moveBoard = procedure.moveBoards[i];
+        const newBoard = moveBoard.map((point) => {
+          const node = new THREE.Vector3(...point);
+          const rotateNode = node.clone().sub(subNode);
+          rotateNode.applyAxisAngle(rotateAxis, theta);
+          rotateNode.add(subNode);
+          return [rotateNode.x, rotateNode.y, rotateNode.z];
+        });
+        boards.push(newBoard);
+      }
     }
 
     // 板を描画
