@@ -66,7 +66,7 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
         </Flex>
         <Pagination
           currentPage={props.procedureIndex}
-          limit={props.procedureLength}
+          limit={5}
           count={props.procedureLength}
           changePage={props.setProcedureIndex}
         />
