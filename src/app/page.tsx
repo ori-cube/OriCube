@@ -13,7 +13,7 @@ export default function Home() {
     ListItemProps[] | null
   >(null);
   const origamiList = items.map((item) => {
-    const { searchKeyword, ...rest } = item;
+    const { ...rest } = item;
     return rest;
   });
 
@@ -27,7 +27,7 @@ export default function Home() {
 
     // searchKeywordを除いた結果を設定
     const newItems = newfilteredOrigamiList.map((item) => {
-      const { searchKeyword, ...rest } = item;
+      const { ...rest } = item;
       return rest;
     });
     setfilteredOrigamiList(newItems); // フィルタリング結果を更新
