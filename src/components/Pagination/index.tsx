@@ -23,24 +23,30 @@ export const Pagination = ({
   const PaginationPrev = () => {
     return (
       <IconButton
-        handleClick={() =>
-          changePage((i) => {
-            return i - 1;
-          })
-        }
+        handleClick={() => {
+          if (currentPage != 1) {
+            changePage((i) => {
+              return i - 1;
+            });
+          }
+        }}
         Icon={HiOutlineArrowLeft}
+        disable={currentPage != 1 ? false : true}
       />
     );
   };
   const PaginationNext = () => {
     return (
       <IconButton
-        handleClick={() =>
-          changePage((i) => {
-            return i + 1;
-          })
-        }
+        handleClick={() => {
+          if (currentPage != count) {
+            changePage((i) => {
+              return i + 1;
+            });
+          }
+        }}
         Icon={HiOutlineArrowRight}
+        disable={currentPage != count ? false : true}
       />
     );
   };
@@ -85,23 +91,15 @@ export const Pagination = ({
   }
   return (
     <div className={style.pagination}>
-      {currentPage > 1 && PaginationPrev()}
+      {PaginationPrev()}
       {numList.map((i, index) => {
         if (typeof i === "number") {
-          return (
-            <div key={index}>
-              {PaginationNum(i)}
-            </div>
-          )
+          return <div key={index}>{PaginationNum(i)}</div>;
         } else {
-          return (
-            <div key={index}>
-              {PaginationDots()}
-            </div>
-          )
+          return <div key={index}>{PaginationDots()}</div>;
         }
       })}
-      {currentPage < count && PaginationNext()}
+      {PaginationNext()}
     </div>
   );
 };
