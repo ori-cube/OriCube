@@ -8,7 +8,6 @@ import {
   HiMiniStop,
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
-  HiMiniPause,
 } from "react-icons/hi2";
 import { Pagination } from "../Pagination";
 import { IconButton } from "../IconButton";
