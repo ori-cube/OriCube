@@ -1,6 +1,12 @@
 import React from "react";
 import styles from "./index.module.scss";
 import { ListItemProps, OrigamiListItem } from "../OrigamiListItem";
+import { Zen_Maru_Gothic } from "next/font/google";
+
+const ZenMaruFont = Zen_Maru_Gothic({
+  weight: "500",
+  subsets: ["latin"],
+});
 
 type OrigamiListProps = {
   origamiList: ListItemProps[];
@@ -10,7 +16,9 @@ export const OrigamiList = ({ origamiList }: OrigamiListProps) => {
   return (
     <div>
       {items.length === 0 ? (
-        <p>アイテムがありません</p>
+        <p className={`${ZenMaruFont.className} ${styles.notFound}`}>
+          折り紙が見つかりませんでした。
+        </p>
       ) : (
         <li className={styles.list}>
           {items.map((item) => (
