@@ -1,6 +1,6 @@
-import React from 'react';
-import styles from './index.module.scss';
-import { ListItemProps, OrigamiListItem } from '../OrigamiListItem';
+import React from "react";
+import styles from "./index.module.scss";
+import { ListItemProps, OrigamiListItem } from "../OrigamiListItem";
 
 type OrigamiListProps = {
   origamiList: ListItemProps[];
@@ -9,7 +9,7 @@ export const OrigamiList = ({ origamiList }: OrigamiListProps) => {
   const items = origamiList;
   return (
     <div>
-      {items === null ? (
+      {items.length === 0 ? (
         <p>アイテムがありません</p>
       ) : (
         <li className={styles.list}>

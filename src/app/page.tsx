@@ -38,7 +38,7 @@ export default function Home() {
         <SearchBoxPresenter handleSearch={handleSearch} />
       </Header>
       <main className={styles.main}>
-        {filteredOrigamiList && filteredOrigamiList.length > 0 ? (
+        {filteredOrigamiList ? (
           <OrigamiList origamiList={filteredOrigamiList} />
         ) : (
           <OrigamiList origamiList={origamiList} />
