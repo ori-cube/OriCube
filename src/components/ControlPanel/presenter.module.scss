@@ -6,12 +6,19 @@
   @media (max-width: 767px) {
     display: none;
   }
+
+  position: fixed;
+  bottom: 32px;
+  right: 50%;
+  transform: translateX(50%);
+
+  background-color: white;
 }
 
 .controller {
   display: flex;
   align-items: center;
-  width: auto;
+  width: 100%;
   max-width: 500px;
   padding-left: 64px;
   padding-right: 64px;
@@ -27,15 +34,22 @@
 }
 
 .controller_container_sp {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  .slider {
+    width: 300px;
+  }
 
-.controller_sp {
-  width: 60%;
-}
+  .box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-.button_disable {
-  pointer-events: none;
+  .controller_sp {
+    width: 60%;
+  }
+
+  .button_disable {
+    pointer-events: none;
+  }
+  z-index: 1000;
 }

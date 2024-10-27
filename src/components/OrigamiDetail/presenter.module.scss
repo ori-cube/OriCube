@@ -5,3 +5,9 @@
   transform: translate(-50%);
   /* 自分の幅と高さの50%分逆方向に移動 */
 }
+.control {
+  position: fixed;
+  bottom: 32px;
+  right: 50%;
+  transform: translateX(50%);
+}

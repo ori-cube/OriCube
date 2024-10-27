@@ -5,6 +5,7 @@ export type Model = {
 
 export type Procedure = {
   [key: string]: {
+    description: string;
     fixBoards: number[][][];
     moveBoards: number[][][];
     rotateAxis: number[][];

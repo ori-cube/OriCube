@@ -1,18 +1,49 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Model } from "@/types/model";
+import { OrigamiTitle } from "@/components/OrigamiTitle";
 import { ControlPanel } from "@/components/ControlPanel";
-import style from "./presenter.module.scss"
+import { Three } from "../three";
+import styles from "./presenter.module.scss";
 
 interface OrigamiDetailPresenterProps {
-  step: number
-  setStep: React.Dispatch<React.SetStateAction<number>>
-  sliderValue: number
-  setSliderValue: React.Dispatch<React.SetStateAction<number>>
-  stepNum: number
+  modelData: Model;
 }
 
-export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = (props: OrigamiDetailPresenterProps) => {
-  return(
-    <div className={style.container}>
-      <ControlPanel stepNum={props.stepNum} step={props.step} setStep={props.setStep} sliderValue={props.sliderValue} setSliderValue={props.setSliderValue} maxArg={180}/>
+export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
+  modelData,
+}) => {
+  const [sliderValue, setSliderValue] = useState(0); //折り紙の折る進行状況を保持
+  const [procedureIndex, setProcedureIndex] = useState(1); //折り紙の手順を保持
+
+  useEffect(() => {
+    setSliderValue(0);
+  }, [procedureIndex]);
+
+  const procedureLength = Object.keys(modelData.procedure).length;
+  const description =
+    modelData.procedure[procedureIndex.toString()].description;
+
+  return (
+    <div>
+      <Three
+        model={modelData.procedure}
+        foldAngle={sliderValue}
+        procedureIndex={procedureIndex}
+      />
+      <OrigamiTitle title={modelData.name} description={description} />
+      <div className={styles.control}>
+        <ControlPanel
+          stepNum={5}
+          value={sliderValue}
+          setSliderValue={setSliderValue}
+          maxArg={180}
+          procedureIndex={procedureIndex}
+          setProcedureIndex={setProcedureIndex}
+          procedureLength={procedureLength}
+        />
+      </div>
     </div>
-  )
-}
+  );
+};

@@ -1,32 +1,43 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import { ControlPanelPresenter } from "./presenter";
 
 interface ControlPanelProps {
-  stepNum: number
-  step: number
-  setStep: React.Dispatch<React.SetStateAction<number>>
-  sliderValue: number
-  setSliderValue: React.Dispatch<React.SetStateAction<number>>
-  maxArg: number
+  stepNum: number;
+  value: number;
+  setSliderValue: React.Dispatch<React.SetStateAction<number>>;
+  maxArg: number;
+  procedureIndex: number;
+  setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
+  procedureLength: number;
 }
 
-export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const duration = 3000; // 再生時間
+export const ControlPanel: React.FC<ControlPanelProps> = (
+  props: ControlPanelProps
+) => {
+  const [isPlaying, setIsPlaying] = useState(true);
+  const duration = 2500; // 再生時間
 
   const sliderValueChanged = (value: number) => {
-    props.setSliderValue(value)
-  }
-  const increaseValue = () => {
-    setIsPlaying((prevPlaying) => {return !prevPlaying}); // 再生状態にする
+    props.setSliderValue(value);
+  };
+
+  const switchPlaying = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+    } else {
+      if (props.value >= props.maxArg) {
+        props.setSliderValue(0);
+      }
+      setIsPlaying(true);
+    }
   };
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     if (isPlaying) {
-      const interval = 100; // 100ミリ秒ごとに更新
+      const interval = 10; // 10ミリ秒ごとに更新
       const increment = props.maxArg / (duration / interval);
       intervalId = setInterval(() => {
         props.setSliderValue((prevProgress) => {
@@ -42,5 +53,21 @@ export const ControlPanel: React.FC<ControlPanelProps> = (props: ControlPanelPro
     return () => clearInterval(intervalId); // クリーンアップ
   }, [isPlaying]);
 
-  return <ControlPanelPresenter step={props.step} setStep={props.setStep} stepNum={props.stepNum} value={props.sliderValue} maxArg={props.maxArg} isPlaying={isPlaying} sliderValueChanged={sliderValueChanged} increaseValue={increaseValue}/>
-}
+  useEffect(() => {
+    setIsPlaying(true);
+  }, [props.procedureIndex]);
+
+  return (
+    <ControlPanelPresenter
+      stepNum={props.stepNum}
+      isPlaying={isPlaying}
+      value={props.value}
+      maxArg={props.maxArg}
+      sliderValueChanged={sliderValueChanged}
+      switchPlaying={switchPlaying}
+      procedureIndex={props.procedureIndex}
+      setProcedureIndex={props.setProcedureIndex}
+      procedureLength={props.procedureLength}
+    />
+  );
+};

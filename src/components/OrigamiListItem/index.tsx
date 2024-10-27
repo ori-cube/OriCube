@@ -1,15 +1,19 @@
-import React from "react";
-import Link from "next/link";
-import styles from "./index.module.scss";
-import Image from "next/image";
+import React from 'react';
+import Link from 'next/link';
+import styles from './index.module.scss';
+import Image from 'next/image';
 
-type Props = {
-  id: string;
-  name: string;
+export type ListItemProps = {
+  id?: string;
+  name?: string;
   imageUrl: string;
 };
 
-export const OrigamiListItem: React.FC<Props> = ({ id, name, imageUrl }) => {
+export const OrigamiListItem: React.FC<ListItemProps> = ({
+  id,
+  name,
+  imageUrl,
+}) => {
   return (
     <Link href={`/${id}`} className={styles.listItem}>
       <Image
