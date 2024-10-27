@@ -86,11 +86,19 @@ export const Pagination = ({
   return (
     <div className={style.pagination}>
       {currentPage > 1 && PaginationPrev()}
-      {numList.map((i) => {
+      {numList.map((i, index) => {
         if (typeof i === "number") {
-          return PaginationNum(i);
+          return (
+            <div key={index}>
+              {PaginationNum(i)}
+            </div>
+          )
         } else {
-          return PaginationDots();
+          return (
+            <div key={index}>
+              {PaginationDots()}
+            </div>
+          )
         }
       })}
       {currentPage < count && PaginationNext()}
