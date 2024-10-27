@@ -1,6 +1,11 @@
-# OriCube（オリキューブ）
+# [OriCube（オリキューブ）](https://oricube.vercel.app/)
 
-<!-- ここに画像などが入ります。 -->
+[![OriCubeのデモ動画](https://github.com/user-attachments/assets/bd532f4b-e063-4a0f-b1b0-75df7a069c37)](https://www.youtube.com/watch?v=-ON8P8Axjng)
+
+## 各種リンク
+
+- サイトURL：https://oricube.vercel.app/
+- デモ動画URL：https://www.youtube.com/watch?v=-ON8P8Axjng
 
 ## 製品概要
 
@@ -30,7 +35,7 @@
 
 ##### 動画での折り方説明
 
-[折り紙動画の例]("https://www.youtube.com/watch?v=RIqlnV9cTY8")
+[折り紙動画の例](https://www.youtube.com/watch?v=RIqlnV9cTY8)
 
 動画での折り方説明には以下の利点が挙げられます。
 
@@ -41,11 +46,16 @@
 
 ##### OrigamiSimulator
 
-[OrigamiSimulator](""https://origamisimulator.org/"")は、折り目パターンをシミュレーションするアプリケーションで、ユーザーは 3D の折り紙モデルを自由に回転・拡大できます。しかし、全ての折り目が同時に折られるため、連続した手順としての折り方のサポートには適していません。
+[OrigamiSimulator](https://origamisimulator.org/)は、折り目パターンをシミュレーションするアプリケーションで、ユーザーは 3D の折り紙モデルを自由に回転・拡大できます。しかし、全ての折り目が同時に折られるため、連続した手順としての折り方のサポートには適していません。
 
 ### 製品説明（具体的な製品の説明）
 
 **OriCube** は様々な折り紙の折り方を立体的に閲覧できるサービスです。
+
+<p>
+  <img src="https://github.com/user-attachments/assets/fd4a0982-a23e-413b-a164-e7c8e12e9fbb" width="720px" alt="画像：OriCubeのPCのモック画像" />
+  <img src="https://github.com/user-attachments/assets/8d7862d3-2fa4-4235-b455-f61f27920bba" width="240px"　alt="画像：OriCubeのスマートフォンのモック画像" />
+</p>
 
 ### 特長
 
@@ -99,7 +109,7 @@ Three.js を用いて、誰でもアクセス可能な Web 上で、折り紙の
 
 #### デバイス
 
-- web アプリで、スマートフォン、タブレット、PC に対応
+- Web アプリで、スマートフォン、タブレット、PC に対応
 
 ### 独自技術
 
