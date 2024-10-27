@@ -5,12 +5,13 @@ import style from "./presenter.module.scss";
 import { Slider, Flex } from "@radix-ui/themes";
 import {
   HiMiniPlay,
-  HiMiniStop,
+  HiMiniPause,
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
 } from "react-icons/hi2";
 import { Pagination } from "../Pagination";
 import { IconButton } from "../IconButton";
+import { IconContext } from "react-icons";
 
 interface ControlPanelPresenterProps {
   stepNum: number;
@@ -41,14 +42,16 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
           {props.isPlaying ? (
             <IconButton
               handleClick={props.switchPlaying}
-              Icon={HiMiniStop}
+              Icon={HiMiniPause}
               color="#1109ad"
+              disable={false}
             />
           ) : (
             <IconButton
               handleClick={props.switchPlaying}
               Icon={HiMiniPlay}
               color="#1109ad"
+              disable={false}
             />
           )}
           <Slider
@@ -70,6 +73,7 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
           changePage={props.setProcedureIndex}
         />
       </div>
+
       <div className={style.control_panel_sp}>
         <Slider
           value={[props.value]}
@@ -91,38 +95,40 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
               gap="2"
               className={style.controller_sp}
             >
-              <HiOutlineArrowLeft
-                size={16}
-                className={
-                  props.procedureIndex === 1 ? style.button_disable : ""
-                }
-                onClick={() => {
-                  props.setProcedureIndex((step) => step - 1);
+              <IconButton
+                handleClick={() => {
+                  if (props.procedureIndex != 1) {
+                    props.setProcedureIndex((step) => step - 1);
+                  }
                 }}
+                Icon={HiOutlineArrowLeft}
+                color="#000"
+                disable={false}
               />
               {props.isPlaying ? (
                 <IconButton
                   handleClick={props.switchPlaying}
-                  Icon={HiMiniStop}
+                  Icon={HiMiniPause}
                   color="#1109ad"
+                  disable={false}
                 />
               ) : (
                 <IconButton
                   handleClick={props.switchPlaying}
                   Icon={HiMiniPlay}
                   color="#1109ad"
+                  disable={false}
                 />
               )}
-              <HiOutlineArrowRight
-                size={16}
-                className={
-                  props.procedureIndex === props.stepNum
-                    ? style.button_disable
-                    : ""
-                }
-                onClick={() => {
-                  props.setProcedureIndex((step) => step + 1);
+              <IconButton
+                handleClick={() => {
+                  if (props.procedureIndex != props.procedureLength) {
+                    props.setProcedureIndex((step) => step + 1);
+                  }
                 }}
+                Icon={HiOutlineArrowRight}
+                color="#000"
+                disable={false}
               />
             </Flex>
           </div>
