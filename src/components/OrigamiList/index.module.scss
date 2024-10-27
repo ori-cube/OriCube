@@ -1,5 +1,12 @@
 @use "@/styles/variables" as *;
 
+.notFound {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+}
+
 .list {
   width: 100%;
   display: grid;
