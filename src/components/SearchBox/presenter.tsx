@@ -40,7 +40,7 @@ export const SearchBoxPresenter: React.FC<SearchBoxPresenterProps> = ({
     <>
       <div className={style.search_box}>
         <TextField.Root
-          placeholder="おりがみのなまえを入力してください 例：つる"
+          placeholder="おりがみのなまえを入力してください 例：よっと"
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
           onKeyDown={(e) => onKeyDown(e.key)}
