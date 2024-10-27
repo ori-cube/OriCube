@@ -2,6 +2,12 @@ import React from "react";
 import Link from "next/link";
 import styles from "./index.module.scss";
 import Image from "next/image";
+import { Zen_Maru_Gothic } from "next/font/google";
+
+const ZenMaruFont = Zen_Maru_Gothic({
+  weight: "700",
+  subsets: ["latin"],
+});
 
 export type ListItemProps = {
   id?: string;
@@ -23,7 +29,7 @@ export const OrigamiListItem: React.FC<ListItemProps> = ({
         height={400}
         className={styles.image}
       />
-      <p>{name}</p>
+      <p className={ZenMaruFont.className}>{name}</p>
     </Link>
   );
 };

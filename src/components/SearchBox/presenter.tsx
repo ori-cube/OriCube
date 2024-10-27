@@ -8,6 +8,12 @@ import {
 } from "react-icons/hi2";
 import style from "./presenter.module.scss";
 import { useEffect, useState } from "react";
+import { Zen_Maru_Gothic } from "next/font/google";
+
+const ZenMaruFont = Zen_Maru_Gothic({
+  weight: "500",
+  subsets: ["latin"],
+});
 
 export type SearchBoxPresenterProps = {
   handleSearch: (keyword: string) => void;
@@ -54,6 +60,7 @@ export const SearchBoxPresenter: React.FC<SearchBoxPresenterProps> = ({
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             onKeyDown={(e) => onKeyDown(e.key)}
+            className={`${ZenMaruFont.className} ${style.search_box_text}`}
           >
             <TextField.Slot>
               <HiMagnifyingGlass height="26" width="26" />
@@ -106,6 +113,7 @@ export const SearchBoxPresenter: React.FC<SearchBoxPresenterProps> = ({
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => onKeyDown(e.key)}
+                className={ZenMaruFont.className}
               >
                 <TextField.Slot>
                   <HiMagnifyingGlass height="26" width="26" />
