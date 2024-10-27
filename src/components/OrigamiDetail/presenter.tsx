@@ -24,6 +24,7 @@ export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
   const procedureLength = Object.keys(modelData.procedure).length;
   const description =
     modelData.procedure[procedureIndex.toString()].description;
+  const color = modelData.color;
 
   return (
     <div>
@@ -31,6 +32,7 @@ export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
         model={modelData.procedure}
         foldAngle={sliderValue}
         procedureIndex={procedureIndex}
+        color={color}
       />
       <OrigamiTitle title={modelData.name} description={description} />
       <div className={styles.control}>
