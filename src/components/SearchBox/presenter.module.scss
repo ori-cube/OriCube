@@ -1,3 +1,4 @@
+@use '@/styles/variables' as *;
 .search_box {
   width: 400px;
   @media (max-width: 767px) {
@@ -6,11 +7,27 @@
 }
 
 .search_box_sp {
-  height: 26px;
-  width: 26px;
+  height: 30px;
+  width: 70px;
   display: flex;
+  background-color: $primary_color;
+  color: #fff;
+  justify-content: center;
   align-items: center;
-  @media (min-width: 768px) {
+  padding: 10px;
+  font-size: small;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+  border-radius: 4px;
+  @media (max-width: 767px) {
     display: none;
+  }
+
+  &:hover {
+    background-color: lighten($primary_color, 20%);
+  }
+
+  &:active {
+    background-color: darken($primary_color, 20%);
   }
 }

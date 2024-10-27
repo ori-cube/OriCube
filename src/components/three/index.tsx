@@ -92,10 +92,12 @@ export const Three: React.FC<Props> = ({
     const frontMaterial = new THREE.MeshBasicMaterial({
       color: new THREE.Color(color),
       side: THREE.FrontSide,
+      transparent: true,
     });
     const backMaterial = new THREE.MeshBasicMaterial({
       color: new THREE.Color("#DFDFDF"),
       side: THREE.BackSide,
+      transparent: true,
     });
 
     // 前の板を削除
@@ -139,6 +141,16 @@ export const Three: React.FC<Props> = ({
       const backMesh = new THREE.Mesh(geometry, backMaterial);
       scene.add(frontMesh);
       scene.add(backMesh);
+      const EdgesGeometry = new THREE.EdgesGeometry(geometry);
+      const wireframeMaterial = new THREE.LineBasicMaterial({
+        color: 0x000000, // ワイヤーフレームの色
+        linewidth: 1,
+      });
+      const wireframe = new THREE.LineSegments(
+        EdgesGeometry,
+        wireframeMaterial
+      );
+      scene.add(wireframe);
     });
   }, [foldAngle, procedure]);
 
