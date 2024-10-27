@@ -11,7 +11,6 @@ import {
 } from "react-icons/hi2";
 import { Pagination } from "../Pagination";
 import { IconButton } from "../IconButton";
-import { IconContext } from "react-icons";
 
 interface ControlPanelPresenterProps {
   stepNum: number;

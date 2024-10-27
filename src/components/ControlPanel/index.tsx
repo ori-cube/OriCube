@@ -68,8 +68,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
         return isPlaying;
       });
     }, 100);
-    timerId;
-    intervalId;
+    void timerId;
+    void intervalId;
   }
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
         setIsPlaying(true);
       }, 2000);
       checkIsPlay(resetSlider);
-      resetSlider;
+      void resetSlider;
     }
   }, [props.value]);
 
