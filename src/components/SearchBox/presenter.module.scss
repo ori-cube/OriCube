@@ -1,4 +1,4 @@
-@use '@/styles/variables' as *;
+@use "@/styles/variables" as *;
 .search_box {
   width: 400px;
   @media (max-width: 767px) {
@@ -19,7 +19,7 @@
   font-weight: bold;
   transition: background-color 0.2s ease;
   border-radius: 4px;
-  @media (max-width: 767px) {
+  @media (min-width: 768px) {
     display: none;
   }
 
