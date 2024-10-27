@@ -1,11 +1,11 @@
-'use client';
-import styles from './page.module.scss';
-import { OrigamiList } from '@/components/OrigamiList';
-import { useState } from 'react';
-import { ListItemProps } from '@/components/OrigamiListItem';
-import origamiData from '../models/origamiList.json';
-import { SearchBoxPresenter } from '@/components/SearchBox/presenter';
-import { Header } from '@/components/Header';
+"use client";
+import styles from "./page.module.scss";
+import { OrigamiList } from "@/components/OrigamiList";
+import { useState } from "react";
+import { ListItemProps } from "@/components/OrigamiListItem";
+import origamiData from "../models/origamiList.json";
+import { SearchBoxPresenter } from "@/components/SearchBox/presenter";
+import { Header } from "@/components/Header";
 
 export default function Home() {
   const items = origamiData;
@@ -14,19 +14,10 @@ export default function Home() {
   >(null);
   const origamiList = items.map((item) => {
     const { searchKeyword, ...rest } = item;
-    console.log(searchKeyword);
     return rest;
   });
 
   const handleSearch = (searchKeyword: string) => {
-    console.log('searchKeyword:', searchKeyword); // 検索キーワードの確認
-
-    // 検索キーワードが空の場合、全データを表示
-    if (searchKeyword === '') {
-      setfilteredOrigamiList(null);
-      return;
-    }
-
     // 検索キーワードでフィルタリング
     const newfilteredOrigamiList = items.filter((item) =>
       item.searchKeyword.some((keyword: string) =>
@@ -37,7 +28,6 @@ export default function Home() {
     // searchKeywordを除いた結果を設定
     const newItems = newfilteredOrigamiList.map((item) => {
       const { searchKeyword, ...rest } = item;
-      console.log(searchKeyword);
       return rest;
     });
     setfilteredOrigamiList(newItems); // フィルタリング結果を更新
