@@ -70,7 +70,7 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
         <div className={style.controller_container_sp}>
           <Flex align="center" display="flex" height="46px" justify="between" gap="2" className={style.controller_sp}>
             <HiOutlineArrowLeft size={16} className={(props.procedureIndex===1)?(style.button_disable):""} onClick={() => {props.setProcedureIndex((step) => step-1)}}/>
-            {props.isPlaying ? <HiMiniPause size={24} color="#1109ad" onClick={props.switchPlaying}/> : <HiMiniPlay  size={24} color="#1109ad" onClick={props.increaseValue}/>}
+            {props.isPlaying ? <HiMiniPause size={24} color="#1109ad" onClick={props.switchPlaying}/> : <HiMiniPlay  size={24} color="#1109ad" onClick={props.switchPlaying}/>}
             <HiOutlineArrowRight size={16} className={(props.procedureIndex===props.stepNum)?(style.button_disable):""} onClick={() => {props.setProcedureIndex((step) => step+1)}}/>
           </Flex>
         </div>
