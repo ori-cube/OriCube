@@ -8,7 +8,6 @@ import {
 } from "react-icons/hi2";
 import style from "./presenter.module.scss";
 import { useEffect, useState } from "react";
-import { redirect } from "next/navigation";
 
 export type SearchBoxPresenterProps = {
   handleSearch: (keyword: string) => void;
