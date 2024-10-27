@@ -8,12 +8,14 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 type Props = {
   model: Procedure;
+  color: string;
   foldAngle: number;
   procedureIndex: number;
 };
 
 export const Three: React.FC<Props> = ({
   model,
+  color,
   foldAngle,
   procedureIndex,
 }) => {
@@ -53,7 +55,8 @@ export const Three: React.FC<Props> = ({
       10,
       1000
     );
-    camera.position.set(0, 0, 2).multiplyScalar(70);
+    camera.position.set(20, 70, 100); // 右斜め上からモデルを見るようにカメラ位置を設定
+    camera.lookAt(new THREE.Vector3(0, 0, 0)); // モデルの中心を見るようにカメラの向きを設定
     scene.add(camera);
     cameraRef.current = camera;
 
@@ -87,12 +90,12 @@ export const Three: React.FC<Props> = ({
     if (!scene) return;
 
     const frontMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0xff0000),
+      color: new THREE.Color(color),
       side: THREE.FrontSide,
       transparent: true,
     });
     const backMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0xa9a9a9),
+      color: new THREE.Color("#DFDFDF"),
       side: THREE.BackSide,
       transparent: true,
     });
