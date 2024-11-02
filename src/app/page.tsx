@@ -2,7 +2,7 @@
 import styles from "./page.module.scss";
 import { OrigamiList } from "@/components/OrigamiList";
 import { useState } from "react";
-import { ListItemProps } from "@/components/OrigamiListItem";
+import { ListItemProps } from "@/components/ui/OrigamiListItem";
 import origamiData from "../models/origamiList.json";
 import { SearchBoxPresenter } from "@/components/SearchBox/presenter";
 import { Header } from "@/components/Header";

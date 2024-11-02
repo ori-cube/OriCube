@@ -27,9 +27,7 @@ export default async function Page(props: { params: Params }) {
 
   return (
     <div>
-      <Header>
-        <></>
-      </Header>
+      <Header />
       <OrigamiDetail modelData={modelData} />
     </div>
   );
