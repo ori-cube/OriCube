@@ -4,7 +4,7 @@ import { OrigamiList } from "@/components/OrigamiList";
 import { useState } from "react";
 import { ListItemProps } from "@/components/ui/OrigamiListItem";
 import origamiData from "../models/origamiList.json";
-import { SearchBoxPresenter } from "@/components/SearchBox/presenter";
+import { SearchBoxPresenter } from "@/components/SearchBox";
 import { Header } from "@/components/Header";
 
 export default function Home() {

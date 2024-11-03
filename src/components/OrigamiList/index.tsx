@@ -27,7 +27,10 @@ export const OrigamiList = ({ origamiList }: OrigamiListProps) => {
                 id={item?.id}
                 name={item?.name}
                 imageUrl={item?.imageUrl}
-              />
+              >
+                <OrigamiListItem.OrigamiImage />
+                <OrigamiListItem.Title />
+              </OrigamiListItem>
             </ul>
           ))}
         </li>
