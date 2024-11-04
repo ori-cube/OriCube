@@ -9,8 +9,8 @@ import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
 } from "react-icons/hi2";
-import { Pagination } from "../ui/Pagination";
-import { IconButton } from "../ui/IconButton";
+import { Pagination } from "./Pagination";
+import { IconButton } from "../../ui/IconButton";
 
 interface ControlPanelPresenterProps {
   stepNum: number;

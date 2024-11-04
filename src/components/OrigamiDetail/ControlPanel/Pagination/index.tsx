@@ -5,7 +5,7 @@ import {
   HiDotsHorizontal,
 } from "react-icons/hi";
 import style from "./index.module.scss";
-import { IconButton } from "../IconButton";
+import { IconButton } from "@/components/ui/IconButton";
 
 type Props = {
   currentPage: number;

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Model } from "@/types/model";
-import { OrigamiTitle } from "@/components/OrigamiTitle";
-import { ControlPanel } from "@/components/ControlPanel";
-import { Three } from "../three";
+import { OrigamiTitle } from "@/components/OrigamiDetail/OrigamiTitle";
+import { ControlPanel } from "@/components/OrigamiDetail/ControlPanel";
+import { Three } from "./Three";
 import styles from "./presenter.module.scss";
 
 interface OrigamiDetailPresenterProps {

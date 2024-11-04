@@ -2,9 +2,9 @@
 import styles from "./page.module.scss";
 import { OrigamiList } from "@/components/OrigamiList";
 import { useState } from "react";
-import { ListItemProps } from "@/components/ui/OrigamiListItem";
+import { ListItemProps } from "@/components/OrigamiList/OrigamiListItem";
 import origamiData from "../models/origamiList.json";
-import { SearchBoxPresenter } from "@/components/SearchBox";
+import { SearchBoxPresenter } from "@/components/ui/SearchBox";
 import { Header } from "@/components/Header";
 
 export default function Home() {

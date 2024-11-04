@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./index.module.scss";
-import { ListItemProps, OrigamiListItem } from "../ui/OrigamiListItem";
+import { ListItemProps, OrigamiListItem } from "./OrigamiListItem";
 import { Zen_Maru_Gothic } from "next/font/google";
 
 const ZenMaruFont = Zen_Maru_Gothic({

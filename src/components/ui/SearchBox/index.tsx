@@ -9,7 +9,7 @@ import {
 import style from "./index.module.scss";
 import { createContext, useContext, useState } from "react";
 import { Zen_Maru_Gothic } from "next/font/google";
-import { IconButton } from "../ui/IconButton";
+import { IconButton } from "@/components/ui/IconButton";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "500",
