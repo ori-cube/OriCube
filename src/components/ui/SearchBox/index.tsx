@@ -7,9 +7,10 @@ import {
   HiOutlineArrowLeft,
 } from "react-icons/hi2";
 import style from "./index.module.scss";
-import { createContext, useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { Zen_Maru_Gothic } from "next/font/google";
 import { IconButton } from "@/components/ui/IconButton";
+import { SearchBoxProvider, SearchBoxContext } from "./provider";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "500",
@@ -20,21 +21,34 @@ export type SearchBoxProps = {
   handleSearch: (keyword: string) => void;
 };
 
-type SearchBoxContextProps = {
-  searchKeyword: string;
-  setSearchKeyword: React.Dispatch<React.SetStateAction<string>>;
-  handleSearch: (keyword: string) => void;
-  handleClick: () => void;
-};
-
-const SearchBoxContext = createContext<SearchBoxContextProps>(
-  {} as SearchBoxContextProps
-);
-
 export const SearchBoxPresenter: React.FC<SearchBoxProps> = ({
   handleSearch,
 }) => {
-  const [searchKeyword, setSearchKeyword] = useState("");
+  return (
+    <SearchBoxProvider>
+      <SearchBoxPc handleSearch={handleSearch} />
+      <SearchBoxSp handleSearch={handleSearch} />
+    </SearchBoxProvider>
+  );
+};
+
+const SearchBoxPc = ({
+  handleSearch,
+}: {
+  handleSearch: (word: string) => void;
+}) => {
+  return (
+    <div className={style.search_box}>
+      <InputField handleSearch={handleSearch} />
+    </div>
+  );
+};
+
+const SearchBoxSp = ({
+  handleSearch,
+}: {
+  handleSearch: (word: string) => void;
+}) => {
   const [openSpSearch, setOpenSpSearch] = useState(false);
 
   const handleClick = () => {
@@ -42,18 +56,7 @@ export const SearchBoxPresenter: React.FC<SearchBoxProps> = ({
   };
 
   return (
-    <SearchBoxContext.Provider
-      value={{
-        searchKeyword: searchKeyword,
-        setSearchKeyword: setSearchKeyword,
-        handleSearch: handleSearch,
-        handleClick: handleClick,
-      }}
-    >
-      <div className={style.search_box}>
-        <InputField />
-      </div>
-
+    <div className={style.search_box_sp}>
       {openSpSearch ? (
         <div className={style.container}>
           <Flex
@@ -71,11 +74,11 @@ export const SearchBoxPresenter: React.FC<SearchBoxProps> = ({
               }}
               disable={false}
             />
-            <InputField />
+            <InputField handleSearch={handleSearch} />
           </Flex>
         </div>
       ) : (
-        <div className={style.search_box_sp}>
+        <div className={style.search_box_sp_icon}>
           <IconButton
             Icon={HiMagnifyingGlass}
             handleClick={() => handleClick()}
@@ -83,13 +86,16 @@ export const SearchBoxPresenter: React.FC<SearchBoxProps> = ({
           />
         </div>
       )}
-    </SearchBoxContext.Provider>
+    </div>
   );
 };
 
-const InputField = () => {
-  const { handleSearch, searchKeyword, setSearchKeyword } =
-    useContext(SearchBoxContext);
+const InputField: React.FC<{ handleSearch: (word: string) => void }> = ({
+  handleSearch,
+}: {
+  handleSearch: (word: string) => void;
+}) => {
+  const { searchKeyword, setSearchKeyword } = useContext(SearchBoxContext);
   const onKeyDown = (key: string) => {
     switch (key) {
       case "Enter":

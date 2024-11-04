@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Model } from "@/types/model";
 import { OrigamiTitle } from "@/components/OrigamiDetail/OrigamiTitle";
 import { ControlPanel } from "@/components/OrigamiDetail/ControlPanel";
@@ -8,24 +7,26 @@ import { Three } from "./Three";
 import styles from "./presenter.module.scss";
 
 interface OrigamiDetailPresenterProps {
+  sliderValue: number;
+  setSliderValue: React.Dispatch<React.SetStateAction<number>>;
+  procedureIndex: number;
+  setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
+  procedureLength: number;
+  description: string;
+  color: string;
   modelData: Model;
 }
 
 export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
+  sliderValue,
+  setSliderValue,
+  procedureIndex,
+  setProcedureIndex,
+  procedureLength,
+  description,
+  color,
   modelData,
 }) => {
-  const [sliderValue, setSliderValue] = useState(0); //折り紙の折る進行状況を保持
-  const [procedureIndex, setProcedureIndex] = useState(1); //折り紙の手順を保持
-
-  useEffect(() => {
-    setSliderValue(0);
-  }, [procedureIndex]);
-
-  const procedureLength = Object.keys(modelData.procedure).length;
-  const description =
-    modelData.procedure[procedureIndex.toString()].description;
-  const color = modelData.color;
-
   return (
     <div>
       <Three
