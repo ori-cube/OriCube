@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import style from "./presenter.module.scss";
 import { SearchBoxPresenter } from "./SearchBox";
+import { GoogleAuthButton } from "./GoogleAuth";
 
 export const HeaderPresenter: React.FC<{ enableSearch: boolean }> = ({
   enableSearch,
@@ -28,6 +29,9 @@ export const HeaderPresenter: React.FC<{ enableSearch: boolean }> = ({
       ) : (
         <></>
       )}
+      <Flex id="navigation-container" align="center">
+        <GoogleAuthButton />
+      </Flex>
     </Flex>
   </header>
 );
