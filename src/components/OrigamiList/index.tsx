@@ -2,8 +2,7 @@ import React from "react";
 import styles from "./index.module.scss";
 import { OrigamiListItem } from "./OrigamiListItem";
 import { Zen_Maru_Gothic } from "next/font/google";
-import { useContext } from "react";
-import { OrigamiListPageContext } from "@/app/page";
+import { useOrigamiListPage } from "@/app/_provider";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "500",
@@ -11,7 +10,7 @@ const ZenMaruFont = Zen_Maru_Gothic({
 });
 
 export const OrigamiList = () => {
-  const { filteredOrigamiList } = useContext(OrigamiListPageContext);
+  const { filteredOrigamiList } = useOrigamiListPage();
   return (
     <div>
       {filteredOrigamiList.length === 0 ? (

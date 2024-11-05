@@ -7,10 +7,10 @@ import {
   HiOutlineArrowLeft,
 } from "react-icons/hi2";
 import style from "./index.module.scss";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Zen_Maru_Gothic } from "next/font/google";
 import { IconButton } from "@/components/ui/IconButton";
-import { OrigamiListPageContext } from "@/app/page";
+import { useOrigamiListPage } from "@/app/_provider";
 import origamiData from "@/models/origamiList.json";
 
 const ZenMaruFont = Zen_Maru_Gothic({
@@ -81,7 +81,7 @@ const InputField: React.FC = () => {
   const items = origamiData;
 
   const { searchKeyword, setSearchKeyword, setFilteredOrigamiList } =
-    useContext(OrigamiListPageContext);
+    useOrigamiListPage();
 
   const handleSearch = (searchKeyword: string) => {
     // 検索キーワードでフィルタリング
