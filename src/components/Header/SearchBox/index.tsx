@@ -10,45 +10,32 @@ import style from "./index.module.scss";
 import { useContext, useState } from "react";
 import { Zen_Maru_Gothic } from "next/font/google";
 import { IconButton } from "@/components/ui/IconButton";
-import { SearchBoxProvider, SearchBoxContext } from "./provider";
+import { OrigamiListPageContext } from "@/app/page";
+import origamiData from "@/models/origamiList.json";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "500",
   subsets: ["latin"],
 });
 
-export type SearchBoxProps = {
-  handleSearch: (keyword: string) => void;
-};
-
-export const SearchBoxPresenter: React.FC<SearchBoxProps> = ({
-  handleSearch,
-}) => {
+export const SearchBoxPresenter: React.FC = () => {
   return (
-    <SearchBoxProvider>
-      <SearchBoxPc handleSearch={handleSearch} />
-      <SearchBoxSp handleSearch={handleSearch} />
-    </SearchBoxProvider>
+    <>
+      <SearchBoxPc />
+      <SearchBoxSp />
+    </>
   );
 };
 
-const SearchBoxPc = ({
-  handleSearch,
-}: {
-  handleSearch: (word: string) => void;
-}) => {
+const SearchBoxPc: React.FC = () => {
   return (
     <div className={style.search_box}>
-      <InputField handleSearch={handleSearch} />
+      <InputField />
     </div>
   );
 };
 
-const SearchBoxSp = ({
-  handleSearch,
-}: {
-  handleSearch: (word: string) => void;
-}) => {
+const SearchBoxSp: React.FC = () => {
   const [openSpSearch, setOpenSpSearch] = useState(false);
 
   const handleClick = () => {
@@ -74,7 +61,7 @@ const SearchBoxSp = ({
               }}
               disable={false}
             />
-            <InputField handleSearch={handleSearch} />
+            <InputField />
           </Flex>
         </div>
       ) : (
@@ -90,12 +77,28 @@ const SearchBoxSp = ({
   );
 };
 
-const InputField: React.FC<{ handleSearch: (word: string) => void }> = ({
-  handleSearch,
-}: {
-  handleSearch: (word: string) => void;
-}) => {
-  const { searchKeyword, setSearchKeyword } = useContext(SearchBoxContext);
+const InputField: React.FC = () => {
+  const items = origamiData;
+
+  const { searchKeyword, setSearchKeyword, setFilteredOrigamiList } =
+    useContext(OrigamiListPageContext);
+
+  const handleSearch = (searchKeyword: string) => {
+    // 検索キーワードでフィルタリング
+    const newFilteredOrigamiList = items.filter((item) =>
+      item.searchKeyword.some((keyword: string) =>
+        keyword.includes(searchKeyword)
+      )
+    );
+
+    // searchKeywordを除いた結果を設定
+    const newItems = newFilteredOrigamiList.map((item) => {
+      const { ...rest } = item;
+      return rest;
+    });
+    setFilteredOrigamiList(newItems); // フィルタリング結果を更新
+  };
+
   const onKeyDown = (key: string) => {
     switch (key) {
       case "Enter":
