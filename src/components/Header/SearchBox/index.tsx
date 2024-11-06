@@ -99,7 +99,7 @@ const InputField: React.FC = () => {
     setFilteredOrigamiList(newItems); // フィルタリング結果を更新
   };
 
-  const onKeyDown = (key: string) => {
+  const handleKeyDown = (key: string) => {
     switch (key) {
       case "Enter":
         handleSearch(searchKeyword);
@@ -119,7 +119,7 @@ const InputField: React.FC = () => {
         placeholder="おりがみのなまえを入力してください 例：つる"
         value={searchKeyword}
         onChange={(e) => setSearchKeyword(e.target.value)}
-        onKeyDown={(e) => onKeyDown(e.key)}
+        onKeyDown={(e) => handleKeyDown(e.key)}
         className={ZenMaruFont.className}
       >
         <TextField.Slot>
