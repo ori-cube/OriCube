@@ -1,8 +1,6 @@
 @use "@/styles/variables" as *;
 
 .button {
-  width: 44px;
-  height: 44px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,8 +13,6 @@
 }
 
 .button_disable {
-  width: 44px;
-  height: 44px;
   display: flex;
   justify-content: center;
   align-items: center;
