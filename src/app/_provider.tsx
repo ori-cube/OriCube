@@ -1,3 +1,4 @@
+"use client";
 import origamiData from "@/models/origamiList.json";
 import { createContext, useState, useContext } from "react";
 import { ListItemProps } from "@/components/OrigamiList/OrigamiListItem";
