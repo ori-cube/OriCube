@@ -36,15 +36,15 @@ const SearchBoxPc: React.FC = () => {
 };
 
 const SearchBoxSp: React.FC = () => {
-  const [openSpSearch, setOpenSpSearch] = useState(false);
+  const [isOpenSpSearch, setIsOpenSpSearch] = useState(false);
 
   const handleClick = () => {
-    setOpenSpSearch(!openSpSearch);
+    setIsOpenSpSearch(!isOpenSpSearch);
   };
 
   return (
     <div className={style.search_box_sp}>
-      {openSpSearch ? (
+      {isOpenSpSearch ? (
         <div className={style.container}>
           <Flex
             align="center"
