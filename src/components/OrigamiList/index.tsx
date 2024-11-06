@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import styles from "./index.module.scss";
 import { OrigamiListItem } from "./OrigamiListItem";
@@ -25,10 +27,7 @@ export const OrigamiList = () => {
                 id={item?.id}
                 name={item?.name}
                 imageUrl={item?.imageUrl}
-              >
-                <OrigamiListItem.OrigamiImage />
-                <OrigamiListItem.Title />
-              </OrigamiListItem>
+              />
             </ul>
           ))}
         </li>

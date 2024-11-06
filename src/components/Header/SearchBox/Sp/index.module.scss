@@ -1,0 +1,43 @@
+@use "@/styles/variables" as *;
+
+.search_box_sp {
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+.search_box_sp_icon {
+  display: flex;
+  color: #000;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  font-size: small;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+  border-radius: 10px;
+
+  &:active {
+    background-color: darken($hover-color, 20%);
+  }
+}
+
+.container {
+  position: absolute;
+  box-sizing: content-box;
+  top: 0px;
+  height: 46px;
+  left: 0;
+  width: 100vw;
+  background-color: white;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.container_flex {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-left: 16px;
+  padding-right: 32px;
+}

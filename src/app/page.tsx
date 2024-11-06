@@ -1,4 +1,3 @@
-"use client";
 import styles from "./page.module.scss";
 import { OrigamiList } from "@/components/OrigamiList";
 import { Header } from "@/components/Header";
