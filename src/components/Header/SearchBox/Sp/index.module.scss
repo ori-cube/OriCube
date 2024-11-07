@@ -1,16 +1,12 @@
 @use "@/styles/variables" as *;
-.search_box {
-  width: 400px;
-  @media (max-width: 767px) {
+
+.search_box_sp {
+  @media (min-width: 768px) {
     display: none;
   }
 }
-.search_box_text {
-  font-size: 16px;
-  font-weight: 400;
-}
 
-.search_box_sp {
+.search_box_sp_icon {
   display: flex;
   color: #000;
   justify-content: center;
@@ -20,9 +16,6 @@
   font-weight: bold;
   transition: background-color 0.2s ease;
   border-radius: 10px;
-  @media (min-width: 768px) {
-    display: none;
-  }
 
   &:active {
     background-color: darken($hover-color, 20%);

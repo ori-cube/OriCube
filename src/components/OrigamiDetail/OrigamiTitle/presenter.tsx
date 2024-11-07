@@ -17,7 +17,6 @@ export const OrigamiTitlePresenter: React.FC<OrigamiTitlePresenterProps> = (
   return (
     <div className={`${style.origami_title} ${ZenMaruFont.className}`}>
       <h1 className={style.title}>{props.title}</h1>
-      {/* <div className={style.divider}></div> */}
       <p className={style.description}>{props.description}</p>
     </div>
   );

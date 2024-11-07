@@ -34,6 +34,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     }
   };
 
+  // Slide barの再生・停止を制御
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     if (isPlaying) {
@@ -72,6 +73,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     void intervalId;
   }
 
+  // ループ時に、再生ボタンを押してもバグが発生しないように、ループ開始・終了をstateに保存
   useEffect(() => {
     if (props.value >= props.maxArg) {
       const resetSlider = setTimeout(() => {
@@ -83,6 +85,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     }
   }, [props.value]);
 
+  // 折り方のindexが切り替わったときに、自動再生する
   useEffect(() => {
     setIsPlaying(true);
   }, [props.procedureIndex]);
