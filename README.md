@@ -93,7 +93,7 @@ Three.js を用いて、誰でもアクセス可能な Web 上で、折り紙の
 
 ## 開発技術
 
-<!-- ここに構成図がきます。 -->
+![技術構成図：JSONのデータをThree.jsに送り、Three.jsで3DモデルをNext.jsとTypeScript上で構築したサイトをVercelにデプロイしていることを表すイメージ図](https://github.com/user-attachments/assets/ce6de659-a092-4b3c-b25f-8863db12d4c3)
 
 ### 活用した技術
 
@@ -111,8 +111,6 @@ Three.js を用いて、誰でもアクセス可能な Web 上で、折り紙の
 #### デバイス
 
 - Web アプリで、スマートフォン、タブレット、PC に対応
-
-![IMG_6592](https://github.com/user-attachments/assets/ce6de659-a092-4b3c-b25f-8863db12d4c3)
 
 ### 独自技術
 

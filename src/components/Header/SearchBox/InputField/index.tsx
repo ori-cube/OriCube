@@ -1,6 +1,7 @@
 import { TextField, Box } from "@radix-ui/themes";
 import { HiMagnifyingGlass, HiMiniXMark } from "react-icons/hi2";
 import { Zen_Maru_Gothic } from "next/font/google";
+import { ButtonSizeProp } from "@/types/button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useOrigamiListPage } from "@/app/_provider";
 import origamiData from "@/models/origamiList.json";
@@ -61,7 +62,7 @@ export const InputField: React.FC = () => {
             Icon={HiMiniXMark}
             handleClick={() => resetSearchKeyword()}
             disable={false}
-            size={20}
+            size={ButtonSizeProp.medium}
           />
         </TextField.Slot>
       </TextField.Root>
