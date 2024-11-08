@@ -17,6 +17,7 @@
     "clsx": "^2.1.1",
     "destyle.css": "^4.0.1",
     "firebase-admin": "^12.7.0",
+    "firestore-export-import": "^1.4.0",
     "next": "15.0.1",
     "next-auth": "^4.24.10",
     "react": "^18.3.1",
