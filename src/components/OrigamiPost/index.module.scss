@@ -1,1 +1,9 @@
 @use "@/styles/variables" as *;
+
+.rangeBar {
+  position: fixed;
+  bottom: 10vh;
+  right: 10vh;
+  z-index: 1000;
+  width: 200px;
+}

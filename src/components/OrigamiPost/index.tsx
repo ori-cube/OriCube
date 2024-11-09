@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
@@ -66,6 +66,12 @@ export const OrigamiPost = () => {
 
   const points: Point[] = [];
 
+  const [fixBoards, setFixBoards] = useState<Board[]>([initialBoard]);
+  const [moveBoards, setMoveBoards] = useState<Board[]>([]);
+  const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
+
+  const [foldingAngle, setFoldingAngle] = useState(0);
+
   // シーンの初期化
   useEffect(() => {
     if (sceneRef.current) return; // シーンが既に初期化されている場合は何もしない
@@ -108,7 +114,7 @@ export const OrigamiPost = () => {
       requestAnimationFrame(render);
     };
 
-    renderBoard(scene, initialBoard);
+    fixBoards.forEach((board) => renderBoard(scene, board));
 
     raycasterRef.current = new THREE.Raycaster();
 
@@ -153,8 +159,9 @@ export const OrigamiPost = () => {
         if (points.length >= 2) {
           // この2点を結ぶ線で板を分割する。
           const axis: [Point, Point] = [[...points[0]], [...points[1]]];
+          setRotateAxis(axis);
           const separatedBoard = separateBoard({
-            board: initialBoard,
+            board: fixBoards[0],
             rotateAxis: axis,
           });
           console.log("Separated board:", separatedBoard);
@@ -173,8 +180,13 @@ export const OrigamiPost = () => {
 
           // 新しい板を描画する
           const { leftBoard, rightBoard } = separatedBoard;
+          setFixBoards([leftBoard]);
+          setMoveBoards([rightBoard]);
+
           renderBoard(scene, leftBoard);
           renderBoard(scene, rightBoard);
+
+          points.length = 0;
 
           renderer.render(scene, camera);
         }
@@ -184,7 +196,96 @@ export const OrigamiPost = () => {
     return () => {
       window.removeEventListener("resize", () => {});
     };
-  }, []);
+  }, [fixBoards]);
 
-  return <canvas ref={canvasRef} id="canvas" className={styles.model} />;
+  // 回転に応じて板を描画
+  useEffect(() => {
+    const scene = sceneRef.current;
+    console.log("rotateAxis:", rotateAxis);
+    if (!scene) return;
+    if (rotateAxis.length === 0) return;
+
+    // 前の板を削除
+    scene.children = scene.children.filter((child) => child.type === "Line");
+
+    // そのままの板と、回転後の板を保持
+    const boards = [...fixBoards];
+    const theta = THREE.MathUtils.degToRad(foldingAngle);
+    // 通常の折り方の場合
+    const axis = new THREE.Vector3(...rotateAxis[0])
+      .sub(new THREE.Vector3(...rotateAxis[1]))
+      .normalize();
+    const subNode = new THREE.Vector3(...rotateAxis[0]);
+
+    for (let i = 0; i < moveBoards.length; i++) {
+      const moveBoard = moveBoards[i];
+      const newBoard: Board = moveBoard.map((point) => {
+        const node = new THREE.Vector3(...point);
+        const rotateNode = node.clone().sub(subNode);
+        rotateNode.applyAxisAngle(axis, theta);
+        rotateNode.add(subNode);
+        return [rotateNode.x, rotateNode.y, rotateNode.z] as Point;
+      });
+      boards.push(newBoard);
+    }
+
+    const frontMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("red"),
+      side: THREE.FrontSide,
+      transparent: true,
+    });
+    const backMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#DFDFDF"),
+      side: THREE.BackSide,
+      transparent: true,
+    });
+
+    // 板を描画
+    boards.forEach((board) => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array(board.flat()), 3)
+      );
+      if (board.length >= 4) {
+        const indices = [];
+        for (let j = 0; j < board.length - 2; j++) {
+          indices.push(0, j + 1, j + 2);
+        }
+        geometry.setIndex(indices);
+      }
+      const frontMesh = new THREE.Mesh(geometry, frontMaterial);
+      const backMesh = new THREE.Mesh(geometry, backMaterial);
+      scene.add(frontMesh);
+      scene.add(backMesh);
+      const EdgesGeometry = new THREE.EdgesGeometry(geometry);
+      const wireframeMaterial = new THREE.LineBasicMaterial({
+        color: 0x000000, // ワイヤーフレームの色
+        linewidth: 1,
+      });
+      const wireframe = new THREE.LineSegments(
+        EdgesGeometry,
+        wireframeMaterial
+      );
+      scene.add(wireframe);
+    });
+  }, [foldingAngle, fixBoards, moveBoards, rotateAxis]);
+
+  return (
+    <>
+      <canvas ref={canvasRef} id="canvas" className={styles.model} />
+      <div className={styles.rangeBar}>
+        0
+        <input
+          type="range"
+          min="0"
+          max="180"
+          step="1"
+          value={foldingAngle}
+          onChange={(e) => setFoldingAngle(Number(e.target.value))}
+        />
+        180
+      </div>
+    </>
+  );
 };
