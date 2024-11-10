@@ -4,7 +4,6 @@ import Image from "next/image";
 import style from "./presenter.module.scss";
 import { SearchBoxPresenter } from "./SearchBox";
 import { GoogleAuthButton } from "./GoogleAuth";
-import { Model } from "@/types/model";
 import { HeaderProps } from "./index";
 
 export const HeaderPresenter: React.FC<HeaderProps> = ({

@@ -10,7 +10,10 @@ const ZenMaruFont = Zen_Maru_Gothic({
   subsets: ["latin"],
 });
 
-type OrigamiListItemProps = Omit<Model, "searchKeyWord">;
+type OrigamiListItemProps = Omit<
+  Model,
+  "searchKeyWord" | "procedure" | "color"
+>;
 
 export const OrigamiListItem: React.FC<OrigamiListItemProps> = ({
   id,

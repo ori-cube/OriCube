@@ -5,6 +5,12 @@ import {
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 export async function GET(req: NextRequest) {
   /*
   仕様
@@ -33,7 +39,7 @@ export async function GET(req: NextRequest) {
   const command = new ListObjectsV2Command({ Bucket: "oricube" });
 
   const response = await s3.send(command);
-  const jsonList: Object[] = [];
+  const jsonList: object[] = [];
   try {
     if (!req.nextUrl.searchParams.get("id")) {
       // 全てのデータをjson形式で取得する
@@ -49,7 +55,7 @@ export async function GET(req: NextRequest) {
       }
 
       return new Response(JSON.stringify(jsonList), {
-        headers: { "Content-Type": "application/json" },
+        headers: corsHeaders,
       });
     } else {
       const id = req.nextUrl.searchParams.get("id");
@@ -68,7 +74,7 @@ export async function GET(req: NextRequest) {
         );
       }
       return new Response(JSON.stringify(jsonList[0]), {
-        headers: { "Content-Type": "application/json" },
+        headers: corsHeaders,
       });
     }
   } catch (error) {
@@ -117,7 +123,7 @@ export async function POST(req: NextRequest) {
       {
         message: "アップロードに失敗しました。",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
