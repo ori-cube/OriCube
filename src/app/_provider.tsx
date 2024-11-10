@@ -1,11 +1,10 @@
 "use client";
-import origamiData from "@/models/origamiList.json";
-import { createContext, useState, useContext } from "react";
-import { ListItemProps } from "@/components/OrigamiList/OrigamiListItem";
+import { createContext, useState, useContext, useEffect } from "react";
+import { Model } from "@/types/model";
 
 type OrigamiListPageProps = {
-  filteredOrigamiList: ListItemProps[];
-  setFilteredOrigamiList: React.Dispatch<React.SetStateAction<ListItemProps[]>>;
+  filteredOrigamiList: Model[];
+  setFilteredOrigamiList: React.Dispatch<React.SetStateAction<Model[]>>;
   searchKeyword: string;
   setSearchKeyword: React.Dispatch<React.SetStateAction<string>>;
 };
@@ -16,14 +15,21 @@ const OrigamiListPageContext = createContext<OrigamiListPageProps>(
 
 export const OrigamiListPageProvider: React.FC<{
   children: React.ReactNode;
-}> = ({ children }: { children: React.ReactNode }) => {
+  origamiData: Model[];
+}> = ({
+  children,
+  origamiData,
+}: {
+  children: React.ReactNode;
+  origamiData: Model[];
+}) => {
   const origamiList = origamiData.map((item) => {
     const { ...rest } = item;
     return rest;
   });
 
   const [filteredOrigamiList, setFilteredOrigamiList] =
-    useState<ListItemProps[]>(origamiList);
+    useState<Model[]>(origamiList);
   const [searchKeyword, setSearchKeyword] = useState("");
 
   return (

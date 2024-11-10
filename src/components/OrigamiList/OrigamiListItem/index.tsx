@@ -3,25 +3,16 @@ import Link from "next/link";
 import styles from "./index.module.scss";
 import Image from "next/image";
 import { Zen_Maru_Gothic } from "next/font/google";
+import { Model } from "@/types/model";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "700",
   subsets: ["latin"],
 });
 
-export type ListItemProps = {
-  id?: string;
-  name?: string;
-  imageUrl: string;
-};
-
-export const OrigamiListItem: React.FC<ListItemProps> = ({
-  id,
-  name,
-  imageUrl,
-}) => {
+export const OrigamiListItem: React.FC<Model> = ({ id, name, imageUrl }) => {
   return (
-    <Link href={`/${id}`} className={styles.listItem}>
+    <Link href={{ pathname: `/${id}` }} className={styles.listItem}>
       <Image
         src={imageUrl}
         alt={`サムネイル: ${name}の折り紙画像`}
