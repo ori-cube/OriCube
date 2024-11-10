@@ -12,7 +12,7 @@ export const UploadData = () => {
       await axios
         .post("/api/data", {
           mail: session.user?.email,
-          title: "test_data",
+          id: 0,
           data: data,
         })
         .then(() => {

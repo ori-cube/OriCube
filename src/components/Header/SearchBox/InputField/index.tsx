@@ -4,7 +4,6 @@ import { Zen_Maru_Gothic } from "next/font/google";
 import { ButtonSizeProp } from "@/types/button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useOrigamiListPage } from "@/app/_provider";
-import axios from "axios";
 import { Model } from "@/types/model";
 
 const ZenMaruFont = Zen_Maru_Gothic({
@@ -12,16 +11,18 @@ const ZenMaruFont = Zen_Maru_Gothic({
   subsets: ["latin"],
 });
 
-export const InputField: React.FC = async () => {
-  const response = await axios.get("http://localhost:3000/api/data");
-  const origamiData: Model[] = response.data;
+export const InputField: React.FC<{ origamiData: Model[] }> = ({
+  origamiData,
+}: {
+  origamiData: Model[];
+}) => {
   const { searchKeyword, setSearchKeyword, setFilteredOrigamiList } =
     useOrigamiListPage();
 
   const handleSearch = (searchKeyword: string) => {
     // 検索キーワードでフィルタリング
     const newFilteredOrigamiList = origamiData.filter((item) =>
-      item.searchKeyWord?.some((keyword: string) =>
+      item.searchKeyWord.some((keyword: string) =>
         keyword.includes(searchKeyword)
       )
     );

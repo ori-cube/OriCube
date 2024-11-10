@@ -10,7 +10,13 @@ const ZenMaruFont = Zen_Maru_Gothic({
   subsets: ["latin"],
 });
 
-export const OrigamiListItem: React.FC<Model> = ({ id, name, imageUrl }) => {
+type OrigamiListItemProps = Omit<Model, "searchKeyWord">;
+
+export const OrigamiListItem: React.FC<OrigamiListItemProps> = ({
+  id,
+  name,
+  imageUrl,
+}) => {
   return (
     <Link href={{ pathname: `/${id}` }} className={styles.listItem}>
       <Image
