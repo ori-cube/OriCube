@@ -2,7 +2,7 @@ export type Model = {
   id: number;
   name?: string;
   imageUrl: string;
-  searchKeyWord: string[];
+  searchKeyword?: string[];
   color?: string;
   procedure?: Procedure;
 };

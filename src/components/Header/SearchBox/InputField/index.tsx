@@ -22,7 +22,7 @@ export const InputField: React.FC<{ origamiData: Model[] }> = ({
   const handleSearch = (searchKeyword: string) => {
     // 検索キーワードでフィルタリング
     const newFilteredOrigamiList = origamiData.filter((item) =>
-      item.searchKeyWord.some((keyword: string) =>
+      item.searchKeyword?.some((keyword: string) =>
         keyword.includes(searchKeyword)
       )
     );
