@@ -22,7 +22,8 @@ export default async function Home() {
         </main>
       </OrigamiListPageProvider>
     );
-  } catch (e) {
-    return <>Error</>;
+  } catch (err) {
+    console.log(err);
+    return <div>Error is occur</div>;
   }
 }
