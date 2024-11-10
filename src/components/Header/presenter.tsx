@@ -3,12 +3,13 @@ import Link from "next/link";
 import Image from "next/image";
 import style from "./presenter.module.scss";
 import { SearchBoxPresenter } from "./SearchBox";
+import { GoogleAuthButton } from "./GoogleAuth";
+import { HeaderProps } from "./index";
 
-export const HeaderPresenter: React.FC<{ enableSearch: boolean }> = ({
+export const HeaderPresenter: React.FC<HeaderProps> = ({
   enableSearch,
-}: {
-  enableSearch: boolean;
-}) => (
+  origamiData,
+}: HeaderProps) => (
   <header className={style.header}>
     <Flex id="header-container" align="center" height="46px" justify="between">
       <Flex id="header-logo-container" gapX="8px">
@@ -23,11 +24,14 @@ export const HeaderPresenter: React.FC<{ enableSearch: boolean }> = ({
       </Flex>
       {enableSearch ? (
         <Flex id="navigation-container" align="center">
-          <SearchBoxPresenter />
+          <SearchBoxPresenter origamiData={origamiData} />
         </Flex>
       ) : (
         <></>
       )}
+      <Flex id="navigation-container" align="center">
+        <GoogleAuthButton />
+      </Flex>
     </Flex>
   </header>
 );
