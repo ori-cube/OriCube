@@ -8,7 +8,18 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   /*
   仕様
-    "api/data", GETを叩くと、折り紙の折り方のJSONをリストに格納したものが返される
+    "api/data"
+      GETを叩くと、折り紙の折り方のJSONをリストに格納したものが返される
+      return:
+        [
+          {Model},
+          {Model},
+          ...
+        ]
+    "api/data"{params: {id: number}}
+      R2の中から、指定idのデータを一つ取得できる
+      return:
+        {Model}
   */
   const s3 = new S3Client({
     region: "auto",
@@ -67,7 +78,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { mail, title, data } = await req.json();
+  /*
+  仕様
+    "api/data" POST props: mail: string, id: number, data: string
+      引数に与えたdata(Model型)をDBに保存する
+      {user mail}/{id}形式でDBに保存される
+  */
+  const { mail, id, data } = await req.json();
   const s3 = new S3Client({
     region: "auto",
     endpoint: process.env.R2_ENDPOINT,
@@ -78,7 +95,7 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    const key = `origami/${mail}/${title}`;
+    const key = `origami/${mail}/${id}`;
     await s3.send(
       new PutObjectCommand({
         Bucket: "oricube",
