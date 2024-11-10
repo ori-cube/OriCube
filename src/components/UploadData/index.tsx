@@ -1,7 +1,7 @@
 "use client";
 import axios from "axios";
 import { useSession } from "next-auth/react";
-import data from "@/models/3.json";
+import data from "@/models/1.json";
 
 export const UploadData = () => {
   const { data: session } = useSession();
@@ -12,7 +12,7 @@ export const UploadData = () => {
       await axios
         .post("/api/data", {
           mail: session.user?.email,
-          title: "3",
+          title: "test_data",
           data: data,
         })
         .then(() => {
