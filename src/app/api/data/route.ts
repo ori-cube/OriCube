@@ -5,7 +5,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   /*
   仕様
     "api/data", GETを叩くと、折り紙の折り方のJSONをリストに格納したものが返される
@@ -21,25 +21,45 @@ export async function GET() {
 
   const command = new ListObjectsV2Command({ Bucket: "oricube" });
 
+  const response = await s3.send(command);
+  const jsonList: Object[] = [];
   try {
-    const response = await s3.send(command);
-    const jsonList: Object[] = [];
+    if (!req.nextUrl.searchParams.get("id")) {
+      // 全てのデータをjson形式で取得する
+      if (response.Contents && response.Contents.length > 0) {
+        await Promise.all(
+          response.Contents?.map(async (item) => {
+            const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
+            const jsonFetchData = await fetch(jsonUrl);
+            const jsonData = await jsonFetchData.json();
+            jsonList.push(jsonData);
+          })
+        );
+      }
 
-    // 全てのデータをjson形式で取得する
-    if (response.Contents && response.Contents.length > 0) {
-      await Promise.all(
-        response.Contents?.map(async (item) => {
-          const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
-          const jsonFetchData = await fetch(jsonUrl);
-          const jsonData = await jsonFetchData.json();
-          jsonList.push(jsonData);
-        })
-      );
+      return new Response(JSON.stringify(jsonList), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } else {
+      const id = req.nextUrl.searchParams.get("id");
+      // 指定idのデータをjson形式で取得する
+      if (response.Contents && response.Contents.length > 0) {
+        await Promise.all(
+          response.Contents?.map(async (item) => {
+            const title = item.Key?.split("/").pop();
+            if (title === id) {
+              const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
+              const jsonFetchData = await fetch(jsonUrl);
+              const jsonData = await jsonFetchData.json();
+              jsonList.push(jsonData);
+            }
+          })
+        );
+      }
+      return new Response(JSON.stringify(jsonList[0]), {
+        headers: { "Content-Type": "application/json" },
+      });
     }
-
-    return new Response(JSON.stringify(jsonList), {
-      headers: { "Content-Type": "application/json" },
-    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ status: 500 });
