@@ -5,6 +5,7 @@ import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { separateBoard } from "./logics/separateBoard";
+import { getAllIntersections } from "./logics/getAllIntersections";
 
 type Point = [number, number, number];
 type Board = Point[];
@@ -74,10 +75,12 @@ export const OrigamiPost = () => {
 
   // シーンの初期化
   useEffect(() => {
-    if (sceneRef.current) return; // シーンが既に初期化されている場合は何もしない
-
     const canvas = canvasRef.current!;
-    const scene = new THREE.Scene();
+    let scene = sceneRef.current;
+
+    if (!scene) {
+      scene = new THREE.Scene();
+    }
     sceneRef.current = scene;
 
     const sizes = {
@@ -157,11 +160,25 @@ export const OrigamiPost = () => {
         points.push([point.x, point.y, point.z]);
 
         if (points.length >= 2) {
+          // TODO: 同じ板上にある2点を選択していない場合エラーになる
+
           // この2点を結ぶ線で板を分割する。
           const axis: [Point, Point] = [[...points[0]], [...points[1]]];
           setRotateAxis(axis);
+
+          // 板上に回転軸がある板を分割する板とする
+          const targetBoard = fixBoards.find((board) => {
+            const intersections = getAllIntersections({
+              board,
+              rotateAxis: axis,
+            });
+            return intersections.length === 2;
+          });
+
+          if (!targetBoard) return alert("Failed to find target board.");
+
           const separatedBoard = separateBoard({
-            board: fixBoards[0],
+            board: targetBoard,
             rotateAxis: axis,
           });
           console.log("Separated board:", separatedBoard);
@@ -180,7 +197,10 @@ export const OrigamiPost = () => {
 
           // 新しい板を描画する
           const { leftBoard, rightBoard } = separatedBoard;
-          setFixBoards([leftBoard]);
+          setFixBoards([
+            ...fixBoards.filter((board) => board !== targetBoard),
+            leftBoard,
+          ]);
           setMoveBoards([rightBoard]);
 
           renderBoard(scene, leftBoard);
@@ -201,7 +221,6 @@ export const OrigamiPost = () => {
   // 回転に応じて板を描画
   useEffect(() => {
     const scene = sceneRef.current;
-    console.log("rotateAxis:", rotateAxis);
     if (!scene) return;
     if (rotateAxis.length === 0) return;
 
@@ -229,47 +248,42 @@ export const OrigamiPost = () => {
       boards.push(newBoard);
     }
 
-    const frontMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("red"),
-      side: THREE.FrontSide,
-      transparent: true,
-    });
-    const backMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#DFDFDF"),
-      side: THREE.BackSide,
-      transparent: true,
-    });
-
     // 板を描画
     boards.forEach((board) => {
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute(
-        "position",
-        new THREE.BufferAttribute(new Float32Array(board.flat()), 3)
-      );
-      if (board.length >= 4) {
-        const indices = [];
-        for (let j = 0; j < board.length - 2; j++) {
-          indices.push(0, j + 1, j + 2);
-        }
-        geometry.setIndex(indices);
-      }
-      const frontMesh = new THREE.Mesh(geometry, frontMaterial);
-      const backMesh = new THREE.Mesh(geometry, backMaterial);
-      scene.add(frontMesh);
-      scene.add(backMesh);
-      const EdgesGeometry = new THREE.EdgesGeometry(geometry);
-      const wireframeMaterial = new THREE.LineBasicMaterial({
-        color: 0x000000, // ワイヤーフレームの色
-        linewidth: 1,
-      });
-      const wireframe = new THREE.LineSegments(
-        EdgesGeometry,
-        wireframeMaterial
-      );
-      scene.add(wireframe);
+      renderBoard(scene, board);
     });
   }, [foldingAngle, fixBoards, moveBoards, rotateAxis]);
+
+  const handleDecideBoards = () => {
+    // moveBoardsを回転した後の板を、fixBoardsに追加する
+    if (moveBoards.length === 0) return;
+    if (rotateAxis.length === 0) return;
+    const boards = [...fixBoards];
+    const theta = THREE.MathUtils.degToRad(foldingAngle);
+    const axis = new THREE.Vector3(...rotateAxis[0])
+      .sub(new THREE.Vector3(...rotateAxis[1]))
+      .normalize();
+    const subNode = new THREE.Vector3(...rotateAxis[0]);
+
+    for (let i = 0; i < moveBoards.length; i++) {
+      const moveBoard = moveBoards[i];
+      const newBoard: Board = moveBoard.map((point) => {
+        const node = new THREE.Vector3(...point);
+        const rotateNode = node.clone().sub(subNode);
+        rotateNode.applyAxisAngle(axis, theta);
+        rotateNode.add(subNode);
+        return [rotateNode.x, rotateNode.y, rotateNode.z] as Point;
+      });
+      boards.push(newBoard);
+    }
+
+    console.log(boards);
+
+    setFixBoards(boards);
+    setMoveBoards([]);
+    setRotateAxis([]);
+    setFoldingAngle(0);
+  };
 
   return (
     <>
@@ -286,6 +300,9 @@ export const OrigamiPost = () => {
         />
         180
       </div>
+      <button className={styles.button} onClick={handleDecideBoards}>
+        確定
+      </button>
     </>
   );
 };
