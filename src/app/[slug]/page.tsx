@@ -8,7 +8,8 @@ type Params = Promise<{ slug: string }>;
 
 export default async function Page(props: { params: Params }) {
   const { slug } = await props.params;
-  const response = await axios.get("http://localhost:3000/api/data", {
+  const baseUrl = process.env.NEXT_PUBLIC_URL;
+  const response = await axios.get(`${baseUrl}/api/data`, {
     params: { id: slug },
   });
   const modelData: Model = response.data;
