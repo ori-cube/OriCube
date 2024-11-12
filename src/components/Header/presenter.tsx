@@ -22,15 +22,17 @@ export const HeaderPresenter: React.FC<HeaderProps> = ({
           />
         </Link>
       </Flex>
-      {enableSearch ? (
+      <Flex gapX="8px" justify="between" align="center">
+        {enableSearch ? (
+          <Flex id="navigation-container" align="center">
+            <SearchBoxPresenter origamiData={origamiData} />
+          </Flex>
+        ) : (
+          <></>
+        )}
         <Flex id="navigation-container" align="center">
-          <SearchBoxPresenter origamiData={origamiData} />
+          <GoogleAuthButton />
         </Flex>
-      ) : (
-        <></>
-      )}
-      <Flex id="navigation-container" align="center">
-        <GoogleAuthButton />
       </Flex>
     </Flex>
   </header>
