@@ -83,11 +83,13 @@ export const Pagination = ({
     numList.push(count - 1);
     numList.push(count);
   } else {
+    numList.push(1);
     numList.push("...");
     numList.push(currentPage - 1);
     numList.push(currentPage);
     numList.push(currentPage + 1);
     numList.push("...");
+    numList.push(count);
   }
   return (
     <div className={style.pagination}>
