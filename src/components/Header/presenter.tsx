@@ -5,6 +5,7 @@ import style from "./presenter.module.scss";
 import { SearchBoxPresenter } from "./SearchBox";
 import { GoogleAuthButton } from "./GoogleAuth";
 import { Model } from "@/types/model";
+import MobileMenu from "./HamburgerMenu";
 
 export type HeaderPresenterProps =
   | { enableSearch: true; origamiData: Model[] } // enableSearch が true の場合
@@ -16,6 +17,9 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
 }: HeaderPresenterProps) => (
   <header className={style.header}>
     <Flex id="header-container" align="center" height="46px" justify="between">
+      <div className={style.mobile_menu}>
+        <MobileMenu />
+      </div>
       <Flex id="header-logo-container" gapX="8px">
         <Link href="/">
           <Image
@@ -34,7 +38,11 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
         ) : (
           <></>
         )}
-        <Flex id="navigation-container" align="center">
+        <Flex
+          id="navigation-container"
+          align="center"
+          className={style.google_auth_button}
+        >
           <GoogleAuthButton />
         </Flex>
       </Flex>
