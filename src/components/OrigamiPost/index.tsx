@@ -109,7 +109,7 @@ export const OrigamiPost = () => {
         10,
         1000
       );
-      camera.position.set(20, 70, 100); // 右斜め上からモデルを見るようにカメラ位置を設定
+      camera.position.set(0, 0, 100); // 右斜め上からモデルを見るようにカメラ位置を設定
       camera.lookAt(new THREE.Vector3(0, 0, 0)); // モデルの中心を見るようにカメラの向きを設定
       scene.add(camera);
       cameraRef.current = camera;
@@ -201,6 +201,9 @@ export const OrigamiPost = () => {
               // 板を分割しない場合
               // 板が回転軸の左側にあるか、右側にあるかを判定
               // TODO: 一部分だけ回転軸の左右にある場合はエラーになる。
+
+              console.log(intersections);
+
               const isLeftSide = board.map((point) =>
                 isOnLeftSide({
                   point,
