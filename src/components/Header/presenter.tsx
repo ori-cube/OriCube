@@ -4,12 +4,17 @@ import Image from "next/image";
 import style from "./presenter.module.scss";
 import { SearchBoxPresenter } from "./SearchBox";
 import { GoogleAuthButton } from "./GoogleAuth";
-import { HeaderProps } from "./index";
+import { Model } from "@/types/model";
 
-export const HeaderPresenter: React.FC<HeaderProps> = ({
+export type HeaderPresenterProps =
+  | { enableSearch: true; origamiData: Model[]; onIconClick: () => void } // enableSearch が true の場合
+  | { enableSearch: false; origamiData?: undefined; onIconClick: () => void }; // enableSearch が false の場合
+
+export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
   enableSearch,
   origamiData,
-}: HeaderProps) => (
+  onIconClick,
+}: HeaderPresenterProps) => (
   <header className={style.header}>
     <Flex id="header-container" align="center" height="46px" justify="between">
       <Flex id="header-logo-container" gapX="8px">
@@ -19,6 +24,7 @@ export const HeaderPresenter: React.FC<HeaderProps> = ({
             src="/assets/OriCube.png"
             width={140}
             height={46}
+            onClick={() => onIconClick()}
           />
         </Link>
       </Flex>
