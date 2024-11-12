@@ -100,17 +100,24 @@ export const Three: React.FC<Props> = ({
       transparent: true,
     });
 
-    // 前の板を削除
-    scene.children = scene.children.filter((child) => child.type === "Line");
+    // シーンをクリア
+    scene.clear();
 
     // そのままの板と、回転後の板を保持
     const boards = [...procedure.fixBoards];
+    const holds_line = [];
     const theta = THREE.MathUtils.degToRad(foldAngle);
 
     // 畳み込みの場合
     if (isConvolutionProcedure(procedure)) {
       const nodes = procedure.nodes.concat();
       for (let i = 0; i < procedure.moveNodesIdx.length; i++) {
+        holds_line.push(
+          new Float32Array([
+            ...procedure.rotateAxes[i][0],
+            ...procedure.rotateAxes[i][1],
+          ])
+        );
         const moveNode = new THREE.Vector3(...nodes[procedure.moveNodesIdx[i]]);
         const axis = new THREE.Vector3(...procedure.rotateAxes[i][0])
           .sub(new THREE.Vector3(...procedure.rotateAxes[i][1]))
@@ -119,6 +126,7 @@ export const Three: React.FC<Props> = ({
         const rotateNode = moveNode.clone().sub(subNode);
         rotateNode.applyAxisAngle(axis, theta);
         rotateNode.add(subNode);
+        console.log(rotateNode);
         nodes[procedure.moveNodesIdx[i]] = [
           rotateNode.x,
           rotateNode.y,
@@ -136,6 +144,12 @@ export const Three: React.FC<Props> = ({
       }
     } else {
       // 通常の折り方の場合
+      holds_line.push(
+        new Float32Array([
+          ...procedure.rotateAxis[0],
+          ...procedure.rotateAxis[1],
+        ])
+      );
       const rotateAxis = new THREE.Vector3(...procedure.rotateAxis[0])
         .sub(new THREE.Vector3(...procedure.rotateAxis[1]))
         .normalize();
@@ -182,6 +196,18 @@ export const Three: React.FC<Props> = ({
         wireframeMaterial
       );
       scene.add(wireframe);
+    });
+
+    // 折り目を描画
+    holds_line.forEach((line) => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(line, 3));
+      const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0xff00ff,
+        linewidth: 2,
+      });
+      const lineMesh = new THREE.Line(geometry, lineMaterial);
+      scene.add(lineMesh);
     });
   }, [foldAngle, procedure]);
 
