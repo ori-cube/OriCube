@@ -40,23 +40,19 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     }
   };
 
-  //ページに入ったときに自動再生する。
-  useEffect(() => {
-    const newIntervalId = playSlider(props, duration);
-    setIntervalId(newIntervalId);
-  }, []);
-
   onSliderMax(props, isLoop, setIsPlaying, intervalId!);
 
   // 折り方のindexが切り替わったときに、自動再生する
   useEffect(() => {
-    // ページに初めて入ったときには実行しない
     if (intervalId) {
-      pauseSlider(intervalId!);
-      setIsPlaying(true);
-      const newIntervalId = playSlider(props, duration);
-      setIntervalId(newIntervalId);
+      pauseSlider(intervalId);
     }
+    setIsPlaying(true);
+    const newIntervalId = playSlider(props, duration);
+    setIntervalId(newIntervalId);
+    return () => {
+      pauseSlider(newIntervalId);
+    };
   }, [props.procedureIndex]);
 
   const onLoopClick = () => {
