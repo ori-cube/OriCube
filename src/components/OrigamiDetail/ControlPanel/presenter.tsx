@@ -11,6 +11,8 @@ import {
 } from "react-icons/hi2";
 import { Pagination } from "./Pagination";
 import { IconButton } from "../../ui/IconButton";
+import { HiArrowPathRoundedSquare } from "react-icons/hi2";
+import { ButtonSizeProp } from "@/types/button";
 
 interface ControlPanelPresenterProps {
   stepNum: number;
@@ -22,6 +24,8 @@ interface ControlPanelPresenterProps {
   procedureIndex: number;
   setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
   procedureLength: number;
+  isLoop: boolean;
+  onLoopClick: () => void;
 }
 
 export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
@@ -44,6 +48,7 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
               Icon={HiMiniPause}
               color="#1109ad"
               disable={false}
+              size={ButtonSizeProp.large}
             />
           ) : (
             <IconButton
@@ -51,6 +56,7 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
               Icon={HiMiniPlay}
               color="#1109ad"
               disable={false}
+              size={ButtonSizeProp.large}
             />
           )}
           <Slider
@@ -63,6 +69,13 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
             min={0}
             max={props.maxArg}
             className={style.slider}
+          />
+          <IconButton
+            handleClick={props.onLoopClick}
+            Icon={HiArrowPathRoundedSquare}
+            color={props.isLoop ? "#1109ad" : "#000000"}
+            disable={false}
+            size={ButtonSizeProp.large}
           />
         </Flex>
         <Pagination
