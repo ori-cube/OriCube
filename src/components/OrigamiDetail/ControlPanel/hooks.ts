@@ -20,8 +20,6 @@ export function useOnSliderMax(
 }
 
 export function playSlider(props: ControlPanelProps, duration: number) {
-  // let intervalId: NodeJS.Timeout;
-
   const interval = 10; // 10ミリ秒ごとに更新
   const increment = props.maxArg / (duration / interval);
 
