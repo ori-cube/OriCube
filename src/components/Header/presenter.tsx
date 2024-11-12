@@ -20,7 +20,7 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
       <div className={style.mobile_menu}>
         <MobileMenu />
       </div>
-      <Flex id="header-logo-container" gapX="8px">
+      <Flex id="header-logo-container" gapX="8px" className={style.logo}>
         <Link href="/">
           <Image
             alt="ロゴ:OriCube"
@@ -30,6 +30,7 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
           />
         </Link>
       </Flex>
+
       <Flex gapX="8px" justify="between" align="center">
         {enableSearch ? (
           <Flex id="navigation-container" align="center">

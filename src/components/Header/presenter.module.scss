@@ -20,6 +20,14 @@
   z-index: 100;
 }
 
+.logo {
+  @media (max-width: 767px) {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
 .mobile_menu {
   @media (min-width: 768px) {
     display: none;
