@@ -11,23 +11,15 @@ export const Header: React.FC<HeaderProps> = ({
   enableSearch,
   origamiData,
 }: HeaderProps) => {
-  const { setSearchKeyword } = useOrigamiListPage();
-  const onIconClick = () => {
-    setSearchKeyword("");
-  };
   return (
     <>
       {enableSearch ? (
         <HeaderPresenter
           enableSearch={enableSearch}
           origamiData={origamiData}
-          onIconClick={onIconClick}
         />
       ) : (
-        <HeaderPresenter
-          enableSearch={enableSearch}
-          onIconClick={onIconClick}
-        />
+        <HeaderPresenter enableSearch={enableSearch} />
       )}
     </>
   );

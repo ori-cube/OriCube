@@ -7,13 +7,12 @@ import { GoogleAuthButton } from "./GoogleAuth";
 import { Model } from "@/types/model";
 
 export type HeaderPresenterProps =
-  | { enableSearch: true; origamiData: Model[]; onIconClick: () => void } // enableSearch が true の場合
-  | { enableSearch: false; origamiData?: undefined; onIconClick: () => void }; // enableSearch が false の場合
+  | { enableSearch: true; origamiData: Model[] } // enableSearch が true の場合
+  | { enableSearch: false; origamiData?: undefined }; // enableSearch が false の場合
 
 export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
   enableSearch,
   origamiData,
-  onIconClick,
 }: HeaderPresenterProps) => (
   <header className={style.header}>
     <Flex id="header-container" align="center" height="46px" justify="between">
@@ -24,7 +23,6 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
             src="/assets/OriCube.png"
             width={140}
             height={46}
-            onClick={() => onIconClick()}
           />
         </Link>
       </Flex>
