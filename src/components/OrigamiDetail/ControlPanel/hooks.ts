@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ControlPanelProps } from ".";
 import React from "react";
 
-export function onSliderMax(
+export function useOnSliderMax(
   props: ControlPanelProps,
   isLoop: boolean,
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>,
@@ -20,12 +20,12 @@ export function onSliderMax(
 }
 
 export function playSlider(props: ControlPanelProps, duration: number) {
-  let intervalId: NodeJS.Timeout;
+  // let intervalId: NodeJS.Timeout;
 
   const interval = 10; // 10ミリ秒ごとに更新
   const increment = props.maxArg / (duration / interval);
 
-  intervalId = setInterval(() => {
+  const intervalId = setInterval(() => {
     props.setSliderValue((prevProgress) => {
       const newProgress = prevProgress + increment;
       if (newProgress >= props.maxArg) {

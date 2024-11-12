@@ -1,7 +1,6 @@
 "use client";
 import { HeaderPresenter } from "./presenter";
 import { Model } from "@/types/model";
-import { useOrigamiListPage } from "@/app/_provider";
 
 export type HeaderProps =
   | { enableSearch: true; origamiData: Model[] } // enableSearch が true の場合

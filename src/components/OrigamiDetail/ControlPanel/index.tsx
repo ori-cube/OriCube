@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ControlPanelPresenter } from "./presenter";
-import { onSliderMax, pauseSlider, playSlider } from "./hooks";
+import { useOnSliderMax, pauseSlider, playSlider } from "./hooks";
 
 export interface ControlPanelProps {
   stepNum: number; //一度に表示する個数
@@ -40,7 +40,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     }
   };
 
-  onSliderMax(props, isLoop, setIsPlaying, intervalId!);
+  useOnSliderMax(props, isLoop, setIsPlaying, intervalId!);
 
   // 折り方のindexが切り替わったときに、自動再生する
   useEffect(() => {
