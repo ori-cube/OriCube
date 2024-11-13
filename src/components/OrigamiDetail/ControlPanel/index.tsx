@@ -19,6 +19,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
 ) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isLoop, setIsLoop] = useState(false);
+  const [isLoopStandby, setIsLoopStandby] = useState(false);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout>();
   const duration = 2500; // 再生時間
 
@@ -40,7 +41,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     }
   };
 
-  useOnSliderMax(props, isLoop, setIsPlaying, intervalId!);
+  useOnSliderMax(
+    props,
+    isLoop,
+    setIsPlaying,
+    intervalId!,
+    isPlaying,
+    setIsLoopStandby
+  );
 
   // 折り方のindexが切り替わったときに、自動再生する
   useEffect(() => {
@@ -74,6 +82,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
       procedureLength={props.procedureLength}
       isLoop={isLoop}
       onLoopClick={onLoopClick}
+      isLoopStandby={isLoopStandby}
     />
   );
 };

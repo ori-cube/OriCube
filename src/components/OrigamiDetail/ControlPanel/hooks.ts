@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ControlPanelProps } from ".";
 import React from "react";
 
@@ -6,17 +6,47 @@ export function useOnSliderMax(
   props: ControlPanelProps,
   isLoop: boolean,
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>,
-  intervalId: NodeJS.Timeout
+  intervalId: NodeJS.Timeout,
+  isPlaying: boolean,
+  setIsLoopStandby: React.Dispatch<React.SetStateAction<boolean>>
 ) {
-  // スライダーの値が最大に達したとき && Loop状態出ない時に再生を停止
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    if (props.value >= props.maxArg && !isLoop) {
-      pauseSlider(intervalId);
-      setIsPlaying(false);
-    } else if (props.value >= props.maxArg && isLoop) {
+    if (props.value >= props.maxArg) {
+      if (!isLoop) {
+        // Loop が無効の場合、スライダーを停止
+        pauseSlider(intervalId);
+        setIsPlaying(false);
+      } else {
+        // Loop が有効の場合、3秒後にスライダーをリセット
+        setIsLoopStandby(true);
+        timeoutRef.current = setTimeout(() => {
+          props.setSliderValue(0);
+          setIsLoopStandby(false);
+        }, 2500); // 3000ミリ秒 = 3秒
+      }
+    }
+
+    // クリーンアップ関数: タイムアウトをクリア
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+        setIsLoopStandby(false);
+      }
+    };
+  }, [props.value, isLoop, intervalId, setIsPlaying, props]);
+
+  useEffect(() => {
+    // isPlaying が false に変更された場合、タイムアウトをクリア
+    if (!isPlaying && timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+      setIsLoopStandby(false);
       props.setSliderValue(0);
     }
-  }, [props.value]);
+  }, [isPlaying]);
 }
 
 export function playSlider(props: ControlPanelProps, duration: number) {

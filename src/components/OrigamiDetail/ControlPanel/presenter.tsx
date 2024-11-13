@@ -13,6 +13,7 @@ import { Pagination } from "./Pagination";
 import { IconButton } from "../../ui/IconButton";
 import { HiArrowPathRoundedSquare } from "react-icons/hi2";
 import { ButtonSizeProp } from "@/types/button";
+import { PlayButton } from "./PlayButton";
 
 interface ControlPanelPresenterProps {
   stepNum: number;
@@ -26,6 +27,7 @@ interface ControlPanelPresenterProps {
   procedureLength: number;
   isLoop: boolean;
   onLoopClick: () => void;
+  isLoopStandby: boolean;
 }
 
 export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
@@ -42,12 +44,12 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
           gap="4"
           className={style.controller}
         >
-          <IconButton
+          <PlayButton
             handleClick={props.switchPlaying}
             Icon={props.isPlaying ? HiMiniPause : HiMiniPlay}
             color="#1109ad"
             disable={false}
-            size={ButtonSizeProp.large}
+            isLoopStandby={props.isLoopStandby}
           />
           <Slider
             value={[props.value]}

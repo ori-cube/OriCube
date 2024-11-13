@@ -1,0 +1,58 @@
+/* IconButton.module.css */
+
+.button {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button_disable {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  cursor: not-allowed;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBottom {
+  color: white;
+  position: absolute;
+  top: 50%; /* 親要素の50%の位置に配置 */
+  left: 50%; /* 親要素の50%の位置に配置 */
+  transform: translate(-50%, -50%); /* 完全に中央に配置 */
+}
+
+.iconTop {
+  color: blue;
+  position: absolute;
+  top: 50%; /* 親要素の50%の位置に配置 */
+  left: 50%; /* 親要素の50%の位置に配置 */
+  transform: translate(-50%, -50%); /* 完全に中央に配置 */
+  width: 28px;
+  height: 28px;
+  /* 初期状態では全体を隠す */
+  clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  /* アニメーションの設定 */
+  animation: revealBlue 4s forwards;
+}
+
+@keyframes revealBlue {
+  from {
+    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
