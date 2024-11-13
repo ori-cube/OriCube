@@ -1,7 +1,7 @@
 import React from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@radix-ui/themes";
-import { HiLogout } from "react-icons/hi";
+import Image from "next/image";
 
 export const Logout = () => {
   const { status } = useSession();
@@ -9,9 +9,19 @@ export const Logout = () => {
   if (status === "authenticated") {
     return (
       <div>
-        <Button onClick={() => signOut()}>
+        <Button
+          color="gray"
+          variant="surface"
+          highContrast
+          onClick={() => signOut()}
+        >
+          <Image
+            src="/assets/google.png"
+            alt="google icon"
+            width={20}
+            height={20}
+          />
           ログアウト
-          <HiLogout color="white" />
         </Button>
       </div>
     );
