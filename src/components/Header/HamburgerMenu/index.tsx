@@ -9,11 +9,12 @@ import { IconButton } from "@/components/ui/IconButton";
 import { GoogleAuthButton } from "../GoogleAuth";
 import styles from "./index.module.scss"; // Sassファイルをインポート
 import { ButtonSizeProp } from "@/types/button";
+import { useSession } from "next-auth/react";
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
+  const { status } = useSession();
   const toggleMenu = () => setIsOpen(!isOpen);
 
   useEffect(() => {
@@ -57,15 +58,19 @@ export default function MobileMenu() {
                 ホーム
               </Link>
             </li>
-            <li className={styles.menu_item}>
-              <Link
-                href="/add"
-                className={styles.menu_link}
-                onClick={toggleMenu}
-              >
-                折り紙を追加
-              </Link>
-            </li>
+            {status === "authenticated" ? (
+              <li className={styles.menu_item}>
+                <Link
+                  href="/add"
+                  className={styles.menu_link}
+                  onClick={toggleMenu}
+                >
+                  折り紙を追加
+                </Link>
+              </li>
+            ) : (
+              <></>
+            )}
           </ul>
           <div className={styles.menu_auth}>
             <GoogleAuthButton />

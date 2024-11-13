@@ -51,7 +51,7 @@ export const Pagination = ({
     );
   };
   const PaginationDots = () => {
-    return <HiDotsHorizontal size={16} className={style.icon} />;
+    return <HiDotsHorizontal size={8} className={style.icon} />;
   };
   const PaginationNum = (i: number) => {
     return (
@@ -70,15 +70,33 @@ export const Pagination = ({
     for (let i = 1; i <= count; i++) {
       numList.push(i);
     }
-  } else if (currentPage == 1 || currentPage == 2) {
+  } else if (
+    currentPage == 1 ||
+    currentPage == 2
+    // currentPage == 3 ||
+    // currentPage == 4
+  ) {
     numList.push(1);
     numList.push(2);
     numList.push(3);
+    // numList.push(4);
+    // numList.push(5);
+    numList.push("...");
+    numList.push("...");
     numList.push("...");
     numList.push(count);
-  } else if (currentPage == count - 1 || currentPage == count) {
+  } else if (
+    // currentPage == count - 3 ||
+    // currentPage == count - 2 ||
+    currentPage == count - 1 ||
+    currentPage == count
+  ) {
     numList.push(1);
     numList.push("...");
+    numList.push("...");
+    numList.push("...");
+    // numList.push(count - 4);
+    // numList.push(count - 3);
     numList.push(count - 2);
     numList.push(count - 1);
     numList.push(count);

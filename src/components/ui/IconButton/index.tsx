@@ -23,12 +23,12 @@ export const IconButton: React.FC<Props> = ({
       onClick={handleClick}
       className={
         disable
-          ? `${styles.button_disable} width: ${size}; height: ${size}`
-          : `${styles.button} width: ${size}; height: ${size}`
+          ? `${styles.button_disable} width: ${44}; height: ${44}`
+          : `${styles.button} width: ${44}; height: ${44}`
       }
       disabled={disable}
     >
-      <Icon size={size} color={disable ? "#aaa" : color} />
+      <Icon size={28} color={disable ? "#aaa" : color} />
     </button>
   );
 };

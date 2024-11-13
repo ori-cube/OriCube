@@ -10,8 +10,8 @@ export const Login = () => {
     return (
       <div>
         <Button onClick={() => signIn("google", {}, { prompt: "login" })}>
-          <HiLogin color="white" />
           ログイン
+          <HiLogin color="white" />
         </Button>
       </div>
     );
