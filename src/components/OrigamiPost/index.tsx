@@ -135,17 +135,19 @@ export const OrigamiPost = () => {
 
     render();
 
-    window.addEventListener("resize", () => {
+    const resizeListener = () => {
       sizes.width = window.innerWidth;
       sizes.height = window.innerHeight;
       camera.aspect = sizes.width / sizes.height;
       camera.updateProjectionMatrix();
       renderer.setSize(sizes.width, sizes.height);
       renderer.setPixelRatio(window.devicePixelRatio);
-    });
+    };
 
-    const points: Point[] = [];
-    canvas.addEventListener("click", (event) => {
+    window.addEventListener("resize", resizeListener);
+
+    let points: Point[] = [];
+    const clickListener = (event: MouseEvent) => {
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / sizes.width) * 2 - 1;
       mouse.y = -(event.clientY / sizes.height) * 2 + 1;
@@ -161,7 +163,6 @@ export const OrigamiPost = () => {
 
       if (intersects.length > 0) {
         const point = intersects[0].point; // 最初の交差点の座標を取得
-        console.log("Clicked position on edge:", point);
 
         // pointで点を描画
         const geometry = new THREE.BufferGeometry().setFromPoints([point]);
@@ -177,8 +178,8 @@ export const OrigamiPost = () => {
           const axis: [Point, Point] = [[...points[0]], [...points[1]]];
           setRotateAxis(axis);
 
-          const leftBoards: Board[] = [];
-          const rightBoards: Board[] = [];
+          let leftBoards: Board[] = [];
+          let rightBoards: Board[] = [];
 
           fixBoards.forEach((board) => {
             const intersections = getAllIntersections({
@@ -195,14 +196,15 @@ export const OrigamiPost = () => {
               if (!separatedBoard) return alert("Failed to separate board.");
 
               const { leftBoard, rightBoard } = separatedBoard;
+
+              console.log("leftBoard", leftBoard);
+              console.log("rightBoard", rightBoard);
               leftBoards.push(leftBoard);
               rightBoards.push(rightBoard);
             } else {
               // 板を分割しない場合
               // 板が回転軸の左側にあるか、右側にあるかを判定
               // TODO: 一部分だけ回転軸の左右にある場合はエラーになる。
-
-              console.log(intersections);
 
               const isLeftSide = board.map((point) =>
                 isOnLeftSide({
@@ -214,12 +216,17 @@ export const OrigamiPost = () => {
               const isAllLeft = isLeftSide.every((b) => b);
               const isAllRight = isLeftSide.every((b) => !b);
 
+              console.log("intersection", intersections);
+
+              // NOTE: ここが原因で、false falseになっている
+              console.log(isAllLeft, isAllRight);
+
               if (isAllLeft) {
                 leftBoards.push(board);
               } else if (isAllRight) {
                 rightBoards.push(board);
               } else {
-                alert("Failed to separate board.");
+                console.log("板が回転軸の左右にまたがっている");
               }
             }
           });
@@ -240,15 +247,20 @@ export const OrigamiPost = () => {
           leftBoards.forEach((board) => renderBoard(scene, board));
           rightBoards.forEach((board) => renderBoard(scene, board));
 
-          points.length = 0;
+          points = [];
+          leftBoards = [];
+          rightBoards = [];
 
           renderer.render(scene, camera);
         }
       }
-    });
+    };
+
+    canvas.addEventListener("click", clickListener);
 
     return () => {
-      window.removeEventListener("resize", () => {});
+      window.removeEventListener("resize", resizeListener);
+      canvas.removeEventListener("click", clickListener);
     };
   }, [fixBoards]);
 
@@ -320,6 +332,8 @@ export const OrigamiPost = () => {
     setMoveBoards([]);
     setRotateAxis([]);
     setFoldingAngle(0);
+
+    console.log("decide ------------------------------------------");
   };
 
   return (

@@ -29,6 +29,12 @@ export const getAllIntersections: GetAllIntersections = ({
       q2: rotateAxis[1],
     });
     if (intersection) {
+      const isOnTheBoard = isIntersectionOnTheBoard({
+        intersection,
+        board,
+      });
+      console.log("isOnTheBoard", isOnTheBoard);
+      if (!isOnTheBoard) continue;
       // 重複を避けるため、すでに求めた交点と同じ座標の場合は追加しない
       const isDuplicated = intersections.some(
         (p) =>
@@ -72,14 +78,78 @@ const getIntersection: GetIntersection = ({ p1, p2, q1, q2 }) => {
     ((q1[1] - p1[1]) * (p2[0] - p1[0]) - (q1[0] - p1[0]) * (p2[1] - p1[1])) /
     denominator;
 
-  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-    // 交点が見つかった場合の座標
-    const x = p1[0] + t * (p2[0] - p1[0]);
-    const y = p1[1] + t * (p2[1] - p1[1]);
-    const z = p1[2] + t * (p2[2] - p1[2]);
+  const x = p1[0] + t * (p2[0] - p1[0]);
+  const y = p1[1] + t * (p2[1] - p1[1]);
+  const z = p1[2] + t * (p2[2] - p1[2]);
 
-    return [x, y, z];
+  return [x, y, z];
+};
+
+/*
+交点が板上にあるかどうかを判定する関数
+**/
+
+type IsIntersectionOnTheBoard = (props: {
+  intersection: Point;
+  board: Board;
+}) => boolean;
+
+export const isIntersectionOnTheBoard: IsIntersectionOnTheBoard = ({
+  intersection,
+  board,
+}) => {
+  // board上の各辺との交点があるかどうかを判定
+  for (let i = 0; i < board.length; i++) {
+    const p1 = board[i];
+    const p2 = board[(i + 1) % board.length];
+
+    // intersection-p1とintersection-p2の外積が0の場合は、p1, p2, intersectionは一直線上にある
+    const v1 = [
+      p1[0] - intersection[0],
+      p1[1] - intersection[1],
+      p1[2] - intersection[2],
+    ];
+    const v2 = [
+      p2[0] - intersection[0],
+      p2[1] - intersection[1],
+      p2[2] - intersection[2],
+    ];
+
+    const crossProduct = [
+      v1[1] * v2[2] - v1[2] * v2[1],
+      v1[2] * v2[0] - v1[0] * v2[2],
+      v1[0] * v2[1] - v1[1] * v2[0],
+    ];
+
+    // crossProductの値が0.01より小さい場合は0とみなす
+    if (crossProduct[0] < 0.01) crossProduct[0] = 0;
+    if (crossProduct[1] < 0.01) crossProduct[1] = 0;
+    if (crossProduct[2] < 0.01) crossProduct[2] = 0;
+
+    // すべての外積が0でない場合、intersectionは返上にない
+    if (
+      crossProduct[0] !== 0 ||
+      crossProduct[1] !== 0 ||
+      crossProduct[2] !== 0
+    ) {
+      continue;
+    }
+
+    // intersectionが辺の内側にあるかどうかを判定
+    const isInsideX =
+      Math.min(p1[0], p2[0]) <= intersection[0] &&
+      intersection[0] <= Math.max(p1[0], p2[0]);
+    const isInsideY =
+      Math.min(p1[1], p2[1]) <= intersection[1] &&
+      intersection[1] <= Math.max(p1[1], p2[1]);
+    const isInsideZ =
+      Math.min(p1[2], p2[2]) <= intersection[2] &&
+      intersection[2] <= Math.max(p1[2], p2[2]);
+
+    if (isInsideX && isInsideY && isInsideZ) {
+      return true;
+    }
   }
 
-  return null; // 交点がない
+  return false;
 };
