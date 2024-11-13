@@ -28,8 +28,8 @@ export const PlayButton: React.FC<Props> = ({
     >
       {isLoopStandby ? (
         <>
-          {/*下側の灰色アイコン */}
-          <HiMiniPlay size={28} color="#aaa" className={styles.iconBottom} />
+          {/*下側の白色アイコン */}
+          <HiMiniPlay size={28} color="#fff" className={styles.iconBottom} />
           {/* 上層の青色アイコン */}
           {!disable && (
             <HiMiniPlay size={28} color={color} className={styles.iconTop} />

@@ -21,11 +21,7 @@ export const IconButton: React.FC<Props> = ({
   return (
     <button
       onClick={handleClick}
-      className={
-        disable
-          ? `${styles.button_disable} width: ${44}; height: ${44}`
-          : `${styles.button} width: ${44}; height: ${44}`
-      }
+      className={disable ? `${styles.button_disable}` : `${styles.button}`}
       disabled={disable}
     >
       <Icon size={28} color={disable ? "#aaa" : color} />
