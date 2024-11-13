@@ -14,6 +14,7 @@ import { IconButton } from "../../ui/IconButton";
 import { HiArrowPathRoundedSquare } from "react-icons/hi2";
 import { ButtonSizeProp } from "@/types/button";
 import { PlayButton } from "./PlayButton";
+import { LoopButton } from "./LoopButton";
 
 interface ControlPanelPresenterProps {
   stepNum: number;
@@ -62,12 +63,11 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
             max={props.maxArg}
             className={style.slider}
           />
-          <IconButton
+          <LoopButton
             handleClick={props.onLoopClick}
             Icon={HiArrowPathRoundedSquare}
-            color={props.isLoop ? "#1109ad" : "#000000"}
-            disable={false}
-            size={ButtonSizeProp.large}
+            color={props.isLoop ? "#ffffff" : "#000000"}
+            active={props.isLoop}
           />
         </Flex>
         <Pagination
