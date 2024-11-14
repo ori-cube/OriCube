@@ -1,7 +1,12 @@
 /* IconButton.module.css */
-
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .button {
   position: relative;
+  border-radius: 50%;
   width: 44px;
   height: 44px;
   border: none;
@@ -11,48 +16,88 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: none;
 }
 
-.button_disable {
+.circle {
   position: relative;
   width: 44px;
   height: 44px;
-  border: none;
-  background: none;
-  cursor: not-allowed;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #1109ad;
+  border-radius: 50%;
+  text-align: center;
+  overflow: hidden;
+  z-index: 1;
 }
 
-.iconBottom {
-  color: white;
+.circle::before {
+  content: "";
+  display: block;
   position: absolute;
-  top: 50%; /* 親要素の50%の位置に配置 */
-  left: 50%; /* 親要素の50%の位置に配置 */
-  transform: translate(-50%, -50%); /* 完全に中央に配置 */
+  top: 0;
+  left: -22px;
+  width: 44px;
+  height: 44px;
+  background: #dbdbdb;
+  transform-origin: right 22px;
+  z-index: 2;
+  animation: rotate-circle-left 2.5s linear forwards;
 }
 
-.iconTop {
-  color: blue;
+.circle::after {
+  content: "";
+  display: block;
   position: absolute;
-  top: 50%; /* 親要素の50%の位置に配置 */
-  left: 50%; /* 親要素の50%の位置に配置 */
-  transform: translate(-50%, -50%); /* 完全に中央に配置 */
-  width: 28px;
-  height: 28px;
-  /* 初期状態では全体を隠す */
-  clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
-  /* アニメーションの設定 */
-  animation: revealBlue 4s forwards;
+  top: 0px;
+  left: 22px;
+  width: 44px;
+  height: 44px;
+  background: #dbdbdb;
+  transform-origin: left 22px;
+  z-index: 3;
+  animation: rotate-circle-right 2.5s linear forwards;
 }
 
-@keyframes revealBlue {
-  from {
-    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+.circle_inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 35px;
+  height: 35px;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 4;
+  @include flex-center; /* Flexboxで中央配置 */
+}
+
+@keyframes rotate-circle-right {
+  0% {
+    transform: rotate(0deg);
+    background: #dbdbdb;
   }
-  to {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  50% {
+    transform: rotate(180deg);
+    background: #dbdbdb;
+  }
+  50.01% {
+    transform: rotate(360deg);
+    background: #1109ad;
+  }
+  100% {
+    transform: rotate(360deg);
+    background: #1109ad;
+  }
+}
+
+@keyframes rotate-circle-left {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(180deg);
   }
 }

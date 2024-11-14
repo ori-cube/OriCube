@@ -1,14 +1,12 @@
-// components/IconButton/IconButton.tsx
+// PlayButton.tsx
 
 import React from "react";
-import styles from "./index.module.scss";
-import { IconType } from "react-icons";
-import { HiMiniPlay } from "react-icons/hi2";
+import styles from "./index.module.scss"; // SASS ファイルをインポート
 
 interface Props {
   handleClick: () => void;
   color?: string;
-  Icon: IconType;
+  Icon: React.ComponentType<{ size: number; color: string }>;
   disable?: boolean;
   isLoopStandby: boolean;
 }
@@ -21,20 +19,13 @@ export const PlayButton: React.FC<Props> = ({
   isLoopStandby,
 }) => {
   return (
-    <button
-      onClick={handleClick}
-      className={disable ? styles.button_disable : styles.button}
-      disabled={disable}
-    >
+    <button onClick={handleClick} className={styles.button} disabled={disable}>
       {isLoopStandby ? (
-        <>
-          {/*下側の白色アイコン */}
-          <HiMiniPlay size={28} color="#fff" className={styles.iconBottom} />
-          {/* 上層の青色アイコン */}
-          {!disable && (
-            <HiMiniPlay size={28} color={color} className={styles.iconTop} />
-          )}
-        </>
+        <div className={styles.circle}>
+          <div className={styles.circle_inner}>
+            <Icon size={28} color={disable ? "#aaa" : color} />
+          </div>
+        </div>
       ) : (
         <Icon size={28} color={disable ? "#aaa" : color} />
       )}
