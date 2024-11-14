@@ -2,7 +2,7 @@
 
 import React from "react";
 import styles from "./index.module.scss"; // SASS ファイルをインポート
-
+import { HiMiniPlay } from "react-icons/hi2";
 interface Props {
   handleClick: () => void;
   color?: string;
@@ -23,7 +23,7 @@ export const PlayButton: React.FC<Props> = ({
       {isLoopStandby ? (
         <div className={styles.circle}>
           <div className={styles.circle_inner}>
-            <Icon size={28} color={disable ? "#aaa" : color} />
+            <HiMiniPlay size={28} color={disable ? "#aaa" : color} />
           </div>
         </div>
       ) : (

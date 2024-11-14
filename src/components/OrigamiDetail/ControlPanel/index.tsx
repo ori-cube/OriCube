@@ -28,16 +28,18 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
   };
 
   const switchPlaying = () => {
-    if (isPlaying) {
+    if (isPlaying && !isLoopStandby) {
       setIsPlaying(false);
       pauseSlider(intervalId!);
-    } else {
+    } else if (!isLoopStandby && !isPlaying) {
       if (props.value >= props.maxArg) {
         props.setSliderValue(0);
       }
       setIsPlaying(true);
       const newIntervalId = playSlider(props, duration);
       setIntervalId(newIntervalId);
+    } else if (isLoopStandby) {
+      props.setSliderValue(0);
     }
   };
 
@@ -47,6 +49,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
     setIsPlaying,
     intervalId!,
     isPlaying,
+    isLoopStandby,
     setIsLoopStandby
   );
 

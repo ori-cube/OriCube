@@ -12,7 +12,6 @@ import {
 import { Pagination } from "./Pagination";
 import { IconButton } from "../../ui/IconButton";
 import { HiArrowPathRoundedSquare } from "react-icons/hi2";
-import { ButtonSizeProp } from "@/types/button";
 import { PlayButton } from "./PlayButton";
 import { LoopButton } from "./LoopButton";
 

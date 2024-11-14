@@ -8,6 +8,7 @@ export function useOnSliderMax(
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>,
   intervalId: NodeJS.Timeout,
   isPlaying: boolean,
+  isLoopStandby: boolean,
   setIsLoopStandby: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,11 +41,14 @@ export function useOnSliderMax(
 
   useEffect(() => {
     // isPlaying が false に変更された場合、タイムアウトをクリア
-    if (!isPlaying && timeoutRef.current) {
+    if (!isPlaying && timeoutRef.current && !isLoopStandby) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+      props.setSliderValue(0);
+    } else if (!isPlaying && timeoutRef.current && isLoopStandby) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
       setIsLoopStandby(false);
-      props.setSliderValue(0);
     }
   }, [isPlaying]);
 }
