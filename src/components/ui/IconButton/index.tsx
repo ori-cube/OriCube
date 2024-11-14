@@ -15,7 +15,6 @@ export const IconButton: React.FC<Props> = ({
   handleClick,
   color = "#000",
   Icon,
-  size = ButtonSizeProp.medium,
   disable = false,
 }) => {
   return (

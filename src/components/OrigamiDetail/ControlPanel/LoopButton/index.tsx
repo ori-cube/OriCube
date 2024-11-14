@@ -1,7 +1,6 @@
 import React from "react";
 import { IconType } from "react-icons";
 import styles from "./index.module.scss";
-import { ButtonSizeProp } from "@/types/button";
 
 interface Props {
   handleClick: () => void;
