@@ -34,6 +34,9 @@ export const OrigamiPost = () => {
   const [foldingAngle, setFoldingAngle] = useState(0);
   const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(1);
 
+  const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
+  const [inputStep, setInputStep] = useState(1);
+
   // シーンの初期化
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -71,7 +74,7 @@ export const OrigamiPost = () => {
         10,
         1000
       );
-      camera.position.set(0, 0, 100); // 右斜め上からモデルを見るようにカメラ位置を設定
+      camera.position.set(0, 0, 100);
       camera.lookAt(new THREE.Vector3(0, 0, 0)); // モデルの中心を見るようにカメラの向きを設定
       scene.add(camera);
       cameraRef.current = camera;
@@ -108,7 +111,6 @@ export const OrigamiPost = () => {
 
     window.addEventListener("resize", resizeListener);
 
-    let points: Point[] = [];
     const clickListener = (event: MouseEvent) => {
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / sizes.width) * 2 - 1;
@@ -126,93 +128,35 @@ export const OrigamiPost = () => {
       if (intersects.length > 0) {
         const point = intersects[0].point; // 最初の交差点の座標を取得
 
-        // pointで点を描画
-        const geometry = new THREE.BufferGeometry().setFromPoints([point]);
-        const material = new THREE.PointsMaterial({ color: 0x000000 });
-        const pointMesh = new THREE.Points(geometry, material);
-        scene.add(pointMesh);
+        // 現在記録している点の数が2個未満の場合は、新しい点を追加, 2個以上の場合は最初の点を消して、新しい点を追加
+        let newPoints = [...selectedPoints];
 
-        points.push([point.x, point.y, point.z]);
-
-        if (points.length >= 2) {
-          // TODO: 同じ板上にある2点を選択しているかを判定する
-          // この2点を結ぶ線で板を分割する。
-          const axis: [Point, Point] = [[...points[0]], [...points[1]]];
-          setRotateAxis(axis);
-
-          let leftBoards: Board[] = [];
-          let rightBoards: Board[] = [];
-
-          fixBoards.forEach((board) => {
-            const intersections = getAllIntersections({
-              board,
-              rotateAxis: axis,
-            });
-
-            if (intersections.length === 2) {
-              // 板を分割する場合
-              const separatedBoard = separateBoard({
-                board,
-                rotateAxis: axis,
-              });
-              if (!separatedBoard) return alert("Failed to separate board.");
-
-              const { leftBoard, rightBoard } = separatedBoard;
-
-              leftBoards.push(leftBoard);
-              rightBoards.push(rightBoard);
-            } else {
-              // 板を分割しない場合
-              // 板が回転軸の左側にあるか、右側にあるかを判定
-              // TODO: 一部分だけ回転軸の左右にある場合はエラーになる。
-
-              const isLeftSide = board.map((point) =>
-                isOnLeftSide({
-                  point,
-                  axis1: axis[0],
-                  axis2: axis[1],
-                })
-              );
-              const isAllLeft = isLeftSide.every((b) => b);
-              const isAllRight = isLeftSide.every((b) => !b);
-
-              if (isAllLeft) {
-                leftBoards.push(board);
-              } else if (isAllRight) {
-                rightBoards.push(board);
-              } else {
-                console.log("板が回転軸の左右にまたがっている");
-              }
-            }
-          });
-
-          //   rightBoards(moveBoards)のz座標にすべて+0.001する
-          rightBoards = rightBoards.map((board) =>
-            board.map((point) => [point[0], point[1], point[2] + 0.001])
-          );
-
-          // boardを削除する
-          scene.children = scene.children.filter(
-            (child) => child.type !== "Mesh" && child.type !== "LineSegments"
-          );
-
-          // pointを削除する
-          scene.children = scene.children.filter(
-            (child) => child.type !== "Points"
-          );
-
-          setFixBoards(leftBoards);
-          setMoveBoards(rightBoards);
-
-          leftBoards.forEach((board) => renderBoard({ scene, board }));
-          rightBoards.forEach((board) => renderBoard({ scene, board }));
-
-          points = [];
-          leftBoards = [];
-          rightBoards = [];
-
-          renderer.render(scene, camera);
+        if (selectedPoints.length < 2) {
+          newPoints.push([point.x, point.y, point.z]);
+        } else {
+          newPoints = newPoints.slice(1);
+          newPoints.push([point.x, point.y, point.z]);
         }
+
+        // 既存のpointを削除する
+        scene.children = scene.children.filter(
+          (child) => child.type === "Points"
+        );
+        // pointsを描画し直す
+        newPoints.forEach((point) => {
+          const geometry = new THREE.SphereGeometry(1, 32, 32).scale(
+            0.7,
+            0.7,
+            0.7
+          );
+          const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+          const pointMesh = new THREE.Mesh(geometry, material);
+          pointMesh.position.set(point[0], point[1], point[2]);
+          scene.add(pointMesh);
+        });
+        setSelectedPoints(newPoints);
+
+        renderer.render(scene, camera);
       }
     };
 
@@ -222,7 +166,73 @@ export const OrigamiPost = () => {
       window.removeEventListener("resize", resizeListener);
       canvas.removeEventListener("click", clickListener);
     };
-  }, [fixBoards]);
+  }, [fixBoards, selectedPoints]);
+
+  const handleDecideRotateAxis = () => {
+    // if (points.length >= 2) {
+    //   // TODO: 同じ板上にある2点を選択しているかを判定する
+    //   // この2点を結ぶ線で板を分割する。
+    //   const axis: [Point, Point] = [[...points[0]], [...points[1]]];
+    //   setRotateAxis(axis);
+    //   let leftBoards: Board[] = [];
+    //   let rightBoards: Board[] = [];
+    //   fixBoards.forEach((board) => {
+    //     const intersections = getAllIntersections({
+    //       board,
+    //       rotateAxis: axis,
+    //     });
+    //     if (intersections.length === 2) {
+    //       // 板を分割する場合
+    //       const separatedBoard = separateBoard({
+    //         board,
+    //         rotateAxis: axis,
+    //       });
+    //       if (!separatedBoard) return alert("Failed to separate board.");
+    //       const { leftBoard, rightBoard } = separatedBoard;
+    //       leftBoards.push(leftBoard);
+    //       rightBoards.push(rightBoard);
+    //     } else {
+    //       // 板を分割しない場合
+    //       // 板が回転軸の左側にあるか、右側にあるかを判定
+    //       // TODO: 一部分だけ回転軸の左右にある場合はエラーになる。
+    //       const isLeftSide = board.map((point) =>
+    //         isOnLeftSide({
+    //           point,
+    //           axis1: axis[0],
+    //           axis2: axis[1],
+    //         })
+    //       );
+    //       const isAllLeft = isLeftSide.every((b) => b);
+    //       const isAllRight = isLeftSide.every((b) => !b);
+    //       if (isAllLeft) {
+    //         leftBoards.push(board);
+    //       } else if (isAllRight) {
+    //         rightBoards.push(board);
+    //       } else {
+    //         console.log("板が回転軸の左右にまたがっている");
+    //       }
+    //     }
+    //   });
+    //   //   rightBoards(moveBoards)のz座標にすべて+0.001する
+    //   rightBoards = rightBoards.map((board) =>
+    //     board.map((point) => [point[0], point[1], point[2] + 0.001])
+    //   );
+    //   // boardを削除する
+    //   scene.children = scene.children.filter(
+    //     (child) => child.type !== "Mesh" && child.type !== "LineSegments"
+    //   );
+    //   // pointを削除する
+    //   scene.children = scene.children.filter(
+    //     (child) => child.type !== "Points"
+    //   );
+    //   setFixBoards(leftBoards);
+    //   setMoveBoards(rightBoards);
+    //   leftBoards.forEach((board) => renderBoard({ scene, board }));
+    //   rightBoards.forEach((board) => renderBoard({ scene, board }));
+    //   points = [];
+    //   leftBoards = [];
+    //   rightBoards = [];
+  };
 
   // 回転に応じて板を描画
   useEffect(() => {
