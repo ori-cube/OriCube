@@ -6,11 +6,7 @@ import { isBoardFrontSide } from "./isBoardFrontSide";
 import { sortBoardCoordinate } from "./sortBoardCoordinate";
 import { getAllIntersections } from "./getAllIntersections";
 import { isOnLeftSide } from "./isOnLeftSide";
-
-type Point = [number, number, number];
-type Board = Point[];
-
-type RotateAxis = [Point, Point];
+import { Board, RotateAxis } from "@/types/three";
 
 type Props = {
   board: Board;

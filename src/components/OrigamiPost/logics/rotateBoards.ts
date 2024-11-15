@@ -2,9 +2,7 @@
 板を与えられた角度によって回転する関数
 **/
 import * as THREE from "three";
-
-type Point = [number, number, number];
-type Board = Point[];
+import { Point, Board } from "@/types/three";
 
 type rotateBoards = (props: {
   boards: Board[];

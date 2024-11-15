@@ -1,11 +1,7 @@
 /* 
 板と回転軸のすべての交点を求める関数。
 **/
-
-type Point = [number, number, number];
-type Board = Point[];
-
-type RotateAxis = [Point, Point];
+import { Point, Board, RotateAxis } from "@/types/three";
 
 type Props = {
   board: Board;

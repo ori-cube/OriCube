@@ -8,49 +8,8 @@ import { separateBoard } from "./logics/separateBoard";
 import { getAllIntersections } from "./logics/getAllIntersections";
 import { isOnLeftSide } from "./logics/isOnLeftSide";
 import { rotateBoards } from "./logics/rotateBoards";
-
-type Point = [number, number, number];
-type Board = Point[];
-
-const renderBoard = (scene: THREE.Scene, board: Board) => {
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(new Float32Array(board.flat()), 3)
-  );
-
-  if (board.length >= 4) {
-    const indices = [];
-    for (let j = 0; j < board.length - 2; j++) {
-      indices.push(0, j + 1, j + 2);
-    }
-    geometry.setIndex(indices);
-  }
-
-  const frontMaterial = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("red"),
-    side: THREE.FrontSide,
-    transparent: true,
-  });
-  const backMaterial = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#DFDFDF"),
-    side: THREE.BackSide,
-    transparent: true,
-  });
-  const wireframeMaterial = new THREE.LineBasicMaterial({
-    color: 0x000000,
-    linewidth: 1,
-  });
-
-  const frontMesh = new THREE.Mesh(geometry, frontMaterial);
-  const backMesh = new THREE.Mesh(geometry, backMaterial);
-  scene.add(frontMesh);
-  scene.add(backMesh);
-
-  const edgesGeometry = new THREE.EdgesGeometry(geometry);
-  const wireframe = new THREE.LineSegments(edgesGeometry, wireframeMaterial);
-  scene.add(wireframe);
-};
+import { renderBoard } from "./logics/renderBoard";
+import { Point, Board } from "@/types/three";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -127,7 +86,7 @@ export const OrigamiPost = () => {
       requestAnimationFrame(render);
     };
 
-    fixBoards.forEach((board) => renderBoard(scene, board));
+    fixBoards.forEach((board) => renderBoard({ scene, board }));
 
     if (!raycaster) {
       raycaster = new THREE.Raycaster();
@@ -243,8 +202,8 @@ export const OrigamiPost = () => {
           setFixBoards(leftBoards);
           setMoveBoards(rightBoards);
 
-          leftBoards.forEach((board) => renderBoard(scene, board));
-          rightBoards.forEach((board) => renderBoard(scene, board));
+          leftBoards.forEach((board) => renderBoard({ scene, board }));
+          rightBoards.forEach((board) => renderBoard({ scene, board }));
 
           points = [];
           leftBoards = [];
@@ -280,7 +239,7 @@ export const OrigamiPost = () => {
     scene.children = scene.children.filter((child) => child.type === "Line");
     // 板を描画
     boards.forEach((board) => {
-      renderBoard(scene, board);
+      renderBoard({ scene, board });
     });
   }, [foldingAngle, fixBoards, moveBoards, rotateAxis]);
 

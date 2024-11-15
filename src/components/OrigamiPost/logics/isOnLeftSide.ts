@@ -3,7 +3,8 @@
 zx平面、yz平面では使用できない...
 **/
 
-type Point = [number, number, number];
+import { Point } from "@/types/three";
+
 type IsOnLeftSide = (props: {
   point: Point;
   axis1: Point;
