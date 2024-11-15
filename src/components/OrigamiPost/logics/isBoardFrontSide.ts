@@ -4,7 +4,7 @@ boardには多角形の頂点の座標が左回りまたは右回りに格納さ
 左回りの場合は面裏、右回りの場合は面表と判定する
 NOTE: boardがソートされていることが前提
 **/
-import { Point, Board } from "@/types/three";
+import { Board } from "@/types/three";
 
 type IsBoardFrontSide = (props: { board: Board }) => boolean;
 

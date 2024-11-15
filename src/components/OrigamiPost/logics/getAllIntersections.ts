@@ -69,9 +69,9 @@ const getIntersection: GetIntersection = ({ p1, p2, q1, q2 }) => {
   const t =
     ((q1[1] - p1[1]) * (q2[0] - q1[0]) - (q1[0] - p1[0]) * (q2[1] - q1[1])) /
     denominator;
-  const u =
-    ((q1[1] - p1[1]) * (p2[0] - p1[0]) - (q1[0] - p1[0]) * (p2[1] - p1[1])) /
-    denominator;
+  //   const u =
+  //     ((q1[1] - p1[1]) * (p2[0] - p1[0]) - (q1[0] - p1[0]) * (p2[1] - p1[1])) /
+  //     denominator;
 
   const x = p1[0] + t * (p2[0] - p1[0]);
   const y = p1[1] + t * (p2[1] - p1[1]);
