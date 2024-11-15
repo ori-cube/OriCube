@@ -7,14 +7,13 @@ type Props = {
   handleNextStep: () => void;
 };
 
-export const FoldTargetSelectPanel: React.FC<Props> = ({
+export const FoldMethodSelectPanel: React.FC<Props> = ({
   handlePrevStep,
   handleNextStep,
 }) => {
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>折る側の紙を選択</h2>
-      <div>ここにGIFの説明が入る</div>
+      <h2 className={styles.title}>折り方を選択</h2>
       <div className={styles.buttons}>
         <PrevStepButton handlePrevStep={handlePrevStep} />
         <NextStepButton handleNextStep={handleNextStep} />
