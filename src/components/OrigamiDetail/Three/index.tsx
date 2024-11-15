@@ -5,6 +5,9 @@ import * as THREE from "three";
 import styles from "./index.module.scss";
 import { Procedure, isConvolutionProcedure } from "@/types/model";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { LineGeometry } from "three/examples/jsm/Addons.js";
+import { LineMaterial } from "three/examples/jsm/Addons.js";
+import { Line2 } from "three/examples/jsm/Addons.js";
 
 type Props = {
   model: Procedure;
@@ -200,13 +203,14 @@ export const Three: React.FC<Props> = ({
 
     // 折り目を描画
     holds_line.forEach((line) => {
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute("position", new THREE.BufferAttribute(line, 3));
-      const lineMaterial = new THREE.LineBasicMaterial({
+      console.log(line);
+      const geometry = new LineGeometry();
+      geometry.setPositions(line);
+      const lineMaterial = new LineMaterial({
         color: 0xff00ff,
-        linewidth: 2,
+        linewidth: 3,
       });
-      const lineMesh = new THREE.Line(geometry, lineMaterial);
+      const lineMesh = new Line2(geometry, lineMaterial);
       scene.add(lineMesh);
     });
   }, [foldAngle, procedure]);
