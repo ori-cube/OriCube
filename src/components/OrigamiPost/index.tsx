@@ -168,70 +168,76 @@ export const OrigamiPost = () => {
     };
   }, [fixBoards, selectedPoints]);
 
-  const handleDecideRotateAxis = () => {
-    // if (points.length >= 2) {
-    //   // TODO: 同じ板上にある2点を選択しているかを判定する
-    //   // この2点を結ぶ線で板を分割する。
-    //   const axis: [Point, Point] = [[...points[0]], [...points[1]]];
-    //   setRotateAxis(axis);
-    //   let leftBoards: Board[] = [];
-    //   let rightBoards: Board[] = [];
-    //   fixBoards.forEach((board) => {
-    //     const intersections = getAllIntersections({
-    //       board,
-    //       rotateAxis: axis,
-    //     });
-    //     if (intersections.length === 2) {
-    //       // 板を分割する場合
-    //       const separatedBoard = separateBoard({
-    //         board,
-    //         rotateAxis: axis,
-    //       });
-    //       if (!separatedBoard) return alert("Failed to separate board.");
-    //       const { leftBoard, rightBoard } = separatedBoard;
-    //       leftBoards.push(leftBoard);
-    //       rightBoards.push(rightBoard);
-    //     } else {
-    //       // 板を分割しない場合
-    //       // 板が回転軸の左側にあるか、右側にあるかを判定
-    //       // TODO: 一部分だけ回転軸の左右にある場合はエラーになる。
-    //       const isLeftSide = board.map((point) =>
-    //         isOnLeftSide({
-    //           point,
-    //           axis1: axis[0],
-    //           axis2: axis[1],
-    //         })
-    //       );
-    //       const isAllLeft = isLeftSide.every((b) => b);
-    //       const isAllRight = isLeftSide.every((b) => !b);
-    //       if (isAllLeft) {
-    //         leftBoards.push(board);
-    //       } else if (isAllRight) {
-    //         rightBoards.push(board);
-    //       } else {
-    //         console.log("板が回転軸の左右にまたがっている");
-    //       }
-    //     }
-    //   });
-    //   //   rightBoards(moveBoards)のz座標にすべて+0.001する
-    //   rightBoards = rightBoards.map((board) =>
-    //     board.map((point) => [point[0], point[1], point[2] + 0.001])
-    //   );
-    //   // boardを削除する
-    //   scene.children = scene.children.filter(
-    //     (child) => child.type !== "Mesh" && child.type !== "LineSegments"
-    //   );
-    //   // pointを削除する
-    //   scene.children = scene.children.filter(
-    //     (child) => child.type !== "Points"
-    //   );
-    //   setFixBoards(leftBoards);
-    //   setMoveBoards(rightBoards);
-    //   leftBoards.forEach((board) => renderBoard({ scene, board }));
-    //   rightBoards.forEach((board) => renderBoard({ scene, board }));
-    //   points = [];
-    //   leftBoards = [];
-    //   rightBoards = [];
+  const handleDecideRotateAxis = (scene: THREE.Scene) => {
+    if (selectedPoints.length < 2) return window.alert("2点を選択してください");
+
+    const axis: [Point, Point] = [
+      [...selectedPoints[0]],
+      [...selectedPoints[1]],
+    ];
+
+    let leftBoards: Board[] = [];
+    let rightBoards: Board[] = [];
+
+    fixBoards.forEach((board) => {
+      const intersections = getAllIntersections({
+        board,
+        rotateAxis: axis,
+      });
+      if (intersections.length === 2) {
+        // 板を分割する場合
+        const separatedBoard = separateBoard({
+          board,
+          rotateAxis: axis,
+        });
+        if (!separatedBoard) return alert("Failed to separate board.");
+        const { leftBoard, rightBoard } = separatedBoard;
+        leftBoards.push(leftBoard);
+        rightBoards.push(rightBoard);
+      } else {
+        // 板を分割しない場合
+        // 板が回転軸の左側にあるか、右側にあるかを判定
+        // TODO: 一部分だけ回転軸の左右にある場合はエラーになる。
+
+        const isLeftSide = board.map((point) =>
+          isOnLeftSide({
+            point,
+            axis1: axis[0],
+            axis2: axis[1],
+          })
+        );
+
+        const isAllLeft = isLeftSide.every((b) => b);
+        const isAllRight = isLeftSide.every((b) => !b);
+
+        if (isAllLeft) {
+          leftBoards.push(board);
+        } else if (isAllRight) {
+          rightBoards.push(board);
+        } else {
+          console.log("板が回転軸の左右にまたがっている");
+        }
+      }
+    });
+
+    // rightBoardsのz座標にすべて+0.001する。板の重なりを避けるため
+    rightBoards = rightBoards.map((board) =>
+      board.map((point) => [point[0], point[1], point[2] + 0.001])
+    );
+
+    // sceneから板、線を削除
+    scene.children = scene.children.filter(
+      (child) => child.type !== "Mesh" && child.type !== "LineSegments"
+    );
+    // pointを削除する
+    scene.children = scene.children.filter((child) => child.type !== "Points");
+
+    setFixBoards(leftBoards);
+    setMoveBoards(rightBoards);
+    setRotateAxis(axis);
+    setSelectedPoints([]);
+    leftBoards.forEach((board) => renderBoard({ scene, board }));
+    rightBoards.forEach((board) => renderBoard({ scene, board }));
   };
 
   // 回転に応じて板を描画
@@ -361,7 +367,11 @@ export const OrigamiPost = () => {
         {numberOfMoveBoards}
       </button> */}
       <div className={styles.panelContainer}>
-        <FoldMethodControlPanel />
+        <FoldMethodControlPanel
+          handleDecideRotateAxis={() =>
+            handleDecideRotateAxis(sceneRef.current!)
+          }
+        />
       </div>
     </>
   );
