@@ -33,7 +33,6 @@ export const getAllIntersections: GetAllIntersections = ({
         intersection,
         board,
       });
-      console.log("isOnTheBoard", isOnTheBoard);
       if (!isOnTheBoard) continue;
       // 重複を避けるため、すでに求めた交点と同じ座標の場合は追加しない
       const isDuplicated = intersections.some(
@@ -121,10 +120,10 @@ export const isIntersectionOnTheBoard: IsIntersectionOnTheBoard = ({
       v1[0] * v2[1] - v1[1] * v2[0],
     ];
 
-    // crossProductの値が0.01より小さい場合は0とみなす
-    if (crossProduct[0] < 0.01) crossProduct[0] = 0;
-    if (crossProduct[1] < 0.01) crossProduct[1] = 0;
-    if (crossProduct[2] < 0.01) crossProduct[2] = 0;
+    // crossProductの値が0.001より小さい場合は0とみなす
+    if (crossProduct[0] < 0.001) crossProduct[0] = 0;
+    if (crossProduct[1] < 0.001) crossProduct[1] = 0;
+    if (crossProduct[2] < 0.001) crossProduct[2] = 0;
 
     // すべての外積が0でない場合、intersectionは返上にない
     if (

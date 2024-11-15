@@ -7,6 +7,7 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { separateBoard } from "./logics/separateBoard";
 import { getAllIntersections } from "./logics/getAllIntersections";
 import { isOnLeftSide } from "./logics/isOnLeftSide";
+import { rotateBoards } from "./logics/rotateBoards";
 
 type Point = [number, number, number];
 type Board = Point[];
@@ -173,7 +174,7 @@ export const OrigamiPost = () => {
         points.push([point.x, point.y, point.z]);
 
         if (points.length >= 2) {
-          // TODO: 同じ板上にある2点を選択していない場合エラーになる
+          // TODO: 同じ板上にある2点を選択しているかを判定する
           // この2点を結ぶ線で板を分割する。
           const axis: [Point, Point] = [[...points[0]], [...points[1]]];
           setRotateAxis(axis);
@@ -197,8 +198,6 @@ export const OrigamiPost = () => {
 
               const { leftBoard, rightBoard } = separatedBoard;
 
-              console.log("leftBoard", leftBoard);
-              console.log("rightBoard", rightBoard);
               leftBoards.push(leftBoard);
               rightBoards.push(rightBoard);
             } else {
@@ -216,11 +215,6 @@ export const OrigamiPost = () => {
               const isAllLeft = isLeftSide.every((b) => b);
               const isAllRight = isLeftSide.every((b) => !b);
 
-              console.log("intersection", intersections);
-
-              // NOTE: ここが原因で、false falseになっている
-              console.log(isAllLeft, isAllRight);
-
               if (isAllLeft) {
                 leftBoards.push(board);
               } else if (isAllRight) {
@@ -230,6 +224,11 @@ export const OrigamiPost = () => {
               }
             }
           });
+
+          //   rightBoards(moveBoards)のz座標にすべて+0.001する
+          rightBoards = rightBoards.map((board) =>
+            board.map((point) => [point[0], point[1], point[2] + 0.001])
+          );
 
           // boardを削除する
           scene.children = scene.children.filter(
@@ -270,30 +269,15 @@ export const OrigamiPost = () => {
     if (!scene) return;
     if (rotateAxis.length === 0) return;
 
+    const rotatedBoards = rotateBoards({
+      boards: moveBoards,
+      rotateAxis,
+      angle: foldingAngle,
+    });
+    const boards = [...fixBoards, ...rotatedBoards];
+
     // 前の板を削除
     scene.children = scene.children.filter((child) => child.type === "Line");
-
-    // そのままの板と、回転後の板を保持
-    const boards = [...fixBoards];
-    const theta = THREE.MathUtils.degToRad(foldingAngle);
-    // 通常の折り方の場合
-    const axis = new THREE.Vector3(...rotateAxis[0])
-      .sub(new THREE.Vector3(...rotateAxis[1]))
-      .normalize();
-    const subNode = new THREE.Vector3(...rotateAxis[0]);
-
-    for (let i = 0; i < moveBoards.length; i++) {
-      const moveBoard = moveBoards[i];
-      const newBoard: Board = moveBoard.map((point) => {
-        const node = new THREE.Vector3(...point);
-        const rotateNode = node.clone().sub(subNode);
-        rotateNode.applyAxisAngle(axis, theta);
-        rotateNode.add(subNode);
-        return [rotateNode.x, rotateNode.y, rotateNode.z] as Point;
-      });
-      boards.push(newBoard);
-    }
-
     // 板を描画
     boards.forEach((board) => {
       renderBoard(scene, board);
@@ -304,36 +288,26 @@ export const OrigamiPost = () => {
     // moveBoardsを回転した後の板を、fixBoardsに追加する
     if (moveBoards.length === 0) return;
     if (rotateAxis.length === 0) return;
-    const boards = [...fixBoards];
-    const theta = THREE.MathUtils.degToRad(foldingAngle);
-    const axis = new THREE.Vector3(...rotateAxis[0])
-      .sub(new THREE.Vector3(...rotateAxis[1]))
-      .normalize();
-    const subNode = new THREE.Vector3(...rotateAxis[0]);
 
-    for (let i = 0; i < moveBoards.length; i++) {
-      const moveBoard = moveBoards[i];
-      const newBoard: Board = moveBoard.map((point) => {
-        const node = new THREE.Vector3(...point);
-        const rotateNode = node.clone().sub(subNode);
-        rotateNode.applyAxisAngle(axis, theta);
-        rotateNode.add(subNode);
-        return [rotateNode.x, rotateNode.y, rotateNode.z] as Point;
-      });
-      boards.push(newBoard);
-    }
+    const rotatedBoards = rotateBoards({
+      boards: moveBoards,
+      rotateAxis,
+      angle: foldingAngle,
+    });
+    const boards = [...fixBoards, ...rotatedBoards];
 
-    // boardsの格値を少数第2位までにする
+    // boardsの格値を少数第3位までにする
+    // これをしないとe^-16のような値が出てきて、板が重なっているかどうかの判定がうまくいかない
     const roundedBoards = boards.map((board) =>
-      board.map((point) => point.map((v) => Math.round(v * 100) / 100) as Point)
+      board.map(
+        (point) => point.map((v) => Math.round(v * 1000) / 1000) as Point
+      )
     );
 
     setFixBoards(roundedBoards);
     setMoveBoards([]);
     setRotateAxis([]);
     setFoldingAngle(0);
-
-    console.log("decide ------------------------------------------");
   };
 
   return (

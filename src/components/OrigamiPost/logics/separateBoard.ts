@@ -2,6 +2,7 @@
 板を回転軸で左右に分割する関数。
 **/
 
+import { isBoardFrontSide } from "./isBoardFrontSide";
 import { sortBoardCoordinate } from "./sortBoardCoordinate";
 import { getAllIntersections } from "./getAllIntersections";
 import { isOnLeftSide } from "./isOnLeftSide";
@@ -57,14 +58,16 @@ export const separateBoard: SeparateBoard = ({ board, rotateAxis }) => {
     if (!isDuplicated2) rightBoard.push(p);
   });
 
+  const isFrontSide = isBoardFrontSide({ board });
+
   // 座標をソート
   const sortedLeftBoard = sortBoardCoordinate({
     board: leftBoard,
-    isFrontSide: true,
+    isFrontSide: isFrontSide,
   });
   const sortedRightBoard = sortBoardCoordinate({
     board: rightBoard,
-    isFrontSide: true,
+    isFrontSide: isFrontSide,
   });
 
   return {
