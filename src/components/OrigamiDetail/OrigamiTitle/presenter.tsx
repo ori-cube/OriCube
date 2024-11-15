@@ -1,5 +1,8 @@
+"use client";
 import style from "./presenter.module.scss";
 import { Zen_Maru_Gothic } from "next/font/google";
+import { useState } from "react";
+import { SetHiragana } from "@/utils/children-mode";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "700",
@@ -14,10 +17,13 @@ interface OrigamiTitlePresenterProps {
 export const OrigamiTitlePresenter: React.FC<OrigamiTitlePresenterProps> = (
   props: OrigamiTitlePresenterProps
 ) => {
+  const [description, setDescription] = useState(props.description);
+  SetHiragana(description, setDescription);
+
   return (
     <div className={`${style.origami_title} ${ZenMaruFont.className}`}>
       <h1 className={style.title}>{props.title}</h1>
-      <p className={style.description}>{props.description}</p>
+      <p className={style.description}>{description}</p>
     </div>
   );
 };
