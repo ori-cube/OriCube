@@ -10,6 +10,7 @@ import { isOnLeftSide } from "./logics/isOnLeftSide";
 import { rotateBoards } from "./logics/rotateBoards";
 import { renderBoard } from "./logics/renderBoard";
 import { Point, Board } from "@/types/three";
+import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -328,7 +329,7 @@ export const OrigamiPost = () => {
   return (
     <>
       <canvas ref={canvasRef} id="canvas" className={styles.model} />
-      <div className={styles.rangeBar}>
+      {/* <div className={styles.rangeBar}>
         0
         <input
           type="range"
@@ -348,7 +349,10 @@ export const OrigamiPost = () => {
         onClick={handleChangeNumberOfMoveBoards}
       >
         {numberOfMoveBoards}
-      </button>
+      </button> */}
+      <div className={styles.panelContainer}>
+        <FoldMethodControlPanel />
+      </div>
     </>
   );
 };

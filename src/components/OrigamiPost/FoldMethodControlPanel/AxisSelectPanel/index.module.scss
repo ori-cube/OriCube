@@ -1,0 +1,26 @@
+@use "@/styles/variables" as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 9999px;
+    border: solid 1px #000;
+
+    &:hover {
+      background-color: $hover-color;
+    }
+  }
+}
