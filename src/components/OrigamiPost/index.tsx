@@ -31,6 +31,7 @@ export const OrigamiPost = () => {
   const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
 
   const [foldingAngle, setFoldingAngle] = useState(0);
+  const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(1);
 
   // シーンの初期化
   useEffect(() => {
@@ -227,13 +228,38 @@ export const OrigamiPost = () => {
     const scene = sceneRef.current;
     if (!scene) return;
     if (rotateAxis.length === 0) return;
+    if (moveBoards.length === 0) return;
+
+    // TODO: 共通化する
+    // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
+    // それ以外の板は無条件で折る
+    let xyPlaneBoards: Board[] = [];
+    let notXyPlaneBoards: Board[] = [];
+    for (let i = 0; i < moveBoards.length; i++) {
+      const board = moveBoards[i];
+      const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+      if (isEquallyZ) {
+        xyPlaneBoards.push(board);
+      } else {
+        notXyPlaneBoards.push(board);
+      }
+    }
+
+    // xy平面上の板をz座標が大きい順にソート
+    xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
+
+    const foldBoards = [
+      ...xyPlaneBoards.slice(0, numberOfMoveBoards),
+      ...notXyPlaneBoards,
+    ];
+    const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
 
     const rotatedBoards = rotateBoards({
-      boards: moveBoards,
+      boards: foldBoards,
       rotateAxis,
       angle: foldingAngle,
     });
-    const boards = [...fixBoards, ...rotatedBoards];
+    const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
 
     // 前の板を削除
     scene.children = scene.children.filter((child) => child.type === "Line");
@@ -241,19 +267,42 @@ export const OrigamiPost = () => {
     boards.forEach((board) => {
       renderBoard({ scene, board });
     });
-  }, [foldingAngle, fixBoards, moveBoards, rotateAxis]);
+  }, [foldingAngle, fixBoards, moveBoards, rotateAxis, numberOfMoveBoards]);
 
   const handleDecideBoards = () => {
     // moveBoardsを回転した後の板を、fixBoardsに追加する
     if (moveBoards.length === 0) return;
     if (rotateAxis.length === 0) return;
 
+    // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
+    // それ以外の板は無条件で折る
+    let xyPlaneBoards: Board[] = [];
+    let notXyPlaneBoards: Board[] = [];
+    for (let i = 0; i < moveBoards.length; i++) {
+      const board = moveBoards[i];
+      const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+      if (isEquallyZ) {
+        xyPlaneBoards.push(board);
+      } else {
+        notXyPlaneBoards.push(board);
+      }
+    }
+
+    // xy平面上の板をz座標が大きい順にソート
+    xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
+
+    const foldBoards = [
+      ...xyPlaneBoards.slice(0, numberOfMoveBoards),
+      ...notXyPlaneBoards,
+    ];
+    const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
+
     const rotatedBoards = rotateBoards({
-      boards: moveBoards,
+      boards: foldBoards,
       rotateAxis,
       angle: foldingAngle,
     });
-    const boards = [...fixBoards, ...rotatedBoards];
+    const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
 
     // boardsの格値を少数第3位までにする
     // これをしないとe^-16のような値が出てきて、板が重なっているかどうかの判定がうまくいかない
@@ -267,6 +316,13 @@ export const OrigamiPost = () => {
     setMoveBoards([]);
     setRotateAxis([]);
     setFoldingAngle(0);
+  };
+
+  const handleChangeNumberOfMoveBoards = () => {
+    const filteredBoards = moveBoards.filter((board) =>
+      board.every((point) => point[2] === board[0][2])
+    );
+    setNumberOfMoveBoards((prev) => (prev + 1) % (filteredBoards.length + 1));
   };
 
   return (
@@ -286,6 +342,12 @@ export const OrigamiPost = () => {
       </div>
       <button className={styles.button} onClick={handleDecideBoards}>
         確定
+      </button>
+      <button
+        className={styles.button2}
+        onClick={handleChangeNumberOfMoveBoards}
+      >
+        {numberOfMoveBoards}
       </button>
     </>
   );
