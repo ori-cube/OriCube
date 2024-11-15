@@ -234,7 +234,7 @@ export const OrigamiPost = () => {
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
     let xyPlaneBoards: Board[] = [];
-    let notXyPlaneBoards: Board[] = [];
+    const notXyPlaneBoards: Board[] = [];
     for (let i = 0; i < moveBoards.length; i++) {
       const board = moveBoards[i];
       const isEquallyZ = board.every((point) => point[2] === board[0][2]);
@@ -277,7 +277,7 @@ export const OrigamiPost = () => {
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
     let xyPlaneBoards: Board[] = [];
-    let notXyPlaneBoards: Board[] = [];
+    const notXyPlaneBoards: Board[] = [];
     for (let i = 0; i < moveBoards.length; i++) {
       const board = moveBoards[i];
       const isEquallyZ = board.every((point) => point[2] === board[0][2]);
