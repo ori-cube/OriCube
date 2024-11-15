@@ -4,21 +4,25 @@ import { Zen_Maru_Gothic } from "next/font/google";
 import { ButtonSizeProp } from "@/types/button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useOrigamiListPage } from "@/app/_provider";
-import origamiData from "@/models/origamiList.json";
+import { Model } from "@/types/model";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "500",
   subsets: ["latin"],
 });
 
-export const InputField: React.FC = () => {
+export const InputField: React.FC<{ origamiData: Model[] }> = ({
+  origamiData,
+}: {
+  origamiData: Model[];
+}) => {
   const { searchKeyword, setSearchKeyword, setFilteredOrigamiList } =
     useOrigamiListPage();
 
   const handleSearch = (searchKeyword: string) => {
     // 検索キーワードでフィルタリング
     const newFilteredOrigamiList = origamiData.filter((item) =>
-      item.searchKeyword.some((keyword: string) =>
+      item.searchKeyword?.some((keyword: string) =>
         keyword.includes(searchKeyword)
       )
     );
