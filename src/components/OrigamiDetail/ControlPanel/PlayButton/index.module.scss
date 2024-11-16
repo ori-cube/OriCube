@@ -1,4 +1,5 @@
-/* IconButton.module.css */
+@use "@/styles/variables" as *;
+
 @mixin flex-center {
   display: flex;
   align-items: center;
