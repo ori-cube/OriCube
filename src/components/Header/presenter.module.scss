@@ -43,4 +43,7 @@
 
 .children_mode_button {
   margin-right: 24px;
+  @media (max-width: 767px) {
+    display: none;
+  }
 }
