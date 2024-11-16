@@ -39,6 +39,7 @@ export const OrigamiPost = () => {
   const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
   const [inputStep, setInputStep] = useState<Step>("axis");
 
+  const [isMoveBoardsRight, setIsMoveBoardsRight] = useState(true);
   const [leftBoards, setLeftBoards] = useState<Board[]>([]);
   const [rightBoards, setRightBoards] = useState<Board[]>([]);
 
@@ -276,6 +277,7 @@ export const OrigamiPost = () => {
   const handleDecideFoldTarget = () => {
     // ここで、moveBoardsとfixBoardsに振り分ける
     // TODO: シーン上の板を選択して、振り分けを行う。
+    setIsMoveBoardsRight(true);
     setMoveBoards(rightBoards);
     setFixBoards(leftBoards);
     setInputStep("fold");
@@ -295,45 +297,46 @@ export const OrigamiPost = () => {
   ).length;
 
   const handleFoldFrontSide = () => {
-    setNumberOfMoveBoards((prev) => (prev + 1) % (maxNumberOfMoveBoards + 1));
-    setMoveBoards(
-      moveBoards.map((board) =>
-        board.map((point) => [point[0], point[1], point[2] + 0.001])
-      )
-    );
-    // // setNumberOfMoveBoards((prev) => (prev + 1) % (maxNumberOfMoveBoards + 1));
-    // const number = (numberOfMoveBoards + 1) % (maxNumberOfMoveBoards + 1);
+    // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
+    // それ以外の板は無条件で折る
+    let xyPlaneBoards: Board[] = [];
+    const notXyPlaneBoards: Board[] = [];
 
-    // // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
-    // // それ以外の板は無条件で折る
-    // let xyPlaneBoards: Board[] = [];
-    // const notXyPlaneBoards: Board[] = [];
-    // for (let i = 0; i < moveBoards.length; i++) {
-    //   const board = moveBoards[i];
-    //   const isEquallyZ = board.every((point) => point[2] === board[0][2]);
-    //   if (isEquallyZ) {
-    //     xyPlaneBoards.push(board);
-    //   } else {
-    //     notXyPlaneBoards.push(board);
-    //   }
-    // }
+    const targetBoards = isMoveBoardsRight ? rightBoards : leftBoards;
+    const maxNumberOfMoveBoards = targetBoards.filter((board) =>
+      board.every((point) => point[2] === board[0][2])
+    ).length;
+    const number = (numberOfMoveBoards + 1) % (maxNumberOfMoveBoards + 1);
+    for (let i = 0; i < targetBoards.length; i++) {
+      const board = targetBoards[i];
+      const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+      if (isEquallyZ) {
+        xyPlaneBoards.push(board);
+      } else {
+        notXyPlaneBoards.push(board);
+      }
+    }
 
-    // // xy平面上の板をz座標が大きい順にソート
-    // xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
+    // xy平面上の板をz座標が大きい順にソート
+    xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
 
-    // // foldXyPlaneBoardsにz座標を+0.001する
-    // // const foldXyPlaneBoards = xyPlaneBoards.slice(0, number);
-    // // foldXyPlaneBoardsのうち、number枚目をz座標に+0.001する
-    // const foldXyPlaneBoards = xyPlaneBoards.map((board, i) =>
-    //   i === number
-    //     ? board.map((point) => [point[0], point[1], point[2] + 0.001])
-    //     : board
-    // )
+    // foldXyPlaneBoardsの、上からumber枚にz座標を+0.001する
+    const foldXyPlaneBoards = xyPlaneBoards
+      .slice(0, number)
+      .map(
+        (board) =>
+          board.map((point) => [point[0], point[1], point[2] + 0.001]) as Board
+      );
 
-    // const foldBoards = [...foldXyPlaneBoards, ...notXyPlaneBoards];
-    // const notFoldBoards = xyPlaneBoards.slice(number);
+    const foldBoards = [...foldXyPlaneBoards, ...notXyPlaneBoards];
+    const notFoldBoards = xyPlaneBoards.slice(number);
 
-    // setMoveBoards(foldBoards);
+    setMoveBoards(foldBoards);
+    setFixBoards([
+      ...(isMoveBoardsRight ? leftBoards : rightBoards),
+      ...notFoldBoards,
+    ]);
+    setNumberOfMoveBoards(number);
   };
 
   const handleFoldBackSide = () => {
@@ -349,8 +352,8 @@ export const OrigamiPost = () => {
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
+    if (inputStep !== "fold") return;
     if (rotateAxis.length === 0) return;
-    if (moveBoards.length === 0) return;
 
     // TODO: 共通化する
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
