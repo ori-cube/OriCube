@@ -4,6 +4,7 @@ import styles from "./index.module.scss";
 import { AxisSelectPanel } from "./AxisSelectPanel";
 import { FoldTargetSelectPanel } from "./FoldTargetSelectPanel";
 import { FoldMethodSelectPanel } from "./FoldMethodSelectPanel";
+import React from "react";
 
 export type Step = "axis" | "target" | "fold";
 
@@ -11,6 +12,11 @@ type Props = {
   handleDecideRotateAxis: () => void;
   handleCancelRotateAxis: () => void;
   handleDecideFoldTarget: () => void;
+  handleFoldFrontSide: () => void;
+  handleFoldBackSide: () => void;
+  foldAngle: number;
+  setFoldAngle: React.Dispatch<React.SetStateAction<number>>;
+  handleDecideFoldMethod: () => void;
   currentStep: Step;
 };
 
@@ -18,6 +24,11 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   handleDecideRotateAxis,
   handleCancelRotateAxis,
   handleDecideFoldTarget,
+  handleFoldFrontSide,
+  handleFoldBackSide,
+  foldAngle,
+  setFoldAngle,
+  handleDecideFoldMethod,
   currentStep,
 }) => {
   return (
@@ -34,7 +45,11 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
       {currentStep === "fold" && (
         <FoldMethodSelectPanel
           handlePrevStep={() => {}}
-          handleNextStep={() => {}}
+          handleFoldFrontSide={handleFoldFrontSide}
+          handleFoldBackSide={handleFoldBackSide}
+          foldAngle={foldAngle}
+          setFoldAngle={setFoldAngle}
+          handleNextStep={handleDecideFoldMethod}
         />
       )}
     </section>

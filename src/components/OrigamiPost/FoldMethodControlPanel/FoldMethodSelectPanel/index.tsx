@@ -3,28 +3,37 @@ import { NextStepButton } from "../ui/NextStepButton";
 import { PrevStepButton } from "../ui/PrevStepButton";
 import { FoldButton } from "../ui/FoldButton";
 import { Slider, TextArea } from "@radix-ui/themes";
+import React from "react";
 
 type Props = {
   handlePrevStep: () => void;
+  handleFoldFrontSide: () => void;
+  handleFoldBackSide: () => void;
+  foldAngle: number;
+  setFoldAngle: React.Dispatch<React.SetStateAction<number>>;
   handleNextStep: () => void;
 };
 
 export const FoldMethodSelectPanel: React.FC<Props> = ({
   handlePrevStep,
   handleNextStep,
+  handleFoldFrontSide,
+  handleFoldBackSide,
+  foldAngle,
+  setFoldAngle,
 }) => {
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>折り方を選択</h2>
       <div className={styles.foldButtons}>
         <FoldButton
-          handleClick={() => {}}
+          handleClick={handleFoldFrontSide}
           currentStep={0}
           totalSteps={0}
           isFrontSide={true}
         />
         <FoldButton
-          handleClick={() => {}}
+          handleClick={handleFoldBackSide}
           currentStep={1}
           totalSteps={3}
           isFrontSide={false}
@@ -39,7 +48,11 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
             min={0}
             max={180}
             size="3"
+            onValueChange={(value) => {
+              setFoldAngle(value[0]);
+            }}
             defaultValue={[180]}
+            value={[foldAngle]}
           />
           180
         </div>

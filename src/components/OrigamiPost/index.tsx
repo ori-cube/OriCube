@@ -33,15 +33,14 @@ export const OrigamiPost = () => {
   const [moveBoards, setMoveBoards] = useState<Board[]>([]);
   const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
 
-  const [foldingAngle, setFoldingAngle] = useState(0);
-  const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(1);
-
   const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
   const [inputStep, setInputStep] = useState<Step>("axis");
 
   const [leftBoards, setLeftBoards] = useState<Board[]>([]);
   const [rightBoards, setRightBoards] = useState<Board[]>([]);
 
+  const [foldingAngle, setFoldingAngle] = useState(180);
+  const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(0);
   // シーンの初期化
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -265,6 +264,64 @@ export const OrigamiPost = () => {
   //   board.map((point) => [point[0], point[1], point[2] + 0.001])
   // );
 
+  // 手前に折るか、奥に折るかを決める関数
+  // 手前に折る場合、moveBoardsのz座標に+0.001し、奥に折る場合はz座標に-0.001する
+  // また、1回押すごとにnumberOfMoveBoardsに1を足す
+  const maxNumberOfMoveBoards = moveBoards.filter((board) =>
+    board.every((point) => point[2] === board[0][2])
+  ).length;
+
+  const handleFoldFrontSide = () => {
+    setNumberOfMoveBoards((prev) => (prev + 1) % (maxNumberOfMoveBoards + 1));
+    setMoveBoards(
+      moveBoards.map((board) =>
+        board.map((point) => [point[0], point[1], point[2] + 0.001])
+      )
+    );
+    // // setNumberOfMoveBoards((prev) => (prev + 1) % (maxNumberOfMoveBoards + 1));
+    // const number = (numberOfMoveBoards + 1) % (maxNumberOfMoveBoards + 1);
+
+    // // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
+    // // それ以外の板は無条件で折る
+    // let xyPlaneBoards: Board[] = [];
+    // const notXyPlaneBoards: Board[] = [];
+    // for (let i = 0; i < moveBoards.length; i++) {
+    //   const board = moveBoards[i];
+    //   const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+    //   if (isEquallyZ) {
+    //     xyPlaneBoards.push(board);
+    //   } else {
+    //     notXyPlaneBoards.push(board);
+    //   }
+    // }
+
+    // // xy平面上の板をz座標が大きい順にソート
+    // xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
+
+    // // foldXyPlaneBoardsにz座標を+0.001する
+    // // const foldXyPlaneBoards = xyPlaneBoards.slice(0, number);
+    // // foldXyPlaneBoardsのうち、number枚目をz座標に+0.001する
+    // const foldXyPlaneBoards = xyPlaneBoards.map((board, i) =>
+    //   i === number
+    //     ? board.map((point) => [point[0], point[1], point[2] + 0.001])
+    //     : board
+    // )
+
+    // const foldBoards = [...foldXyPlaneBoards, ...notXyPlaneBoards];
+    // const notFoldBoards = xyPlaneBoards.slice(number);
+
+    // setMoveBoards(foldBoards);
+  };
+
+  const handleFoldBackSide = () => {
+    setNumberOfMoveBoards((prev) => (prev + 1) % (maxNumberOfMoveBoards + 1));
+    setMoveBoards(
+      moveBoards.map((board) =>
+        board.map((point) => [point[0], point[1], point[2] - 0.001])
+      )
+    );
+  };
+
   // 回転に応じて板を描画
   useEffect(() => {
     const scene = sceneRef.current;
@@ -311,7 +368,7 @@ export const OrigamiPost = () => {
     });
   }, [foldingAngle, fixBoards, moveBoards, rotateAxis, numberOfMoveBoards]);
 
-  const handleDecideBoards = () => {
+  const handleDecideFoldMethod = () => {
     // moveBoardsを回転した後の板を、fixBoardsに追加する
     if (moveBoards.length === 0) return;
     if (rotateAxis.length === 0) return;
@@ -357,14 +414,9 @@ export const OrigamiPost = () => {
     setFixBoards(roundedBoards);
     setMoveBoards([]);
     setRotateAxis([]);
-    setFoldingAngle(0);
-  };
-
-  const handleChangeNumberOfMoveBoards = () => {
-    const filteredBoards = moveBoards.filter((board) =>
-      board.every((point) => point[2] === board[0][2])
-    );
-    setNumberOfMoveBoards((prev) => (prev + 1) % (filteredBoards.length + 1));
+    setFoldingAngle(180);
+    setSelectedPoints([]);
+    setInputStep("axis");
   };
 
   return (
@@ -377,6 +429,11 @@ export const OrigamiPost = () => {
           }
           handleCancelRotateAxis={handleCancelRotateAxis}
           handleDecideFoldTarget={handleDecideFoldTarget}
+          handleFoldFrontSide={handleFoldFrontSide}
+          handleFoldBackSide={handleFoldBackSide}
+          foldAngle={foldingAngle}
+          setFoldAngle={setFoldingAngle}
+          handleDecideFoldMethod={handleDecideFoldMethod}
           currentStep={inputStep}
         />
       </div>
