@@ -41,15 +41,12 @@ export const OrigamiPost = () => {
   // シーンの初期化
   useEffect(() => {
     const canvas = canvasRef.current!;
-    let scene = sceneRef.current;
+    const scene = new THREE.Scene();
     let renderer = rendererRef.current;
     let camera = cameraRef.current;
     let controls = controlsRef.current;
     let raycaster = raycasterRef.current;
 
-    if (!scene) {
-      scene = new THREE.Scene();
-    }
     sceneRef.current = scene;
 
     const sizes = {
@@ -112,6 +109,10 @@ export const OrigamiPost = () => {
 
     window.addEventListener("resize", resizeListener);
 
+    console.log("init");
+    console.log(fixBoards);
+    console.log(moveBoards);
+
     return () => {
       window.removeEventListener("resize", resizeListener);
     };
@@ -119,6 +120,7 @@ export const OrigamiPost = () => {
 
   // pointが追加されたとき
   useEffect(() => {
+    if (inputStep !== "axis") return;
     const canvas = canvasRef.current!;
     const scene = sceneRef.current!;
     const renderer = rendererRef.current!;
@@ -180,7 +182,7 @@ export const OrigamiPost = () => {
     return () => {
       canvas.removeEventListener("click", clickListener);
     };
-  }, [selectedPoints]);
+  }, [selectedPoints, inputStep]);
 
   const handleDecideRotateAxis = (scene: THREE.Scene) => {
     if (selectedPoints.length < 2) return window.alert("2点を選択してください");
@@ -249,10 +251,22 @@ export const OrigamiPost = () => {
     setFixBoards(leftBoards);
     setMoveBoards(rightBoards);
     setRotateAxis(axis);
-    setSelectedPoints([]);
     setInputStep("target");
     leftBoards.forEach((board) => renderBoard({ scene, board }));
     rightBoards.forEach((board) => renderBoard({ scene, board }));
+  };
+
+  const handleCancelRotateAxis = () => {
+    console.log("cancel");
+    setRotateAxis([]);
+    // TODO: 状態を保持しておいて、一個前の状態に戻すようにする
+    setFixBoards([initialBoard]);
+    setMoveBoards([]);
+    setInputStep("axis");
+  };
+
+  const handleDecideFoldTarget = () => {
+    setInputStep("fold");
   };
 
   // 回転に応じて板を描画
@@ -365,6 +379,8 @@ export const OrigamiPost = () => {
           handleDecideRotateAxis={() =>
             handleDecideRotateAxis(sceneRef.current!)
           }
+          handleCancelRotateAxis={handleCancelRotateAxis}
+          handleDecideFoldTarget={handleDecideFoldTarget}
           currentStep={inputStep}
         />
       </div>

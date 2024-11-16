@@ -9,11 +9,15 @@ export type Step = "axis" | "target" | "fold";
 
 type Props = {
   handleDecideRotateAxis: () => void;
+  handleCancelRotateAxis: () => void;
+  handleDecideFoldTarget: () => void;
   currentStep: Step;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
   handleDecideRotateAxis,
+  handleCancelRotateAxis,
+  handleDecideFoldTarget,
   currentStep,
 }) => {
   return (
@@ -23,8 +27,8 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
       )}
       {currentStep === "target" && (
         <FoldTargetSelectPanel
-          handlePrevStep={() => {}}
-          handleNextStep={() => {}}
+          handlePrevStep={handleCancelRotateAxis}
+          handleNextStep={handleDecideFoldTarget}
         />
       )}
       {currentStep === "fold" && (
