@@ -1,14 +1,20 @@
-import { useEffect } from "react";
-import { useChildren } from "@/app/_children-provider";
+import axios from "axios";
 
 export function SetHiragana(
   sentence: string,
   setSentence: React.Dispatch<React.SetStateAction<string>>
 ) {
-  const { isChildren } = useChildren();
-  useEffect(() => {
-    if (isChildren) {
-      setSentence(sentence);
+  const outputType = "hiragana";
+  const getHiraganaData = async () => {
+    try {
+      const response = await axios.post("/api/hiragana", {
+        sentence,
+        output_type: outputType,
+      });
+      setSentence(response.data.converted);
+    } catch (err) {
+      console.log(err);
     }
-  }, []);
+  };
+  getHiraganaData();
 }
