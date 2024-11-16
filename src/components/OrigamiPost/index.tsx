@@ -58,6 +58,11 @@ export const OrigamiPost = () => {
 
   const { data: session } = useSession();
 
+  const sizes = {
+    width: window.innerWidth - 320,
+    height: window.innerHeight,
+  };
+
   // シーンの初期化
   useEffect(() => {
     if (inputStep !== "axis") return;
@@ -69,11 +74,6 @@ export const OrigamiPost = () => {
     let raycaster = raycasterRef.current;
 
     sceneRef.current = scene;
-
-    const sizes = {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
 
     if (!renderer) {
       renderer = new THREE.WebGLRenderer({
@@ -121,7 +121,7 @@ export const OrigamiPost = () => {
     render();
 
     const resizeListener = () => {
-      sizes.width = window.innerWidth;
+      sizes.width = window.innerWidth - 320;
       sizes.height = window.innerHeight;
       camera.aspect = sizes.width / sizes.height;
       camera.updateProjectionMatrix();
@@ -149,8 +149,8 @@ export const OrigamiPost = () => {
 
     const clickListener = (event: MouseEvent) => {
       const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      mouse.x = (event.clientX / sizes.width) * 2 - 1;
+      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
 
       // Raycasterのセットアップ
       raycaster.setFromCamera(mouse, camera);
@@ -296,10 +296,6 @@ export const OrigamiPost = () => {
     const canvas = canvasRef.current;
     const scene = sceneRef.current;
     const camera = cameraRef.current;
-    const sizes = {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
 
     // Raycasterのセットアップ
     raycasterRef.current = new THREE.Raycaster();
