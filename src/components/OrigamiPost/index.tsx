@@ -20,6 +20,8 @@ import { Procedure, Model } from "@/types/model";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
 import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
+import { redirect } from "next/navigation";
+import Popup from "./Popup";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -58,6 +60,11 @@ export const OrigamiPost = () => {
   // TODO: STEP2で色の変更が反映されない
   const [origamiColor, setOrigamiColor] = useState("#ff0000");
   const [origamiDescription, setOrigamiDescription] = useState("");
+
+  const [popup, setPopup] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   const { data: session } = useSession();
 
@@ -734,8 +741,18 @@ export const OrigamiPost = () => {
     renderer.domElement.toBlob((blob) => {
       if (!blob) return;
       const file = new File([blob], "model.png", { type: "image/png" });
-      insertData(file, session, model);
+      setPopup({ message: "データ送信中です", type: "info" });
+      insertData(file, session, model).then(() => {
+        setPopup({ message: "データの挿入に成功しました！", type: "success" });
+        setTimeout(() => {
+          redirect("/");
+        }, 1500);
+      });
     });
+  };
+
+  const handleClosePopup = () => {
+    setPopup(null);
   };
 
   const handleCancelFoldTarget = () => {
@@ -785,6 +802,13 @@ export const OrigamiPost = () => {
           setOrigamiDescription={setOrigamiDescription}
         />
       </div>
+      {popup && (
+        <Popup
+          message={popup.message}
+          type={popup.type}
+          onClose={handleClosePopup}
+        />
+      )}
     </>
   );
 };
