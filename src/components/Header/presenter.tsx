@@ -38,14 +38,15 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
             <SearchBoxPresenter origamiData={origamiData} />
           </Flex>
         ) : (
-          <></>
+          <div className={style.children_mode_button}>
+            <ChildrenModeButton />
+          </div>
         )}
         <Flex
           id="navigation-container"
           align="center"
           className={style.google_auth_button}
         >
-          <ChildrenModeButton />
           <GoogleAuthButton />
         </Flex>
       </Flex>
