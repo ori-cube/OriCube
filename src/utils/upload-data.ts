@@ -295,29 +295,25 @@ const touchData = (
   data["searchKeyword"] = [data.name];
   data[
     "imageUrl"
-  ] = `${process.env.NEXT_PUBLIC_R2_BUCKET_URL}/${mail}/${uuid}.png`;
+  ] = `${process.env.NEXT_PUBLIC_R2_BUCKET_URL}/origami/images/${uuid}.png`;
   return data;
 };
 
-export const insertData = async (blob: Blob, session: Session | null) => {
+export const insertData = async (image: File, session: Session | null) => {
   const uuid = createUuid();
-  const formData = new FormData();
-
   if (!session) {
     console.log("ログインしてください");
   } else {
     const fixedData = touchData(mockData, uuid, session.user?.email);
-    const jsonData = JSON.stringify(fixedData, null, 2);
-    formData.append("image", blob, `${uuid}.png`);
-    await axios
-      .post("/api/data", {
-        mail: session.user?.email,
-        id: uuid,
-        data: jsonData,
-        image: formData,
-      })
-      .then(() => {
-        console.log("upload完了");
-      });
+
+    const jsonData = JSON.stringify(fixedData);
+    const formData = new FormData();
+    formData.append("mail", session.user?.email || "");
+    formData.append("id", uuid);
+    formData.append("data", jsonData); // 必要に応じて JSON 文字列に変換
+    formData.append("image", image); // image は File オブジェクト
+    await axios.post("/api/data", formData).then(() => {
+      console.log("upload完了");
+    });
   }
 };

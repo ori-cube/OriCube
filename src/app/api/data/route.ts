@@ -4,7 +4,7 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
+import { streamToBuffer } from "@/utils/stream-to-buffer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,10 +47,12 @@ export async function GET(req: NextRequest) {
       if (response.Contents && response.Contents.length > 0) {
         await Promise.all(
           response.Contents?.map(async (item) => {
-            const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
-            const jsonFetchData = await fetch(jsonUrl);
-            const jsonData = await jsonFetchData.json();
-            jsonList.push(jsonData);
+            if (!(item.Key?.split("/")[1] === "images")) {
+              const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
+              const jsonFetchData = await fetch(jsonUrl);
+              const jsonData = await jsonFetchData.json();
+              jsonList.push(jsonData);
+            }
           })
         );
       }
@@ -91,8 +93,6 @@ export async function POST(req: NextRequest) {
       引数に与えたdata(Model型)をDBに保存する
       {user mail}/{id}形式でDBに保存される
   */
-  const { mail, id, data, image } = await req.json();
-  const imageContent = fs.readFileSync(image.filepath);
   const s3 = new S3Client({
     region: "auto",
     endpoint: process.env.R2_ENDPOINT,
@@ -101,15 +101,22 @@ export async function POST(req: NextRequest) {
       secretAccessKey: process.env.R2_SECRET_KEY!,
     },
   });
+  const formData = await req.formData();
 
+  // フィールドの取得
+  const mail = formData.get("mail") as string | null;
+  const id = formData.get("id") as string | null;
+  const data = formData.get("data") as string | null;
+  const image = formData.get("image") as File;
+  const buffer = await streamToBuffer(image.stream());
   try {
     const jsonKey = `origami/${mail}/${id}`;
-    const imageKey = `origami/images/${id}`;
+    const imageKey = `origami/images/${id}.png`;
     await s3.send(
       new PutObjectCommand({
         Bucket: "oricube",
         Key: jsonKey,
-        Body: JSON.stringify(data), // JSONを送信できる形式に変換
+        Body: data!, // JSONを送信できる形式に変換
         ACL: "public-read",
       })
     );
@@ -117,8 +124,8 @@ export async function POST(req: NextRequest) {
       new PutObjectCommand({
         Bucket: "oricube",
         Key: imageKey,
-        Body: imageContent,
-        ContentType: image.mimetype || "image/png",
+        Body: buffer,
+        ContentType: "image/png",
         ACL: "public-read",
       })
     );
