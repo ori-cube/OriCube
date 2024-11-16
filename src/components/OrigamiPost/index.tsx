@@ -160,8 +160,6 @@ export const OrigamiPost = () => {
     const camera = cameraRef.current!;
     const raycaster = raycasterRef.current!;
 
-    console.log("procedure", procedure);
-
     const clickListener = (event: MouseEvent) => {
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / sizes.width) * 2 - 1;
@@ -285,7 +283,6 @@ export const OrigamiPost = () => {
     });
     const lineMesh = new Line2(lineGeometry, lineMaterial);
     lineMesh.name = "Axis";
-    console.log(lineMesh.name);
     scene.add(lineMesh);
 
     setRotateAxis(axis);
@@ -296,12 +293,14 @@ export const OrigamiPost = () => {
     rights.forEach((board) =>
       renderBoard({ scene, board, color: origamiColor })
     );
+
+    console.log("lefts", lefts);
+    console.log("rights", rights);
     setLeftBoards(lefts);
     setRightBoards(rights);
   };
 
   const handleCancelRotateAxis = () => {
-    console.log("cancel");
     setRotateAxis([]);
     // TODO: 状態を保持しておいて、一個前の状態に戻すようにする
     setFixBoards([initialBoard]);
@@ -333,7 +332,6 @@ export const OrigamiPost = () => {
       mouse.y = -(event.clientY / sizes.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
-      console.log(scene.children);
       const intersects = raycaster.intersectObjects(scene.children, true);
       if (intersects.length > 0) {
         const firstIntersect = intersects[0].object;
@@ -588,12 +586,12 @@ export const OrigamiPost = () => {
       rotateAxis,
       angle: foldingAngle,
       isFoldingDirectionFront: isFoldingDirectionFront,
+      isMoveBoardsRight,
     });
     const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
 
     // 前の板を削除
     scene.children = scene.children.filter((child) => {
-      console.log(child.name);
       return child.name === "Axis";
     });
     // 板を描画
@@ -637,12 +635,58 @@ export const OrigamiPost = () => {
     ];
     const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
 
+    // rotateAxisをソートする。
+    let sortedRotateAxis = rotateAxis;
+    if (isMoveBoardsRight) {
+      sortedRotateAxis =
+        rotateAxis[0][0] < rotateAxis[1][0]
+          ? rotateAxis
+          : [rotateAxis[1], rotateAxis[0]];
+    } else {
+      sortedRotateAxis =
+        rotateAxis[0][0] > rotateAxis[1][0]
+          ? rotateAxis
+          : [rotateAxis[1], rotateAxis[0]];
+    }
+
+    let z = 0;
+    //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
+    if (Math.abs(sortedRotateAxis[0][2] - sortedRotateAxis[1][2]) < 0.01) {
+      for (let i = 0; i < foldBoards.length; i++) {
+        const board = foldBoards[i];
+        const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+        if (isEquallyZ) {
+          if (isFoldingDirectionFront) {
+            if (z === undefined || board[0][2] > z) {
+              z = board[0][2];
+            }
+          } else {
+            if (z === undefined || board[0][2] < z) {
+              z = board[0][2];
+            }
+          }
+        }
+      }
+    }
+
+    // sortedRotateAxisのz座標にzを加える
+    sortedRotateAxis = sortedRotateAxis.map((point) => {
+      return [point[0], point[1], point[2] + z];
+    }) as [Point, Point];
+
+    console.log("sortedRotateAxis");
+
+    // isFoldingDirectionFrontがfalseなら、sortedRotateAxisの順序を逆にする
+    if (isFoldingDirectionFront === false) {
+      sortedRotateAxis = [sortedRotateAxis[1], sortedRotateAxis[0]];
+    }
+
     // Procedureを作成する
     const newProcedure = {
       description: origamiDescription,
       fixBoards: [...fixBoards, notFoldBoards],
       moveBoards: foldBoards,
-      rotateAxis: rotateAxis,
+      rotateAxis: sortedRotateAxis,
     };
 
     const rotatedBoards = rotateBoards({
@@ -650,6 +694,7 @@ export const OrigamiPost = () => {
       rotateAxis,
       angle: foldingAngle,
       isFoldingDirectionFront: isFoldingDirectionFront,
+      isMoveBoardsRight,
     });
     const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
 
@@ -696,28 +741,59 @@ export const OrigamiPost = () => {
     ];
     const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
 
-    // let sortedRotateAxis = rotateAxis;
-    // // rotateAxisを保存する際に、右ネジの方向になるように軸を保存する
-    // if (isMoveBoardsRight) {
-    //   if (isFoldingDirectionFront) {
-    //     // +
-    //   } else {
-    //     // -
-    //   }
-    // } else {
-    //   if (isFoldingDirectionFront) {
-    //     // -
-    //   } else {
-    //     // +
-    //   }
-    // }
+    if (rotateAxis.length === 0) return;
+    // rotateAxisをソート
+    let sortedRotateAxis = rotateAxis;
+    if (isMoveBoardsRight) {
+      sortedRotateAxis =
+        rotateAxis[0][0] < rotateAxis[1][0]
+          ? rotateAxis
+          : [rotateAxis[1], rotateAxis[0]];
+    } else {
+      sortedRotateAxis =
+        rotateAxis[0][0] > rotateAxis[1][0]
+          ? rotateAxis
+          : [rotateAxis[1], rotateAxis[0]];
+    }
+
+    console.log("foldBoards", foldBoards);
+
+    let z = 0;
+    //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
+    if (Math.abs(sortedRotateAxis[0][2] - sortedRotateAxis[1][2]) < 0.01) {
+      for (let i = 0; i < foldBoards.length; i++) {
+        const board = foldBoards[i];
+        const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+        if (isEquallyZ) {
+          if (isFoldingDirectionFront) {
+            if (z === undefined || board[0][2] > z) {
+              z = board[0][2];
+            }
+          } else {
+            if (z === undefined || board[0][2] < z) {
+              z = board[0][2];
+            }
+          }
+        }
+      }
+    }
+
+    // sortedRotateAxisのz座標にzを加える
+    sortedRotateAxis = sortedRotateAxis.map((point) => {
+      return [point[0], point[1], point[2] + z];
+    }) as [Point, Point];
+
+    // isFoldingDirectionFrontがfalseなら、sortedRotateAxisの順序を逆にする
+    if (isFoldingDirectionFront === false) {
+      sortedRotateAxis = [sortedRotateAxis[1], sortedRotateAxis[0]];
+    }
 
     // Procedureを作成する
     const newProcedure = {
       description: origamiDescription,
       fixBoards: [...fixBoards, notFoldBoards],
       moveBoards: foldBoards,
-      rotateAxis: rotateAxis,
+      rotateAxis: sortedRotateAxis,
     };
 
     const procedures = { ...procedure, [procedureIndex]: newProcedure };

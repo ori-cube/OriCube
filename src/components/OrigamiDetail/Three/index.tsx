@@ -22,6 +22,7 @@ export const Three: React.FC<Props> = ({
   foldAngle,
   procedureIndex,
 }) => {
+  console.log(model);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
