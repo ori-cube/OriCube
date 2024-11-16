@@ -23,10 +23,10 @@ import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
-    [18, 18, 0],
-    [-18, 18, 0],
-    [-18, -18, 0],
-    [18, -18, 0],
+    [20, 20, 0],
+    [-20, 20, 0],
+    [-20, -20, 0],
+    [20, -20, 0],
   ];
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,7 +54,7 @@ export const OrigamiPost = () => {
   const [procedureIndex, setProcedureIndex] = useState(1);
   const [procedure, setProcedure] = useState<Procedure>({});
 
-  const [origamiName, setOrigamiName] = useState("hugahuga");
+  const [origamiName, setOrigamiName] = useState("");
   // TODO: STEP2で色の変更が反映されない
   const [origamiColor, setOrigamiColor] = useState("#ff0000");
   const [origamiDescription, setOrigamiDescription] = useState("");
@@ -96,7 +96,7 @@ export const OrigamiPost = () => {
         10,
         1000
       );
-      camera.position.set(0, 0, 100);
+      camera.position.set(0, 0, 120);
       camera.lookAt(new THREE.Vector3(0, 0, 0)); // モデルの中心を見るようにカメラの向きを設定
       scene.add(camera);
       cameraRef.current = camera;

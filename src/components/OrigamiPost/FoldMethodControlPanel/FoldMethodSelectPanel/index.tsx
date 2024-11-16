@@ -37,7 +37,7 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
-        <h2 className={styles.title}>折り方を選択</h2>
+        <h2 className={styles.title}>折り方を選択(3/3)</h2>
         <div className={styles.foldButtons}>
           <FoldButton
             handleClick={handleFoldFrontSide}
