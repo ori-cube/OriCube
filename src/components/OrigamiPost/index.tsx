@@ -275,12 +275,104 @@ export const OrigamiPost = () => {
     setInputStep("axis");
   };
 
+  // 板を折る対象を決定する関数
+  useEffect(() => {
+    if (inputStep !== "target") return;
+    if (rotateAxis.length === 0) return;
+    const canvas = canvasRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    // Raycasterのセットアップ
+    raycasterRef.current = new THREE.Raycaster();
+    const raycaster = raycasterRef.current;
+
+    if (!canvas || !scene || !camera) return;
+
+    const hoverListener = (event: MouseEvent) => {
+      const mouse = new THREE.Vector2();
+      mouse.x = (event.clientX / sizes.width) * 2 - 1;
+      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      console.log(scene.children);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      if (intersects.length > 0) {
+        const firstIntersect = intersects[0].object;
+        if (firstIntersect.type === "Mesh") {
+          firstIntersect.material.color.set(0x000000);
+          scene.children.forEach((child) => {
+            if (child.type === "Mesh" && child !== firstIntersect) {
+              if (child.material.side === THREE.FrontSide) {
+                child.material.color.set("red");
+              } else {
+                child.material.color.set("#DFDFDF");
+              }
+            }
+          });
+        } else {
+          scene.children.forEach((child) => {
+            if (child.type === "Mesh") {
+              if (child.material.side === THREE.FrontSide) {
+                child.material.color.set("red");
+              } else {
+                child.material.color.set("#DFDFDF");
+              }
+            }
+          });
+        }
+      }
+    };
+
+    canvas.addEventListener("mousemove", hoverListener);
+
+    const clickListener = (event: MouseEvent) => {
+      // クリックしたオブジェクトを取得
+      // そいつが軸の右か左かを判定 isOnLeftSideを使う
+      // isMoveBoardsRightを変更する
+      const mouse = new THREE.Vector2();
+      mouse.x = (event.clientX / sizes.width) * 2 - 1;
+      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      if (intersects.length > 0) {
+        const point = intersects[0].point;
+
+        const isTargetLeft = isOnLeftSide({
+          point: [point.x, point.y, point.z],
+          axis1: rotateAxis[0],
+          axis2: rotateAxis[1],
+        });
+
+        setIsMoveBoardsRight(!isTargetLeft);
+
+        // TODO：板を選択中の表示に変える
+      }
+    };
+
+    canvas.addEventListener("click", clickListener);
+
+    return () => {
+      canvas.removeEventListener("mousemove", hoverListener);
+      canvas.removeEventListener("click", clickListener);
+    };
+  }, [inputStep]);
+
   const handleDecideFoldTarget = () => {
     // ここで、moveBoardsとfixBoardsに振り分ける
-    // TODO: シーン上の板を選択して、振り分けを行う。
-    setIsMoveBoardsRight(true);
-    setMoveBoards(rightBoards);
-    setFixBoards(leftBoards);
+    if (isMoveBoardsRight) {
+      setMoveBoards(rightBoards);
+      setFixBoards(leftBoards);
+    } else {
+      setMoveBoards(leftBoards);
+      setFixBoards(rightBoards);
+    }
+
     setInputStep("fold");
   };
 
