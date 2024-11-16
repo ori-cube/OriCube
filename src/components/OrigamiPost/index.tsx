@@ -39,6 +39,9 @@ export const OrigamiPost = () => {
   const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
   const [inputStep, setInputStep] = useState<Step>("axis");
 
+  const [leftBoards, setLeftBoards] = useState<Board[]>([]);
+  const [rightBoards, setRightBoards] = useState<Board[]>([]);
+
   // シーンの初期化
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -181,8 +184,8 @@ export const OrigamiPost = () => {
       [...selectedPoints[1]],
     ];
 
-    let leftBoards: Board[] = [];
-    let rightBoards: Board[] = [];
+    let lefts: Board[] = [];
+    let rights: Board[] = [];
 
     fixBoards.forEach((board) => {
       const intersections = getAllIntersections({
@@ -197,8 +200,8 @@ export const OrigamiPost = () => {
         });
         if (!separatedBoard) return alert("Failed to separate board.");
         const { leftBoard, rightBoard } = separatedBoard;
-        leftBoards.push(leftBoard);
-        rightBoards.push(rightBoard);
+        lefts.push(leftBoard);
+        rights.push(rightBoard);
       } else {
         // 板を分割しない場合
         // 板が回転軸の左側にあるか、右側にあるかを判定
@@ -216,20 +219,14 @@ export const OrigamiPost = () => {
         const isAllRight = isLeftSide.every((b) => !b);
 
         if (isAllLeft) {
-          leftBoards.push(board);
+          lefts.push(board);
         } else if (isAllRight) {
-          rightBoards.push(board);
+          rights.push(board);
         } else {
           console.log("板が回転軸の左右にまたがっている");
         }
       }
     });
-
-    // rightBoardsのz座標にすべて+0.001する。板の重なりを避けるため
-    rightBoards = rightBoards.map((board) =>
-      board.map((point) => [point[0], point[1], point[2] + 0.001])
-    );
-
     // sceneから板、線を削除
     scene.children = scene.children.filter(
       (child) => child.type !== "Mesh" && child.type !== "LineSegments"
@@ -237,12 +234,12 @@ export const OrigamiPost = () => {
     // pointを削除する
     scene.children = scene.children.filter((child) => child.type !== "Points");
 
-    setFixBoards(leftBoards);
-    setMoveBoards(rightBoards);
     setRotateAxis(axis);
     setInputStep("target");
-    leftBoards.forEach((board) => renderBoard({ scene, board }));
-    rightBoards.forEach((board) => renderBoard({ scene, board }));
+    lefts.forEach((board) => renderBoard({ scene, board }));
+    rights.forEach((board) => renderBoard({ scene, board }));
+    setLeftBoards(lefts);
+    setRightBoards(rights);
   };
 
   const handleCancelRotateAxis = () => {
@@ -255,8 +252,18 @@ export const OrigamiPost = () => {
   };
 
   const handleDecideFoldTarget = () => {
+    // ここで、moveBoardsとfixBoardsに振り分ける
+    // TODO: シーン上の板を選択して、振り分けを行う。
+    setMoveBoards(rightBoards);
+    setFixBoards(leftBoards);
     setInputStep("fold");
   };
+
+  // rightBoardsのz座標にすべて+0.001する。板の重なりを避けるため
+  // TODO: ここは確定したステップでやること
+  // rightBoards = rightBoards.map((board) =>
+  //   board.map((point) => [point[0], point[1], point[2] + 0.001])
+  // );
 
   // 回転に応じて板を描画
   useEffect(() => {
