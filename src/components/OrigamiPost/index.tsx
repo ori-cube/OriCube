@@ -20,7 +20,6 @@ import { Procedure, Model } from "@/types/model";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
 import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
-import { rotate } from "three/webgpu";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
