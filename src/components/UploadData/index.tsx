@@ -1,29 +1,12 @@
 "use client";
-import axios from "axios";
 import { useSession } from "next-auth/react";
-import data from "@/models/1.json";
+import { insertData } from "@/utils/upload-data";
 
-export const UploadData = () => {
+export const UploadData = (blob: Blob) => {
   const { data: session } = useSession();
-  const insertData = async () => {
-    if (!session) {
-      console.log("ログインしてください");
-    } else {
-      await axios
-        .post("/api/data", {
-          mail: session.user?.email,
-          id: 0,
-          data: data,
-        })
-        .then(() => {
-          console.log("upload完了");
-        });
-    }
-  };
-
   return (
     <div>
-      <button onClick={() => insertData()}>Insert Data</button>
+      <button onClick={() => insertData(blob, session)}>Insert Data</button>
     </div>
   );
 };

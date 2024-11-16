@@ -4,6 +4,7 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,7 +91,8 @@ export async function POST(req: NextRequest) {
       引数に与えたdata(Model型)をDBに保存する
       {user mail}/{id}形式でDBに保存される
   */
-  const { mail, id, data } = await req.json();
+  const { mail, id, data, image } = await req.json();
+  const imageContent = fs.readFileSync(image.filepath);
   const s3 = new S3Client({
     region: "auto",
     endpoint: process.env.R2_ENDPOINT,
@@ -101,17 +103,27 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    const key = `origami/${mail}/${id}`;
+    const jsonKey = `origami/${mail}/${id}`;
+    const imageKey = `origami/images/${id}`;
     await s3.send(
       new PutObjectCommand({
         Bucket: "oricube",
-        Key: key,
+        Key: jsonKey,
         Body: JSON.stringify(data), // JSONを送信できる形式に変換
         ACL: "public-read",
       })
     );
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: "oricube",
+        Key: imageKey,
+        Body: imageContent,
+        ContentType: image.mimetype || "image/png",
+        ACL: "public-read",
+      })
+    );
 
-    const uploadedUrl = `${process.env.R2_ENDPOINT}/${key}`;
+    const uploadedUrl = `${process.env.R2_ENDPOINT}/${jsonKey}`;
 
     return NextResponse.json({
       message: "アップロードに成功しました。",

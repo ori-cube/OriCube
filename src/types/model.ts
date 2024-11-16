@@ -1,7 +1,7 @@
 export type Model = {
-  id: number;
+  id?: string;
   name: string;
-  imageUrl: string;
+  imageUrl?: string;
   searchKeyword?: string[];
   color: string;
   procedure: Procedure;
