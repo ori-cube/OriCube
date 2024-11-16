@@ -16,6 +16,7 @@ import { renderPoint } from "./logics/renderPoint";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
+import { Procedure } from "@/types/model";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -46,6 +47,10 @@ export const OrigamiPost = () => {
   const [foldingAngle, setFoldingAngle] = useState(180);
   const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(0);
   const [isFoldingDirectionFront, setIsFoldingDirectionFront] = useState(true);
+
+  const [procedureIndex, setProcedureIndex] = useState(1);
+  const [procedure, setProcedure] = useState<Procedure>({});
+
   // シーンの初期化
   useEffect(() => {
     if (inputStep !== "axis") return;
@@ -132,6 +137,8 @@ export const OrigamiPost = () => {
     const renderer = rendererRef.current!;
     const camera = cameraRef.current!;
     const raycaster = raycasterRef.current!;
+
+    console.log("procedure", procedure);
 
     const clickListener = (event: MouseEvent) => {
       const mouse = new THREE.Vector2();
@@ -560,6 +567,14 @@ export const OrigamiPost = () => {
     ];
     const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
 
+    // Procedureを作成する
+    const newProcedure = {
+      description: "hogehoge",
+      fixBoards: [...fixBoards, notFoldBoards],
+      moveBoards: foldBoards,
+      rotateAxis: rotateAxis,
+    };
+
     const rotatedBoards = rotateBoards({
       boards: foldBoards,
       rotateAxis,
@@ -583,6 +598,8 @@ export const OrigamiPost = () => {
     setSelectedPoints([]);
     setInputStep("axis");
     setNumberOfMoveBoards(0);
+    setProcedureIndex(procedureIndex + 1);
+    setProcedure({ ...procedure, [procedureIndex]: newProcedure });
   };
 
   return (
