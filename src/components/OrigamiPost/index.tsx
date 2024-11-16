@@ -370,7 +370,7 @@ export const OrigamiPost = () => {
     // xy平面上の板をz座標が小さい順にソート
     xyPlaneBoards = xyPlaneBoards.sort((a, b) => a[0][2] - b[0][2]);
 
-    // foldXyPlaneBoardsの、上からumber枚にz座標を+0.001する
+    // foldXyPlaneBoardsの、下からnumber枚にz座標を-0.001する
     const foldXyPlaneBoards = xyPlaneBoards
       .slice(0, number)
       .map(

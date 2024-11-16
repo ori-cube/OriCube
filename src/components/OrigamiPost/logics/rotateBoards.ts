@@ -17,7 +17,9 @@ export const rotateBoards: rotateBoards = ({
   angle,
   isFoldingDirectionFront,
 }) => {
-  // 重なっている板を回転するとき、板のz座標が一番大きい板のz座標を基準に回転する
+  // 重なっている板を回転するとき、
+  // 板のz座標がisFoldingDirectionFrontがtrueのときは一番大きい板のz座標を基準に回転する
+  // falseのときは一番小さい板のz座標を基準に回転する
   let z;
   //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
   if (Math.abs(rotateAxis[0][2] - rotateAxis[1][2]) < 0.01) {
@@ -25,12 +27,20 @@ export const rotateBoards: rotateBoards = ({
       const board = boards[i];
       const isEquallyZ = board.every((point) => point[2] === board[0][2]);
       if (isEquallyZ) {
-        if (z === undefined || board[0][2] > z) {
-          z = board[0][2];
+        if (isFoldingDirectionFront) {
+          if (z === undefined || board[0][2] > z) {
+            z = board[0][2];
+          }
+        } else {
+          if (z === undefined || board[0][2] < z) {
+            z = board[0][2];
+          }
         }
       }
     }
   }
+
+  console.log("z", z);
 
   let axis = new THREE.Vector3(...rotateAxis[0])
     .sub(new THREE.Vector3(...rotateAxis[1]))
