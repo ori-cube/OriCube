@@ -4,11 +4,16 @@ import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
 import NextAuthProvider from "./_auth";
 import { ChildrenProvider } from "./_children-provider";
+import { Zen_Maru_Gothic } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "OriCube",
   description: "Origami 3D Viewer",
 };
+const ZenMaruFont = Zen_Maru_Gothic({
+  weight: "700",
+  subsets: ["latin"],
+});
 
 export default function RootLayout({
   children,
@@ -20,7 +25,9 @@ export default function RootLayout({
       <body>
         <NextAuthProvider>
           <ChildrenProvider>
-            <Theme>{children}</Theme>
+            <Theme>
+              <div className={ZenMaruFont.className}>{children}</div>
+            </Theme>
           </ChildrenProvider>
         </NextAuthProvider>
       </body>
