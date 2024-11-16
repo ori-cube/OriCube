@@ -96,17 +96,18 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
             justify="center"
             className={style.controller_sp}
           >
-            <IconButton
+            <PlayButton
               handleClick={props.switchPlaying}
               Icon={props.isPlaying ? HiMiniPause : HiMiniPlay}
               color="#1109ad"
               disable={false}
+              isLoopStandby={props.isLoopStandby}
             />
-            <IconButton
+            <LoopButton
               handleClick={props.onLoopClick}
               Icon={HiArrowPathRoundedSquare}
-              color={props.isLoop ? "#1109ad" : "#000000"}
-              disable={false}
+              color={props.isLoop ? "#ffffff" : "#000000"}
+              active={props.isLoop}
             />
           </Flex>
           <Flex
