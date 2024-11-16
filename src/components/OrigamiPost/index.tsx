@@ -13,6 +13,9 @@ import { Point, Board } from "@/types/three";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
 import { Step } from "./FoldMethodControlPanel";
 import { renderPoint } from "./logics/renderPoint";
+import { LineGeometry } from "three/examples/jsm/Addons.js";
+import { LineMaterial } from "three/examples/jsm/Addons.js";
+import { Line2 } from "three/examples/jsm/Addons.js";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -43,6 +46,7 @@ export const OrigamiPost = () => {
   const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(0);
   // シーンの初期化
   useEffect(() => {
+    if (inputStep !== "axis") return;
     const canvas = canvasRef.current!;
     const scene = new THREE.Scene();
     let renderer = rendererRef.current;
@@ -116,7 +120,7 @@ export const OrigamiPost = () => {
     return () => {
       window.removeEventListener("resize", resizeListener);
     };
-  }, [fixBoards]);
+  }, [fixBoards, inputStep]);
 
   // pointが追加されたとき
   useEffect(() => {
@@ -232,6 +236,25 @@ export const OrigamiPost = () => {
     );
     // pointを削除する
     scene.children = scene.children.filter((child) => child.type !== "Points");
+
+    // 折り線を描画
+    const lineGeometry = new LineGeometry();
+    lineGeometry.setPositions([
+      axis[0][0],
+      axis[0][1],
+      axis[0][2],
+      axis[1][0],
+      axis[1][1],
+      axis[1][2],
+    ]);
+    const lineMaterial = new LineMaterial({
+      color: 0xff00ff,
+      linewidth: 3,
+    });
+    const lineMesh = new Line2(lineGeometry, lineMaterial);
+    lineMesh.name = "Axis";
+    console.log(lineMesh.name);
+    scene.add(lineMesh);
 
     setRotateAxis(axis);
     setInputStep("target");
@@ -361,7 +384,10 @@ export const OrigamiPost = () => {
     const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
 
     // 前の板を削除
-    scene.children = scene.children.filter((child) => child.type === "Line");
+    scene.children = scene.children.filter((child) => {
+      console.log(child.name);
+      return child.name === "Axis";
+    });
     // 板を描画
     boards.forEach((board) => {
       renderBoard({ scene, board });
