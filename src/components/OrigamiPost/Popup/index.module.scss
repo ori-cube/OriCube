@@ -1,0 +1,61 @@
+.popup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  color: #fff;
+  padding: 15px 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  min-width: 250px;
+  opacity: 0;
+  transform: translateY(100%);
+  animation: slideIn 0.5s forwards;
+  transition: opacity 0.5s, transform 0.5s;
+  z-index: 1000;
+
+  p {
+    margin: 0;
+    flex: 1;
+  }
+}
+
+.success {
+  background-color: #28a745; // 緑色
+}
+
+.error {
+  background-color: #dc3545; // 赤色
+}
+
+.info {
+  background-color: #17a2b8; // 青色
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+.closing {
+  animation: slideOut 0.5s forwards;
+}
