@@ -1,3 +1,4 @@
+"use client";
 import { HeaderPresenter } from "./presenter";
 import { Model } from "@/types/model";
 

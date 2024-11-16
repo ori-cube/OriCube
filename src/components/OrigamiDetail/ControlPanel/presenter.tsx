@@ -11,6 +11,9 @@ import {
 } from "react-icons/hi2";
 import { Pagination } from "./Pagination";
 import { IconButton } from "../../ui/IconButton";
+import { HiArrowPathRoundedSquare } from "react-icons/hi2";
+import { PlayButton } from "./PlayButton";
+import { LoopButton } from "./LoopButton";
 
 interface ControlPanelPresenterProps {
   stepNum: number;
@@ -22,6 +25,9 @@ interface ControlPanelPresenterProps {
   procedureIndex: number;
   setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
   procedureLength: number;
+  isLoop: boolean;
+  onLoopClick: () => void;
+  isLoopStandby: boolean;
 }
 
 export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
@@ -38,21 +44,13 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
           gap="4"
           className={style.controller}
         >
-          {props.isPlaying ? (
-            <IconButton
-              handleClick={props.switchPlaying}
-              Icon={HiMiniPause}
-              color="#1109ad"
-              disable={false}
-            />
-          ) : (
-            <IconButton
-              handleClick={props.switchPlaying}
-              Icon={HiMiniPlay}
-              color="#1109ad"
-              disable={false}
-            />
-          )}
+          <PlayButton
+            handleClick={props.switchPlaying}
+            Icon={props.isPlaying ? HiMiniPause : HiMiniPlay}
+            color="#1109ad"
+            disable={false}
+            isLoopStandby={props.isLoopStandby}
+          />
           <Slider
             value={[props.value]}
             onValueChange={(value) => {
@@ -63,6 +61,12 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
             min={0}
             max={props.maxArg}
             className={style.slider}
+          />
+          <LoopButton
+            handleClick={props.onLoopClick}
+            Icon={HiArrowPathRoundedSquare}
+            color={props.isLoop ? "#ffffff" : "#000000"}
+            active={props.isLoop}
           />
         </Flex>
         <Pagination
@@ -85,52 +89,57 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
           max={props.maxArg}
         />
         <div className={style.controller_container_sp}>
-          <div className={style.box}>
-            <Flex
-              align="center"
-              display="flex"
-              height="46px"
-              justify="between"
-              gap="2"
-              className={style.controller_sp}
-            >
-              <IconButton
-                handleClick={() => {
-                  if (props.procedureIndex != 1) {
-                    props.setProcedureIndex((step) => step - 1);
-                  }
-                }}
-                Icon={HiOutlineArrowLeft}
-                color="#000"
-                disable={false}
-              />
-              {props.isPlaying ? (
-                <IconButton
-                  handleClick={props.switchPlaying}
-                  Icon={HiMiniPause}
-                  color="#1109ad"
-                  disable={false}
-                />
-              ) : (
-                <IconButton
-                  handleClick={props.switchPlaying}
-                  Icon={HiMiniPlay}
-                  color="#1109ad"
-                  disable={false}
-                />
-              )}
-              <IconButton
-                handleClick={() => {
-                  if (props.procedureIndex != props.procedureLength) {
-                    props.setProcedureIndex((step) => step + 1);
-                  }
-                }}
-                Icon={HiOutlineArrowRight}
-                color="#000"
-                disable={false}
-              />
-            </Flex>
-          </div>
+          <Flex
+            align="center"
+            display="flex"
+            height="46px"
+            justify="center"
+            className={style.controller_sp}
+          >
+            <IconButton
+              handleClick={props.switchPlaying}
+              Icon={props.isPlaying ? HiMiniPause : HiMiniPlay}
+              color="#1109ad"
+              disable={false}
+            />
+            <IconButton
+              handleClick={props.onLoopClick}
+              Icon={HiArrowPathRoundedSquare}
+              color={props.isLoop ? "#1109ad" : "#000000"}
+              disable={false}
+            />
+          </Flex>
+          <Flex
+            align="center"
+            display="flex"
+            height="46px"
+            justify="center"
+            className={style.controller_sp}
+          >
+            <IconButton
+              handleClick={() => {
+                if (props.procedureIndex != 1) {
+                  props.setProcedureIndex((step) => step - 1);
+                }
+              }}
+              Icon={HiOutlineArrowLeft}
+              color="#000"
+              disable={false}
+            />
+            <div className={style.step_num_sp}>
+              {props.procedureIndex}/{props.procedureLength}
+            </div>
+            <IconButton
+              handleClick={() => {
+                if (props.procedureIndex != props.procedureLength) {
+                  props.setProcedureIndex((step) => step + 1);
+                }
+              }}
+              Icon={HiOutlineArrowRight}
+              color="#000"
+              disable={false}
+            />
+          </Flex>
         </div>
       </div>
     </>

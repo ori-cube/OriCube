@@ -5,6 +5,8 @@ import { ButtonSizeProp } from "@/types/button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useOrigamiListPage } from "@/app/_provider";
 import { Model } from "@/types/model";
+import { useEffect } from "react";
+import styles from "./index.module.scss";
 
 const ZenMaruFont = Zen_Maru_Gothic({
   weight: "500",
@@ -35,15 +37,9 @@ export const InputField: React.FC<{ origamiData: Model[] }> = ({
     setFilteredOrigamiList(newItems); // フィルタリング結果を更新
   };
 
-  const handleKeyDown = (key: string) => {
-    switch (key) {
-      case "Enter":
-        handleSearch(searchKeyword);
-        break;
-      default:
-        break;
-    }
-  };
+  useEffect(() => {
+    handleSearch(searchKeyword);
+  }, [searchKeyword]);
 
   const resetSearchKeyword = () => {
     setSearchKeyword("");
@@ -55,20 +51,23 @@ export const InputField: React.FC<{ origamiData: Model[] }> = ({
         placeholder="おりがみのなまえを入力してください 例：つる"
         value={searchKeyword}
         onChange={(e) => setSearchKeyword(e.target.value)}
-        onKeyDown={(e) => handleKeyDown(e.key)}
-        className={ZenMaruFont.className}
+        className={`${ZenMaruFont.className} ${styles.text_field}`}
       >
         <TextField.Slot>
-          <HiMagnifyingGlass height="26" width="26" />
+          <HiMagnifyingGlass size={18} />
         </TextField.Slot>
-        <TextField.Slot pr="3">
-          <IconButton
-            Icon={HiMiniXMark}
-            handleClick={() => resetSearchKeyword()}
-            disable={false}
-            size={ButtonSizeProp.medium}
-          />
-        </TextField.Slot>
+        {searchKeyword !== "" ? (
+          <TextField.Slot pr="3">
+            <IconButton
+              Icon={HiMiniXMark}
+              handleClick={() => resetSearchKeyword()}
+              disable={false}
+              size={ButtonSizeProp.medium}
+            />
+          </TextField.Slot>
+        ) : (
+          <></>
+        )}
       </TextField.Root>
     </Box>
   );

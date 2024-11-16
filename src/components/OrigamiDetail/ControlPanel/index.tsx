@@ -2,21 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { ControlPanelPresenter } from "./presenter";
+import { useOnSliderMax, pauseSlider, playSlider } from "./hooks";
 
-interface ControlPanelProps {
-  stepNum: number;
-  value: number;
+export interface ControlPanelProps {
+  stepNum: number; //一度に表示する個数
+  value: number; //プログレスバーのパーセント
   setSliderValue: React.Dispatch<React.SetStateAction<number>>;
-  maxArg: number;
-  procedureIndex: number;
+  maxArg: number; //プログレスバーの最大値
+  procedureIndex: number; //現在のステップ数
   setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
-  procedureLength: number;
+  procedureLength: number; //ステップ数の総数
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = (
   props: ControlPanelProps
 ) => {
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isLoop, setIsLoop] = useState(false);
+  const [isLoopStandby, setIsLoopStandby] = useState(false);
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout>();
   const duration = 2500; // 再生時間
 
   const sliderValueChanged = (value: number) => {
@@ -24,71 +28,49 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
   };
 
   const switchPlaying = () => {
-    if (isPlaying) {
+    if (isPlaying && !isLoopStandby) {
       setIsPlaying(false);
-    } else {
+      pauseSlider(intervalId!);
+    } else if (!isLoopStandby && !isPlaying) {
       if (props.value >= props.maxArg) {
         props.setSliderValue(0);
       }
       setIsPlaying(true);
+      const newIntervalId = playSlider(props, duration);
+      setIntervalId(newIntervalId);
+    } else if (isLoopStandby) {
+      props.setSliderValue(0);
     }
   };
 
-  // Slide barの再生・停止を制御
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    if (isPlaying) {
-      const interval = 10; // 10ミリ秒ごとに更新
-      const increment = props.maxArg / (duration / interval);
-      intervalId = setInterval(() => {
-        props.setSliderValue((prevProgress) => {
-          if (prevProgress + increment >= props.maxArg) {
-            clearInterval(intervalId);
-            setTimeout(() => {
-              setIsPlaying(false);
-            }, 100);
-            return props.maxArg;
-          }
-          return prevProgress + increment;
-        });
-      }, interval);
-    }
-    return () => clearInterval(intervalId); // クリーンアップ
-  }, [isPlaying]);
-
-  function checkIsPlay(resetSlider: NodeJS.Timeout) {
-    const timerId = setTimeout(() => {
-      clearInterval(intervalId); // setIntervalの停止
-    }, 2000);
-    // ここで定期的な処理を開始する（例えば、毎100ミリ秒で実行）
-    const intervalId = setInterval(() => {
-      setIsPlaying((isPlaying) => {
-        if (isPlaying) {
-          clearInterval(resetSlider);
-        }
-        return isPlaying;
-      });
-    }, 100);
-    void timerId;
-    void intervalId;
-  }
-
-  // ループ時に、再生ボタンを押してもバグが発生しないように、ループ開始・終了をstateに保存
-  useEffect(() => {
-    if (props.value >= props.maxArg) {
-      const resetSlider = setTimeout(() => {
-        props.setSliderValue(0);
-        setIsPlaying(true);
-      }, 2000);
-      checkIsPlay(resetSlider);
-      void resetSlider;
-    }
-  }, [props.value]);
+  useOnSliderMax(
+    props,
+    isLoop,
+    setIsPlaying,
+    intervalId!,
+    isPlaying,
+    isLoopStandby,
+    setIsLoopStandby
+  );
 
   // 折り方のindexが切り替わったときに、自動再生する
   useEffect(() => {
+    if (intervalId) {
+      pauseSlider(intervalId);
+    }
     setIsPlaying(true);
+    const newIntervalId = playSlider(props, duration);
+    setIntervalId(newIntervalId);
+    return () => {
+      pauseSlider(newIntervalId);
+    };
   }, [props.procedureIndex]);
+
+  const onLoopClick = () => {
+    setIsLoop((prevLoop) => {
+      return !prevLoop;
+    });
+  };
 
   return (
     <ControlPanelPresenter
@@ -101,6 +83,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
       procedureIndex={props.procedureIndex}
       setProcedureIndex={props.setProcedureIndex}
       procedureLength={props.procedureLength}
+      isLoop={isLoop}
+      onLoopClick={onLoopClick}
+      isLoopStandby={isLoopStandby}
     />
   );
 };

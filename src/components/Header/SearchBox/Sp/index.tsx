@@ -3,6 +3,7 @@ import { HiMagnifyingGlass, HiOutlineArrowLeft } from "react-icons/hi2";
 import { useState } from "react";
 import style from "./index.module.scss";
 import { IconButton } from "@/components/ui/IconButton";
+import { ButtonSizeProp } from "@/types/button";
 
 export const SearchBoxSp: React.FC<{ children?: React.ReactNode }> = ({
   children,
@@ -43,6 +44,7 @@ export const SearchBoxSp: React.FC<{ children?: React.ReactNode }> = ({
             Icon={HiMagnifyingGlass}
             handleClick={() => handleClick()}
             disable={false}
+            size={ButtonSizeProp.medium}
           />
         </div>
       )}

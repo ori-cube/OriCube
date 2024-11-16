@@ -4,15 +4,24 @@ import Image from "next/image";
 import style from "./presenter.module.scss";
 import { SearchBoxPresenter } from "./SearchBox";
 import { GoogleAuthButton } from "./GoogleAuth";
-import { HeaderProps } from "./index";
+import { Model } from "@/types/model";
+import MobileMenu from "./HamburgerMenu";
+import ChildrenModeButton from "./ChildButton";
 
-export const HeaderPresenter: React.FC<HeaderProps> = ({
+export type HeaderPresenterProps =
+  | { enableSearch: true; origamiData: Model[] } // enableSearch が true の場合
+  | { enableSearch: false; origamiData?: undefined }; // enableSearch が false の場合
+
+export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
   enableSearch,
   origamiData,
-}: HeaderProps) => (
+}: HeaderPresenterProps) => (
   <header className={style.header}>
     <Flex id="header-container" align="center" height="46px" justify="between">
-      <Flex id="header-logo-container" gapX="8px">
+      <div className={style.mobile_menu}>
+        <MobileMenu />
+      </div>
+      <Flex id="header-logo-container" gapX="8px" className={style.logo}>
         <Link href="/">
           <Image
             alt="ロゴ:OriCube"
@@ -22,15 +31,24 @@ export const HeaderPresenter: React.FC<HeaderProps> = ({
           />
         </Link>
       </Flex>
-      {enableSearch ? (
-        <Flex id="navigation-container" align="center">
-          <SearchBoxPresenter origamiData={origamiData} />
+
+      <Flex gapX="8px" justify="between" align="center">
+        {enableSearch ? (
+          <Flex id="navigation-container" align="center">
+            <SearchBoxPresenter origamiData={origamiData} />
+          </Flex>
+        ) : (
+          <div className={style.children_mode_button}>
+            <ChildrenModeButton />
+          </div>
+        )}
+        <Flex
+          id="navigation-container"
+          align="center"
+          className={style.google_auth_button}
+        >
+          <GoogleAuthButton />
         </Flex>
-      ) : (
-        <></>
-      )}
-      <Flex id="navigation-container" align="center">
-        <GoogleAuthButton />
       </Flex>
     </Flex>
   </header>

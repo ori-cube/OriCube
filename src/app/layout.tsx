@@ -3,6 +3,7 @@ import "@/styles/globals.scss";
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
 import NextAuthProvider from "./_auth";
+import { ChildrenProvider } from "./_children-provider";
 
 export const metadata: Metadata = {
   title: "OriCube",
@@ -18,7 +19,9 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <NextAuthProvider>
-          <Theme>{children}</Theme>
+          <ChildrenProvider>
+            <Theme>{children}</Theme>
+          </ChildrenProvider>
         </NextAuthProvider>
       </body>
     </html>
