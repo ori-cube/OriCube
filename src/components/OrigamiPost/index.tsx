@@ -57,6 +57,7 @@ export const OrigamiPost = () => {
   const [origamiName, setOrigamiName] = useState("hugahuga");
   // TODO: STEP2で色の変更が反映されない
   const [origamiColor, setOrigamiColor] = useState("#ff0000");
+  const [origamiDescription, setOrigamiDescription] = useState("");
 
   const { data: session } = useSession();
 
@@ -587,7 +588,7 @@ export const OrigamiPost = () => {
 
     // Procedureを作成する
     const newProcedure = {
-      description: "hugahuga",
+      description: origamiDescription,
       fixBoards: [...fixBoards, notFoldBoards],
       moveBoards: foldBoards,
       rotateAxis: rotateAxis,
@@ -644,9 +645,25 @@ export const OrigamiPost = () => {
     ];
     const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
 
+    // let sortedRotateAxis = rotateAxis;
+    // // rotateAxisを保存する際に、右ネジの方向になるように軸を保存する
+    // if (isMoveBoardsRight) {
+    //   if (isFoldingDirectionFront) {
+    //     // +
+    //   } else {
+    //     // -
+    //   }
+    // } else {
+    //   if (isFoldingDirectionFront) {
+    //     // -
+    //   } else {
+    //     // +
+    //   }
+    // }
+
     // Procedureを作成する
     const newProcedure = {
-      description: "hugahuga",
+      description: origamiDescription,
       fixBoards: [...fixBoards, notFoldBoards],
       moveBoards: foldBoards,
       rotateAxis: rotateAxis,
@@ -720,6 +737,8 @@ export const OrigamiPost = () => {
           currentNumber={numberOfMoveBoards}
           isFoldFrontSide={isFoldingDirectionFront}
           handleRegisterOrigami={handleRegisterOrigami}
+          origamiDescription={origamiDescription}
+          setOrigamiDescription={setOrigamiDescription}
         />
       </div>
     </>

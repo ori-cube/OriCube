@@ -23,6 +23,8 @@ type Props = {
   currentNumber: number;
   isFoldFrontSide: boolean;
   handleRegisterOrigami: () => void;
+  origamiDescription: string;
+  setOrigamiDescription: React.Dispatch<React.SetStateAction<string>>;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -40,6 +42,8 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   currentNumber,
   isFoldFrontSide,
   handleRegisterOrigami,
+  origamiDescription,
+  setOrigamiDescription,
 }) => {
   return (
     <section className={styles.container}>
@@ -64,6 +68,8 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
           currentNumber={currentNumber}
           isFoldFrontSide={isFoldFrontSide}
           handleRegisterOrigami={handleRegisterOrigami}
+          origamiDescription={origamiDescription}
+          setOrigamiDescription={setOrigamiDescription}
         />
       )}
     </section>
