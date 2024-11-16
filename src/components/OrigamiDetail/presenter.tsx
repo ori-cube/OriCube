@@ -5,7 +5,6 @@ import { OrigamiTitle } from "@/components/OrigamiDetail/OrigamiTitle";
 import { ControlPanel } from "@/components/OrigamiDetail/ControlPanel";
 import { Three } from "./Three";
 import styles from "./presenter.module.scss";
-import AddOrigamiButton from "./AddOrigamiButton";
 
 interface OrigamiDetailPresenterProps {
   sliderValue: number;
@@ -48,7 +47,6 @@ export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
           procedureLength={procedureLength}
         />
       </div>
-      <AddOrigamiButton />
     </div>
   );
 };
