@@ -18,7 +18,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = (
   props: ControlPanelProps
 ) => {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isLoop, setIsLoop] = useState(false);
+  const [isLoop, setIsLoop] = useState(true);
   const [isLoopStandby, setIsLoopStandby] = useState(false);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout>();
   const duration = 2500; // 再生時間
