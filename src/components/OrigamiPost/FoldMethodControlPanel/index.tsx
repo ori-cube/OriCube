@@ -4,33 +4,33 @@ import styles from "./index.module.scss";
 import { AxisSelectPanel } from "./AxisSelectPanel";
 import { FoldTargetSelectPanel } from "./FoldTargetSelectPanel";
 import { FoldMethodSelectPanel } from "./FoldMethodSelectPanel";
-import { useState } from "react";
+
+export type Step = "axis" | "target" | "fold";
 
 type Props = {
   handleDecideRotateAxis: () => void;
+  currentStep: Step;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
   handleDecideRotateAxis,
+  currentStep,
 }) => {
-  const [step, setStep] = useState(3);
-  const handlePrevStep = () => setStep(step - 1);
-  const handleNextStep = () => setStep(step + 1);
   return (
     <section className={styles.container}>
-      {step === 1 && (
+      {currentStep === "axis" && (
         <AxisSelectPanel handleNextStep={handleDecideRotateAxis} />
       )}
-      {step === 2 && (
+      {currentStep === "target" && (
         <FoldTargetSelectPanel
-          handlePrevStep={handlePrevStep}
-          handleNextStep={handleNextStep}
+          handlePrevStep={() => {}}
+          handleNextStep={() => {}}
         />
       )}
-      {step === 3 && (
+      {currentStep === "fold" && (
         <FoldMethodSelectPanel
-          handlePrevStep={handlePrevStep}
-          handleNextStep={handleNextStep}
+          handlePrevStep={() => {}}
+          handleNextStep={() => {}}
         />
       )}
     </section>

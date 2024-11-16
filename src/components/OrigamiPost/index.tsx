@@ -11,6 +11,7 @@ import { rotateBoards } from "./logics/rotateBoards";
 import { renderBoard } from "./logics/renderBoard";
 import { Point, Board } from "@/types/three";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
+import { Step } from "./FoldMethodControlPanel";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -35,7 +36,7 @@ export const OrigamiPost = () => {
   const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(1);
 
   const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
-  const [inputStep, setInputStep] = useState(1);
+  const [inputStep, setInputStep] = useState<Step>("axis");
 
   // シーンの初期化
   useEffect(() => {
@@ -111,10 +112,23 @@ export const OrigamiPost = () => {
 
     window.addEventListener("resize", resizeListener);
 
+    return () => {
+      window.removeEventListener("resize", resizeListener);
+    };
+  }, [fixBoards]);
+
+  // pointが追加されたとき
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    const scene = sceneRef.current!;
+    const renderer = rendererRef.current!;
+    const camera = cameraRef.current!;
+    const raycaster = raycasterRef.current!;
+
     const clickListener = (event: MouseEvent) => {
       const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / sizes.width) * 2 - 1;
-      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
       // Raycasterのセットアップ
       raycaster.setFromCamera(mouse, camera);
@@ -140,7 +154,7 @@ export const OrigamiPost = () => {
 
         // 既存のpointを削除する
         scene.children = scene.children.filter(
-          (child) => child.type === "Points"
+          (child) => child.name !== "Point"
         );
         // pointsを描画し直す
         newPoints.forEach((point) => {
@@ -152,6 +166,7 @@ export const OrigamiPost = () => {
           const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
           const pointMesh = new THREE.Mesh(geometry, material);
           pointMesh.position.set(point[0], point[1], point[2]);
+          pointMesh.name = "Point";
           scene.add(pointMesh);
         });
         setSelectedPoints(newPoints);
@@ -163,10 +178,9 @@ export const OrigamiPost = () => {
     canvas.addEventListener("click", clickListener);
 
     return () => {
-      window.removeEventListener("resize", resizeListener);
       canvas.removeEventListener("click", clickListener);
     };
-  }, [fixBoards, selectedPoints]);
+  }, [selectedPoints]);
 
   const handleDecideRotateAxis = (scene: THREE.Scene) => {
     if (selectedPoints.length < 2) return window.alert("2点を選択してください");
@@ -236,6 +250,7 @@ export const OrigamiPost = () => {
     setMoveBoards(rightBoards);
     setRotateAxis(axis);
     setSelectedPoints([]);
+    setInputStep("target");
     leftBoards.forEach((board) => renderBoard({ scene, board }));
     rightBoards.forEach((board) => renderBoard({ scene, board }));
   };
@@ -345,32 +360,12 @@ export const OrigamiPost = () => {
   return (
     <>
       <canvas ref={canvasRef} id="canvas" className={styles.model} />
-      {/* <div className={styles.rangeBar}>
-        0
-        <input
-          type="range"
-          min="0"
-          max="180"
-          step="1"
-          value={foldingAngle}
-          onChange={(e) => setFoldingAngle(Number(e.target.value))}
-        />
-        180
-      </div>
-      <button className={styles.button} onClick={handleDecideBoards}>
-        確定
-      </button>
-      <button
-        className={styles.button2}
-        onClick={handleChangeNumberOfMoveBoards}
-      >
-        {numberOfMoveBoards}
-      </button> */}
       <div className={styles.panelContainer}>
         <FoldMethodControlPanel
           handleDecideRotateAxis={() =>
             handleDecideRotateAxis(sceneRef.current!)
           }
+          currentStep={inputStep}
         />
       </div>
     </>
