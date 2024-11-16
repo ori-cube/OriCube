@@ -9,10 +9,9 @@ import Footer from "@/components/Footer";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
+const baseUrl = process.env.NEXT_PUBLIC_URL;
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const baseUrl = process.env.NEXT_PUBLIC_URL;
-  if (!baseUrl) return <div>URL is not found</div>;
   const [origamiData, setOrigamiData] = useState([] as Model[]);
   useEffect(() => {
     const getData = async () => {
@@ -27,6 +26,8 @@ export default function Home() {
     };
     getData();
   }, []);
+
+  if (!baseUrl) return <div>URL is not found</div>;
 
   return (
     <OrigamiListPageProvider origamiData={origamiData}>
