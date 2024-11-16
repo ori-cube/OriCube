@@ -9,6 +9,7 @@ type rotateBoards = (props: {
   rotateAxis: [Point, Point];
   angle: number;
   isFoldingDirectionFront: boolean;
+  isMoveBoardsRight: boolean;
 }) => Board[];
 
 export const rotateBoards: rotateBoards = ({
@@ -16,22 +17,26 @@ export const rotateBoards: rotateBoards = ({
   rotateAxis,
   angle,
   isFoldingDirectionFront,
+  isMoveBoardsRight,
 }) => {
   //  isMoveBoardsRightがtrueのとき、軸をx軸が負の方向を向くようにソート
   //  falseのとき、軸をx軸が正の方向を向くようにソート
   //  axisは[1] -> [0]の向きになる
-  const sortedRotateAxis = rotateAxis;
-  //   if (isMoveBoardsRight) {
-  //     sortedRotateAxis =
-  //       rotateAxis[0][0] < rotateAxis[1][0]
-  //         ? rotateAxis
-  //         : [rotateAxis[1], rotateAxis[0]];
-  //   } else {
-  //     sortedRotateAxis =
-  //       rotateAxis[0][0] > rotateAxis[1][0]
-  //         ? rotateAxis
-  //         : [rotateAxis[1], rotateAxis[0]];
-  //   }
+  console.log("isMoveBoardsRight", isMoveBoardsRight);
+  console.log("isFoldingDirectionFront", isFoldingDirectionFront);
+  let sortedRotateAxis = rotateAxis;
+  if (isMoveBoardsRight) {
+    sortedRotateAxis =
+      rotateAxis[0][0] < rotateAxis[1][0]
+        ? rotateAxis
+        : [rotateAxis[1], rotateAxis[0]];
+  } else {
+    sortedRotateAxis =
+      rotateAxis[0][0] > rotateAxis[1][0]
+        ? rotateAxis
+        : [rotateAxis[1], rotateAxis[0]];
+  }
+  console.log("sortedRotateAxis", sortedRotateAxis);
 
   // 重なっている板を回転するとき、
   // 板のz座標がisFoldingDirectionFrontがtrueのときは一番大きい板のz座標を基準に回転する
@@ -55,8 +60,6 @@ export const rotateBoards: rotateBoards = ({
       }
     }
   }
-
-  console.log("z", z);
 
   let axis = new THREE.Vector3(...sortedRotateAxis[0])
     .sub(new THREE.Vector3(...sortedRotateAxis[1]))
