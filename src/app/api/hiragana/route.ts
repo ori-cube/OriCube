@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
+export interface ChildrenModeRequestBody {
+  request_id?: string; // オプショナルフィールド
+  sentence: string; // 必須フィールド
+  output_type: "hiragana" | "katakana"; // 必須フィールドでリテラル型を使用
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: ChildrenModeRequestBody = await request.json();
     const { request_id, sentence, output_type } = body;
 
     // 必須パラメータのチェック
@@ -23,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // リクエストIDの生成（省略時の形式）
-    const generated_request_id =
+    const generated_request_id: string =
       request_id ||
       `labs.goo.ne.jp\t${new Date().toISOString()}\t${Math.floor(
         Math.random() * 100000
@@ -47,11 +53,8 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(response.data, { status: 200 });
-  } catch (error: any) {
-    console.error(
-      "API呼び出しエラー:",
-      error.response ? error.response.data : error.message
-    );
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "API呼び出し中にエラーが発生しました。" },
       { status: 500 }
