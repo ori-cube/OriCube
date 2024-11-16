@@ -55,7 +55,8 @@ export const OrigamiPost = () => {
   const [procedure, setProcedure] = useState<Procedure>({});
 
   const [origamiName, setOrigamiName] = useState("hugahuga");
-  const [origamiColor, setOrigamiColor] = useState("#FFD700");
+  // TODO: STEP2で色の変更が反映されない
+  const [origamiColor, setOrigamiColor] = useState("#ff0000");
 
   const { data: session } = useSession();
 
@@ -112,7 +113,9 @@ export const OrigamiPost = () => {
     };
 
     selectedPoints.forEach((point) => renderPoint({ scene, point }));
-    fixBoards.forEach((board) => renderBoard({ scene, board }));
+    fixBoards.forEach((board) =>
+      renderBoard({ scene, board, color: origamiColor })
+    );
 
     if (!raycaster) {
       raycaster = new THREE.Raycaster();
@@ -135,7 +138,7 @@ export const OrigamiPost = () => {
     return () => {
       window.removeEventListener("resize", resizeListener);
     };
-  }, [fixBoards, inputStep]);
+  }, [fixBoards, inputStep, origamiColor]);
 
   // pointが追加されたとき
   useEffect(() => {
@@ -275,8 +278,12 @@ export const OrigamiPost = () => {
 
     setRotateAxis(axis);
     setInputStep("target");
-    lefts.forEach((board) => renderBoard({ scene, board }));
-    rights.forEach((board) => renderBoard({ scene, board }));
+    lefts.forEach((board) =>
+      renderBoard({ scene, board, color: origamiColor })
+    );
+    rights.forEach((board) =>
+      renderBoard({ scene, board, color: origamiColor })
+    );
     setLeftBoards(lefts);
     setRightBoards(rights);
   };
@@ -319,7 +326,7 @@ export const OrigamiPost = () => {
           scene.children.forEach((child) => {
             if (child.type === "Mesh" && child !== firstIntersect) {
               if (child.material.side === THREE.FrontSide) {
-                child.material.color.set("red");
+                child.material.color.set(origamiColor);
               } else {
                 child.material.color.set("#DFDFDF");
               }
@@ -329,7 +336,7 @@ export const OrigamiPost = () => {
           scene.children.forEach((child) => {
             if (child.type === "Mesh") {
               if (child.material.side === THREE.FrontSide) {
-                child.material.color.set("red");
+                child.material.color.set(origamiColor);
               } else {
                 child.material.color.set("#DFDFDF");
               }
@@ -539,9 +546,16 @@ export const OrigamiPost = () => {
     });
     // 板を描画
     boards.forEach((board) => {
-      renderBoard({ scene, board });
+      renderBoard({ scene, board, color: origamiColor });
     });
-  }, [foldingAngle, fixBoards, moveBoards, rotateAxis, numberOfMoveBoards]);
+  }, [
+    foldingAngle,
+    fixBoards,
+    moveBoards,
+    rotateAxis,
+    numberOfMoveBoards,
+    origamiColor,
+  ]);
 
   const handleDecideFoldMethod = () => {
     // moveBoardsを回転した後の板を、fixBoardsに追加する
@@ -669,11 +683,24 @@ export const OrigamiPost = () => {
     setInputStep("axis");
   };
 
+  const handleOrigamiNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOrigamiName(e.target.value);
+  };
+
+  const handleOrigamiColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOrigamiColor(e.target.value);
+  };
+
   return (
     <>
       <canvas ref={canvasRef} id="canvas" className={styles.model} />
       <div className={styles.namePanelContainer}>
-        <NameAndColorControlPanel />
+        <NameAndColorControlPanel
+          name={origamiName}
+          handleNameChange={handleOrigamiNameChange}
+          color={origamiColor}
+          handleColorChange={handleOrigamiColorChange}
+        />
       </div>
       <div className={styles.panelContainer}>
         <FoldMethodControlPanel

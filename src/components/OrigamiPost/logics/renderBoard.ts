@@ -1,9 +1,13 @@
 import * as THREE from "three";
 import { Board } from "@/types/three";
 
-type RenderBoard = (props: { scene: THREE.Scene; board: Board }) => void;
+type RenderBoard = (props: {
+  scene: THREE.Scene;
+  board: Board;
+  color: string;
+}) => void;
 
-export const renderBoard: RenderBoard = ({ scene, board }) => {
+export const renderBoard: RenderBoard = ({ scene, board, color }) => {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
     "position",
@@ -19,7 +23,7 @@ export const renderBoard: RenderBoard = ({ scene, board }) => {
   }
 
   const frontMaterial = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("red"),
+    color: new THREE.Color(color),
     side: THREE.FrontSide,
     transparent: true,
   });
