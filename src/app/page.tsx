@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { OrigamiListPageProvider } from "./_provider";
 import axios from "axios";
 import { Model } from "@/types/model";
+import AddOrigamiButton from "@/components/ui/AddOrigamiButton";
 
 export default async function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_URL;
@@ -17,6 +18,7 @@ export default async function Home() {
         <main className={styles.main}>
           <OrigamiList />
         </main>
+        <AddOrigamiButton />
       </OrigamiListPageProvider>
     );
   } catch (error) {
