@@ -20,6 +20,7 @@ import { Procedure, Model } from "@/types/model";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
 import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
+import { rotate } from "three/webgpu";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -641,6 +642,39 @@ export const OrigamiPost = () => {
           ? rotateAxis
           : [rotateAxis[1], rotateAxis[0]];
     }
+
+    let z = 0;
+    //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
+    if (Math.abs(sortedRotateAxis[0][2] - sortedRotateAxis[1][2]) < 0.01) {
+      for (let i = 0; i < foldBoards.length; i++) {
+        const board = foldBoards[i];
+        const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+        if (isEquallyZ) {
+          if (isFoldingDirectionFront) {
+            if (z === undefined || board[0][2] > z) {
+              z = board[0][2];
+            }
+          } else {
+            if (z === undefined || board[0][2] < z) {
+              z = board[0][2];
+            }
+          }
+        }
+      }
+    }
+
+    // sortedRotateAxisのz座標にzを加える
+    sortedRotateAxis = sortedRotateAxis.map((point) => {
+      return [point[0], point[1], point[2] + z];
+    }) as [Point, Point];
+
+    console.log("sortedRotateAxis");
+
+    // isFoldingDirectionFrontがfalseなら、sortedRotateAxisの順序を逆にする
+    if (isFoldingDirectionFront === false) {
+      sortedRotateAxis = [sortedRotateAxis[1], sortedRotateAxis[0]];
+    }
+
     // Procedureを作成する
     const newProcedure = {
       description: origamiDescription,
@@ -714,6 +748,38 @@ export const OrigamiPost = () => {
         rotateAxis[0][0] > rotateAxis[1][0]
           ? rotateAxis
           : [rotateAxis[1], rotateAxis[0]];
+    }
+
+    console.log("foldBoards", foldBoards);
+
+    let z = 0;
+    //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
+    if (Math.abs(sortedRotateAxis[0][2] - sortedRotateAxis[1][2]) < 0.01) {
+      for (let i = 0; i < foldBoards.length; i++) {
+        const board = foldBoards[i];
+        const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+        if (isEquallyZ) {
+          if (isFoldingDirectionFront) {
+            if (z === undefined || board[0][2] > z) {
+              z = board[0][2];
+            }
+          } else {
+            if (z === undefined || board[0][2] < z) {
+              z = board[0][2];
+            }
+          }
+        }
+      }
+    }
+
+    // sortedRotateAxisのz座標にzを加える
+    sortedRotateAxis = sortedRotateAxis.map((point) => {
+      return [point[0], point[1], point[2] + z];
+    }) as [Point, Point];
+
+    // isFoldingDirectionFrontがfalseなら、sortedRotateAxisの順序を逆にする
+    if (isFoldingDirectionFront === false) {
+      sortedRotateAxis = [sortedRotateAxis[1], sortedRotateAxis[0]];
     }
 
     // Procedureを作成する
