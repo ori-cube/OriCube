@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useState, useContext } from "react";
+import { createContext, useState, useContext, useEffect } from "react";
 import { Model } from "@/types/model";
 
 type OrigamiListPageProps = {
@@ -23,14 +23,17 @@ export const OrigamiListPageProvider: React.FC<{
   children: React.ReactNode;
   origamiData: Model[];
 }) => {
-  const origamiList = origamiData.map((item) => {
-    const { ...rest } = item;
-    return rest;
-  });
-
-  const [filteredOrigamiList, setFilteredOrigamiList] =
-    useState<Model[]>(origamiList);
+  const [filteredOrigamiList, setFilteredOrigamiList] = useState<Model[]>(
+    [] as Model[]
+  );
   const [searchKeyword, setSearchKeyword] = useState("");
+  useEffect(() => {
+    const origamiList = origamiData.map((item) => {
+      const { ...rest } = item;
+      return rest;
+    });
+    setFilteredOrigamiList(origamiList);
+  }, [origamiData]);
 
   return (
     <OrigamiListPageContext.Provider
