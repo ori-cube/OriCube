@@ -46,10 +46,12 @@ export async function GET(req: NextRequest) {
       if (response.Contents && response.Contents.length > 0) {
         await Promise.all(
           response.Contents?.map(async (item) => {
-            const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
-            const jsonFetchData = await fetch(jsonUrl);
-            const jsonData = await jsonFetchData.json();
-            jsonList.push(jsonData);
+            if (!(item.Key?.split("/")[1] === "images")) {
+              const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
+              const jsonFetchData = await fetch(jsonUrl);
+              const jsonData = await jsonFetchData.json();
+              jsonList.push(jsonData);
+            }
           })
         );
       }
@@ -90,7 +92,6 @@ export async function POST(req: NextRequest) {
       引数に与えたdata(Model型)をDBに保存する
       {user mail}/{id}形式でDBに保存される
   */
-  const { mail, id, data } = await req.json();
   const s3 = new S3Client({
     region: "auto",
     endpoint: process.env.R2_ENDPOINT,
@@ -99,19 +100,37 @@ export async function POST(req: NextRequest) {
       secretAccessKey: process.env.R2_SECRET_KEY!,
     },
   });
+  const formData = await req.formData();
 
+  // フィールドの取得
+  const mail = formData.get("mail") as string | null;
+  const id = formData.get("id") as string | null;
+  const data = formData.get("data") as string | null;
+  const image = formData.get("image") as File;
+  const arrayBuffer = await image.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
   try {
-    const key = `origami/${mail}/${id}`;
+    const jsonKey = `origami/${mail}/${id}`;
+    const imageKey = `origami/images/${id}.png`;
     await s3.send(
       new PutObjectCommand({
         Bucket: "oricube",
-        Key: key,
-        Body: JSON.stringify(data), // JSONを送信できる形式に変換
+        Key: jsonKey,
+        Body: data!, // JSONを送信できる形式に変換
+        ACL: "public-read",
+      })
+    );
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: "oricube",
+        Key: imageKey,
+        Body: buffer,
+        ContentType: "image/png",
         ACL: "public-read",
       })
     );
 
-    const uploadedUrl = `${process.env.R2_ENDPOINT}/${key}`;
+    const uploadedUrl = `${process.env.R2_ENDPOINT}/${jsonKey}`;
 
     return NextResponse.json({
       message: "アップロードに成功しました。",
