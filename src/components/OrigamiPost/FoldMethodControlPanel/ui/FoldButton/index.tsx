@@ -6,6 +6,7 @@ type Props = {
   currentStep: number;
   totalSteps: number;
   isFrontSide: boolean;
+  isFoldFrontSide: boolean;
 };
 
 export const FoldButton: React.FC<Props> = ({
@@ -13,10 +14,11 @@ export const FoldButton: React.FC<Props> = ({
   currentStep,
   totalSteps,
   isFrontSide,
+  isFoldFrontSide,
 }) => {
   return (
     <button
-      className={`${styles.button} ${totalSteps > 0 && styles.active}`}
+      className={`${styles.button} ${currentStep > 0 && styles.active}`}
       onClick={handleClick}
     >
       {isFrontSide ? (
@@ -34,14 +36,16 @@ export const FoldButton: React.FC<Props> = ({
           奥に折る
         </>
       )}
-      <div className={styles.steps}>
-        {Array.from({ length: totalSteps }).map((_, index) => (
-          <div
-            key={index}
-            className={index < currentStep ? styles.active : styles.step}
-          />
-        ))}
-      </div>
+      {totalSteps <= 1 || currentStep === 0 ? null : (
+        <div className={styles.steps}>
+          {Array.from({ length: totalSteps }).map((_, index) => (
+            <div
+              key={index}
+              className={index < currentStep ? styles.active : styles.step}
+            />
+          ))}
+        </div>
+      )}
     </button>
   );
 };

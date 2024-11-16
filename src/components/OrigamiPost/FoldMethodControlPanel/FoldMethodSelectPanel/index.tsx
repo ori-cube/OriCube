@@ -12,6 +12,9 @@ type Props = {
   foldAngle: number;
   setFoldAngle: React.Dispatch<React.SetStateAction<number>>;
   handleNextStep: () => void;
+  totalNumber: number;
+  currentNumber: number;
+  isFoldFrontSide: boolean;
 };
 
 export const FoldMethodSelectPanel: React.FC<Props> = ({
@@ -21,6 +24,9 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
   handleFoldBackSide,
   foldAngle,
   setFoldAngle,
+  totalNumber,
+  currentNumber,
+  isFoldFrontSide,
 }) => {
   return (
     <div className={styles.container}>
@@ -28,15 +34,17 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
       <div className={styles.foldButtons}>
         <FoldButton
           handleClick={handleFoldFrontSide}
-          currentStep={0}
-          totalSteps={0}
+          currentStep={isFoldFrontSide ? currentNumber : 0}
+          totalSteps={totalNumber}
           isFrontSide={true}
+          isFoldFrontSide={isFoldFrontSide}
         />
         <FoldButton
           handleClick={handleFoldBackSide}
-          currentStep={1}
-          totalSteps={3}
+          currentStep={isFoldFrontSide ? 0 : currentNumber}
+          totalSteps={totalNumber}
           isFrontSide={false}
+          isFoldFrontSide={isFoldFrontSide}
         />
       </div>
       <section className={styles.h3Section}>

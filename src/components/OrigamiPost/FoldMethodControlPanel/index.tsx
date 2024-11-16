@@ -18,6 +18,9 @@ type Props = {
   setFoldAngle: React.Dispatch<React.SetStateAction<number>>;
   handleDecideFoldMethod: () => void;
   currentStep: Step;
+  totalNumber: number;
+  currentNumber: number;
+  isFoldFrontSide: boolean;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -30,6 +33,9 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   setFoldAngle,
   handleDecideFoldMethod,
   currentStep,
+  totalNumber,
+  currentNumber,
+  isFoldFrontSide,
 }) => {
   return (
     <section className={styles.container}>
@@ -50,6 +56,9 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
           foldAngle={foldAngle}
           setFoldAngle={setFoldAngle}
           handleNextStep={handleDecideFoldMethod}
+          totalNumber={totalNumber}
+          currentNumber={currentNumber}
+          isFoldFrontSide={isFoldFrontSide}
         />
       )}
     </section>
