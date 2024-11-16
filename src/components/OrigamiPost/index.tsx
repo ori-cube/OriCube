@@ -323,27 +323,28 @@ export const OrigamiPost = () => {
       if (intersects.length > 0) {
         const firstIntersect = intersects[0].object;
         if (firstIntersect.type === "Mesh") {
-          firstIntersect.material.color.set(0x000000);
-          scene.children.forEach((child) => {
-            if (child.type === "Mesh" && child !== firstIntersect) {
-              if (child.material.side === THREE.FrontSide) {
-                child.material.color.set(origamiColor);
-              } else {
-                child.material.color.set("#DFDFDF");
-              }
-            }
+          const mesh = firstIntersect as THREE.Mesh;
+          const edges = Array.from(mesh.geometry.attributes.position.array);
+          const firstVertex = edges.slice(0, 3);
+          edges.push(...firstVertex);
+          const lineGeometry = new LineGeometry();
+          lineGeometry.setPositions(edges);
+          const lineMaterial = new LineMaterial({
+            color: 0x009dff,
+            linewidth: 3,
           });
+          const line = new Line2(lineGeometry, lineMaterial);
+          line.name = "Border";
+          scene.add(line);
         } else {
-          scene.children.forEach((child) => {
-            if (child.type === "Mesh") {
-              if (child.material.side === THREE.FrontSide) {
-                child.material.color.set(origamiColor);
-              } else {
-                child.material.color.set("#DFDFDF");
-              }
-            }
-          });
+          scene.children = scene.children.filter(
+            (child) => child.name !== "Border"
+          );
         }
+      } else {
+        scene.children = scene.children.filter(
+          (child) => child.name !== "Border"
+        );
       }
     };
 
@@ -370,7 +371,42 @@ export const OrigamiPost = () => {
 
         setIsMoveBoardsRight(!isTargetLeft);
 
-        // TODO：板を選択中の表示に変える
+        scene.children = scene.children.filter(
+          (child) => child.name !== "SelectedBorder"
+        );
+
+        if (isTargetLeft) {
+          // leftBoardsのそれぞれの板にBoarderを描画
+          leftBoards.forEach((board) => {
+            const edges = Array.from(board.flat());
+            const firstVertex = edges.slice(0, 3);
+            edges.push(...firstVertex);
+            const lineGeometry = new LineGeometry();
+            lineGeometry.setPositions(edges);
+            const lineMaterial = new LineMaterial({
+              color: 0x4400ff,
+              linewidth: 3,
+            });
+            const line = new Line2(lineGeometry, lineMaterial);
+            line.name = "SelectedBorder";
+            scene.add(line);
+          });
+        } else {
+          rightBoards.forEach((board) => {
+            const edges = Array.from(board.flat());
+            const firstVertex = edges.slice(0, 3);
+            edges.push(...firstVertex);
+            const lineGeometry = new LineGeometry();
+            lineGeometry.setPositions(edges);
+            const lineMaterial = new LineMaterial({
+              color: 0x4400ff,
+              linewidth: 3,
+            });
+            const line = new Line2(lineGeometry, lineMaterial);
+            line.name = "SelectedBorder";
+            scene.add(line);
+          });
+        }
       }
     };
 
