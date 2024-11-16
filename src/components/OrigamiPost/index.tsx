@@ -12,6 +12,7 @@ import { renderBoard } from "./logics/renderBoard";
 import { Point, Board } from "@/types/three";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
 import { Step } from "./FoldMethodControlPanel";
+import { renderPoint } from "./logics/renderPoint";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -89,6 +90,7 @@ export const OrigamiPost = () => {
       requestAnimationFrame(render);
     };
 
+    selectedPoints.forEach((point) => renderPoint({ scene, point }));
     fixBoards.forEach((board) => renderBoard({ scene, board }));
 
     if (!raycaster) {
@@ -108,10 +110,6 @@ export const OrigamiPost = () => {
     };
 
     window.addEventListener("resize", resizeListener);
-
-    console.log("init");
-    console.log(fixBoards);
-    console.log(moveBoards);
 
     return () => {
       window.removeEventListener("resize", resizeListener);
@@ -160,16 +158,7 @@ export const OrigamiPost = () => {
         );
         // pointsを描画し直す
         newPoints.forEach((point) => {
-          const geometry = new THREE.SphereGeometry(1, 32, 32).scale(
-            0.7,
-            0.7,
-            0.7
-          );
-          const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-          const pointMesh = new THREE.Mesh(geometry, material);
-          pointMesh.position.set(point[0], point[1], point[2]);
-          pointMesh.name = "Point";
-          scene.add(pointMesh);
+          renderPoint({ scene, point });
         });
         setSelectedPoints(newPoints);
 
