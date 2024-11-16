@@ -17,6 +17,10 @@
   align-items: center;
   justify-content: center;
   flex: none;
+
+  &:hover {
+    background-color: $hover-color;
+  }
 }
 
 .circle {
