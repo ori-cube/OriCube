@@ -62,7 +62,7 @@ export default function MobileMenu() {
             {status === "authenticated" ? (
               <li className={styles.menu_item}>
                 <Link
-                  href="/add"
+                  href="/post"
                   className={styles.menu_link}
                   onClick={toggleMenu}
                 >
