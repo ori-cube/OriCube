@@ -3,49 +3,60 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
-  align-items: start;
-  width: 100%;
+  justify-content: space-between;
+  height: 100%;
+  align-items: center;
 
-  .title {
-    font-size: 1.5rem;
-    font-weight: bold;
-  }
-
-  .foldButtons {
-    width: 100%;
-    display: flex;
-    gap: 1rem;
-  }
-
-  .h3Section {
-    width: 100%;
+  .wrapper {
     display: flex;
     flex-direction: column;
+    gap: 2.5rem;
     align-items: start;
-    gap: 1rem;
+    width: 100%;
 
-    .h3 {
-      font-size: 1.25rem;
+    .title {
+      font-size: 1.5rem;
       font-weight: bold;
     }
-  }
 
-  .sliderWrapper {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
+    .foldButtons {
+      width: 100%;
+      display: flex;
+      gap: 1rem;
+    }
 
-  .textArea {
-    width: 100%;
-  }
+    .h3Section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: start;
+      gap: 1rem;
 
-  .stepButtons {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
+      .h3 {
+        font-size: 1.25rem;
+        font-weight: bold;
+      }
+    }
+
+    .sliderWrapper {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .textArea {
+      width: 100%;
+    }
+
+    .stepButtons {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+  }
+  .registerButton {
+    width: fit-content;
   }
 }
