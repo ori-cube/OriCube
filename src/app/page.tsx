@@ -1,30 +1,52 @@
+"use client";
 import styles from "./page.module.scss";
 import { OrigamiList } from "@/components/OrigamiList";
 import { Header } from "@/components/Header";
 import { OrigamiListPageProvider } from "./_provider";
-import axios from "axios";
 import { Model } from "@/types/model";
 import AddOrigamiButton from "@/components/ui/AddOrigamiButton";
 import Footer from "@/components/Footer";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
-export default async function Home() {
-  const baseUrl = process.env.NEXT_PUBLIC_URL;
+const baseUrl = process.env.NEXT_PUBLIC_URL;
+export default function Home() {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [origamiData, setOrigamiData] = useState([] as Model[]);
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const response = await axios.get<Model[]>(`${baseUrl}/api/data`);
+        setOrigamiData(response.data);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    getData();
+  }, []);
+
   if (!baseUrl) return <div>URL is not found</div>;
-  try {
-    const response = await axios.get(`${baseUrl}/api/data`);
-    const origamiData: Model[] = response.data;
-    return (
-      <OrigamiListPageProvider origamiData={origamiData}>
-        <Header enableSearch={true} origamiData={origamiData} />
-        <main className={styles.main}>
-          <OrigamiList />
-        </main>
-        <AddOrigamiButton />
-        <Footer />
-      </OrigamiListPageProvider>
-    );
-  } catch (error) {
-    console.log(error);
-    return <div>Error is occur</div>;
-  }
+
+  return (
+    <OrigamiListPageProvider origamiData={origamiData}>
+      <Header enableSearch={true} origamiData={origamiData} />
+      {isLoading ? (
+        <div className={styles.loadingContainer}>
+          <div className={styles.loader}></div>
+          <p>Loading...</p>
+        </div>
+      ) : (
+        <>
+          <main className={styles.main}>
+            <OrigamiList />
+          </main>
+          <AddOrigamiButton />
+        </>
+      )}
+
+      <Footer />
+    </OrigamiListPageProvider>
+  );
 }
