@@ -1,28 +1,10 @@
 @use "@/styles/variables" as *;
 
-.rangeBar {
+.namePanelContainer {
   position: fixed;
-  bottom: 10vh;
-  right: 10vh;
-  z-index: 1000;
-  width: 200px;
-}
-
-.button {
-  position: fixed;
-  bottom: 5vh;
-  right: 10vh;
-  background-color: aqua;
-  z-index: 1000;
-}
-
-.button2 {
-  position: fixed;
-  bottom: 5vh;
-  right: 20vh;
-  background-color: aqua;
-  z-index: 1000;
-  width: 40px;
+  top: 6rem;
+  left: 1rem;
+  z-index: 100;
 }
 
 .panelContainer {

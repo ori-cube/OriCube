@@ -19,6 +19,7 @@ import { Line2 } from "three/examples/jsm/Addons.js";
 import { Procedure, Model } from "@/types/model";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
+import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -662,9 +663,18 @@ export const OrigamiPost = () => {
     });
   };
 
+  const handleCancelFoldTarget = () => {
+    setMoveBoards([]);
+    setFixBoards([initialBoard]);
+    setInputStep("axis");
+  };
+
   return (
     <>
       <canvas ref={canvasRef} id="canvas" className={styles.model} />
+      <div className={styles.namePanelContainer}>
+        <NameAndColorControlPanel />
+      </div>
       <div className={styles.panelContainer}>
         <FoldMethodControlPanel
           handleDecideRotateAxis={() =>
@@ -672,6 +682,7 @@ export const OrigamiPost = () => {
           }
           handleCancelRotateAxis={handleCancelRotateAxis}
           handleDecideFoldTarget={handleDecideFoldTarget}
+          handleCancelFoldTarget={handleCancelFoldTarget}
           handleFoldFrontSide={handleFoldFrontSide}
           handleFoldBackSide={handleFoldBackSide}
           foldAngle={foldingAngle}
