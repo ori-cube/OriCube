@@ -6,6 +6,7 @@ import { SearchBoxPresenter } from "./SearchBox";
 import { GoogleAuthButton } from "./GoogleAuth";
 import { Model } from "@/types/model";
 import MobileMenu from "./HamburgerMenu";
+import ChildrenModeButton from "./ChildButton";
 
 export type HeaderPresenterProps =
   | { enableSearch: true; origamiData: Model[] } // enableSearch が true の場合
@@ -44,6 +45,7 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
           align="center"
           className={style.google_auth_button}
         >
+          <ChildrenModeButton />
           <GoogleAuthButton />
         </Flex>
       </Flex>

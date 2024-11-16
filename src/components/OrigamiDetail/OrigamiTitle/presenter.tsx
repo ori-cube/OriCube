@@ -26,7 +26,7 @@ export const OrigamiTitlePresenter: React.FC<OrigamiTitlePresenterProps> = (
     } else {
       setDescription(props.description);
     }
-  }, [props.description]);
+  }, [props.description, isChildren]);
 
   return (
     <div className={`${style.origami_title} ${ZenMaruFont.className}`}>
