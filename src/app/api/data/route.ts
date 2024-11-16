@@ -4,7 +4,6 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
-import { streamToBuffer } from "@/utils/stream-to-buffer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -108,7 +107,8 @@ export async function POST(req: NextRequest) {
   const id = formData.get("id") as string | null;
   const data = formData.get("data") as string | null;
   const image = formData.get("image") as File;
-  const buffer = await streamToBuffer(image.stream());
+  const arrayBuffer = await image.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
   try {
     const jsonKey = `origami/${mail}/${id}`;
     const imageKey = `origami/images/${id}.png`;
