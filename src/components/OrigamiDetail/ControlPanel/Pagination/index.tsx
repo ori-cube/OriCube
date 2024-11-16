@@ -51,7 +51,7 @@ export const Pagination = ({
     );
   };
   const PaginationDots = () => {
-    return <HiDotsHorizontal size={16} className={style.icon} />;
+    return <HiDotsHorizontal size={8} className={style.icon} />;
   };
   const PaginationNum = (i: number) => {
     return (
@@ -65,6 +65,15 @@ export const Pagination = ({
       </button>
     );
   };
+
+  const PaginationDots_2 = () => {
+    return <HiDotsHorizontal size={8} className={style.icon_2} />;
+  };
+
+  const PaginationDots_3 = () => {
+    return <HiDotsHorizontal size={8} className={style.icon_3} />;
+  };
+
   const numList = [];
   if (count <= limit) {
     for (let i = 1; i <= count; i++) {
@@ -76,6 +85,20 @@ export const Pagination = ({
     numList.push(3);
     numList.push("...");
     numList.push(count);
+  } else if (currentPage == 3) {
+    numList.push(1);
+    numList.push(2);
+    numList.push(3);
+    numList.push(4);
+    numList.push("..");
+    numList.push(count);
+  } else if (currentPage == count - 2) {
+    numList.push(1);
+    numList.push("..");
+    numList.push(count - 3);
+    numList.push(count - 2);
+    numList.push(count - 1);
+    numList.push(count);
   } else if (currentPage == count - 1 || currentPage == count) {
     numList.push(1);
     numList.push("...");
@@ -83,11 +106,13 @@ export const Pagination = ({
     numList.push(count - 1);
     numList.push(count);
   } else {
-    numList.push("...");
+    numList.push(1);
+    numList.push(".");
     numList.push(currentPage - 1);
     numList.push(currentPage);
     numList.push(currentPage + 1);
-    numList.push("...");
+    numList.push(".");
+    numList.push(count);
   }
   return (
     <div className={style.pagination}>
@@ -95,8 +120,12 @@ export const Pagination = ({
       {numList.map((i, index) => {
         if (typeof i === "number") {
           return <div key={index}>{PaginationNum(i)}</div>;
-        } else {
+        } else if (i === ".") {
           return <div key={index}>{PaginationDots()}</div>;
+        } else if (i === "..") {
+          return <div key={index}>{PaginationDots_2()}</div>;
+        } else if (i === "...") {
+          return <div key={index}>{PaginationDots_3()}</div>;
         }
       })}
       {PaginationNext()}

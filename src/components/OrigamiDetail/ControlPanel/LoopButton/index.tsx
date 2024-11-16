@@ -1,29 +1,26 @@
 import React from "react";
 import { IconType } from "react-icons";
 import styles from "./index.module.scss";
-import { ButtonSizeProp } from "@/types/button";
 
 interface Props {
   handleClick: () => void;
   Icon: IconType;
   color?: string;
-  size?: ButtonSizeProp;
-  disable: boolean;
+  active: boolean;
 }
 
-export const IconButton: React.FC<Props> = ({
+export const LoopButton: React.FC<Props> = ({
   handleClick,
   color = "#000",
   Icon,
-  disable = false,
+  active,
 }) => {
   return (
     <button
       onClick={handleClick}
-      className={disable ? `${styles.button_disable}` : `${styles.button}`}
-      disabled={disable}
+      className={active ? `${styles.button_active}` : `${styles.button}`}
     >
-      <Icon size={28} color={disable ? "#aaa" : color} />
+      <Icon size={28} color={color} />
     </button>
   );
 };

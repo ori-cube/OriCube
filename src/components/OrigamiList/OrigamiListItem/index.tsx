@@ -23,7 +23,7 @@ export const OrigamiListItem: React.FC<OrigamiListItemProps> = ({
   return (
     <Link href={{ pathname: `/${id}` }} className={styles.listItem}>
       <Image
-        src={imageUrl}
+        src={imageUrl ? imageUrl : ""}
         alt={`サムネイル: ${name}の折り紙画像`}
         width={500}
         height={400}
