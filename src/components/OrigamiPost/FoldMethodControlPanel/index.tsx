@@ -21,6 +21,7 @@ type Props = {
   totalNumber: number;
   currentNumber: number;
   isFoldFrontSide: boolean;
+  handleRegisterOrigami: () => void;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -36,6 +37,7 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   totalNumber,
   currentNumber,
   isFoldFrontSide,
+  handleRegisterOrigami,
 }) => {
   return (
     <section className={styles.container}>
@@ -59,6 +61,7 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
           totalNumber={totalNumber}
           currentNumber={currentNumber}
           isFoldFrontSide={isFoldFrontSide}
+          handleRegisterOrigami={handleRegisterOrigami}
         />
       )}
     </section>

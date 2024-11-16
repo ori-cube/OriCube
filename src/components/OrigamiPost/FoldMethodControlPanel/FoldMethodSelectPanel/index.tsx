@@ -15,6 +15,7 @@ type Props = {
   totalNumber: number;
   currentNumber: number;
   isFoldFrontSide: boolean;
+  handleRegisterOrigami: () => void;
 };
 
 export const FoldMethodSelectPanel: React.FC<Props> = ({
@@ -27,6 +28,7 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
   totalNumber,
   currentNumber,
   isFoldFrontSide,
+  handleRegisterOrigami,
 }) => {
   return (
     <div className={styles.container}>
@@ -73,6 +75,7 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
         <PrevStepButton handlePrevStep={handlePrevStep} />
         <NextStepButton handleNextStep={handleNextStep} />
       </div>
+      <button onClick={handleRegisterOrigami}>折り紙を登録</button>
     </div>
   );
 };

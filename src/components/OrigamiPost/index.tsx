@@ -16,7 +16,9 @@ import { renderPoint } from "./logics/renderPoint";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
-import { Procedure } from "@/types/model";
+import { Procedure, Model } from "@/types/model";
+import { insertData } from "@/utils/upload-data";
+import { useSession } from "next-auth/react";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -50,6 +52,11 @@ export const OrigamiPost = () => {
 
   const [procedureIndex, setProcedureIndex] = useState(1);
   const [procedure, setProcedure] = useState<Procedure>({});
+
+  const [origamiName, setOrigamiName] = useState("hugahuga");
+  const [origamiColor, setOrigamiColor] = useState("#FFD700");
+
+  const { data: session } = useSession();
 
   // シーンの初期化
   useEffect(() => {
@@ -569,7 +576,7 @@ export const OrigamiPost = () => {
 
     // Procedureを作成する
     const newProcedure = {
-      description: "hogehoge",
+      description: "hugahuga",
       fixBoards: [...fixBoards, notFoldBoards],
       moveBoards: foldBoards,
       rotateAxis: rotateAxis,
@@ -602,6 +609,63 @@ export const OrigamiPost = () => {
     setProcedure({ ...procedure, [procedureIndex]: newProcedure });
   };
 
+  const handleRegisterOrigami = () => {
+    // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
+    // それ以外の板は無条件で折る
+    let xyPlaneBoards: Board[] = [];
+    const notXyPlaneBoards: Board[] = [];
+    for (let i = 0; i < moveBoards.length; i++) {
+      const board = moveBoards[i];
+      const isEquallyZ = board.every((point) => point[2] === board[0][2]);
+      if (isEquallyZ) {
+        xyPlaneBoards.push(board);
+      } else {
+        notXyPlaneBoards.push(board);
+      }
+    }
+
+    // xy平面上の板をz座標が大きい順にソート
+    xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
+
+    const foldBoards = [
+      ...xyPlaneBoards.slice(0, numberOfMoveBoards),
+      ...notXyPlaneBoards,
+    ];
+    const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
+
+    // Procedureを作成する
+    const newProcedure = {
+      description: "hugahuga",
+      fixBoards: [...fixBoards, notFoldBoards],
+      moveBoards: foldBoards,
+      rotateAxis: rotateAxis,
+    };
+
+    const procedures = { ...procedure, [procedureIndex]: newProcedure };
+
+    const model: Model = {
+      name: origamiName,
+      color: origamiColor,
+      procedure: procedures,
+    };
+
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    const renderer = rendererRef.current;
+    if (!scene || !camera || !renderer) {
+      console.error("Failed to register origami.");
+      return;
+    }
+
+    renderer.render(scene, camera);
+
+    renderer.domElement.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], "model.png", { type: "image/png" });
+      insertData(file, session, model);
+    });
+  };
+
   return (
     <>
       <canvas ref={canvasRef} id="canvas" className={styles.model} />
@@ -621,6 +685,7 @@ export const OrigamiPost = () => {
           totalNumber={maxNumberOfMoveBoards}
           currentNumber={numberOfMoveBoards}
           isFoldFrontSide={isFoldingDirectionFront}
+          handleRegisterOrigami={handleRegisterOrigami}
         />
       </div>
     </>
