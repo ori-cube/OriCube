@@ -61,13 +61,12 @@ export const OrigamiPost = () => {
 
   const { data: session } = useSession();
 
-  const sizes = {
-    width: window.innerWidth - 320,
-    height: window.innerHeight,
-  };
-
   // シーンの初期化
   useEffect(() => {
+    const sizes = {
+      width: window.innerWidth - 320,
+      height: window.innerHeight,
+    };
     if (inputStep !== "axis") return;
     const canvas = canvasRef.current!;
     const scene = new THREE.Scene();
@@ -143,6 +142,10 @@ export const OrigamiPost = () => {
 
   // pointが追加されたとき
   useEffect(() => {
+    const sizes = {
+      width: window.innerWidth - 320,
+      height: window.innerHeight,
+    };
     if (inputStep !== "axis") return;
     const canvas = canvasRef.current!;
     const scene = sceneRef.current!;
@@ -201,15 +204,16 @@ export const OrigamiPost = () => {
   }, [selectedPoints, inputStep]);
 
   const handleDecideRotateAxis = (scene: THREE.Scene) => {
-    if (selectedPoints.length < 2) return window.alert("2点を選択してください");
+    if (selectedPoints.length < 2)
+      return console.error("点が2つ選択されていません");
 
     const axis: [Point, Point] = [
       [...selectedPoints[0]],
       [...selectedPoints[1]],
     ];
 
-    let lefts: Board[] = [];
-    let rights: Board[] = [];
+    const lefts: Board[] = [];
+    const rights: Board[] = [];
 
     fixBoards.forEach((board) => {
       const intersections = getAllIntersections({
@@ -300,6 +304,10 @@ export const OrigamiPost = () => {
 
   // 板を折る対象を決定する関数
   useEffect(() => {
+    const sizes = {
+      width: window.innerWidth - 320,
+      height: window.innerHeight,
+    };
     if (inputStep !== "target") return;
     if (rotateAxis.length === 0) return;
     const canvas = canvasRef.current;
@@ -440,7 +448,7 @@ export const OrigamiPost = () => {
   // 手前に折るか、奥に折るかを決める関数
   // 手前に折る場合、moveBoardsのz座標に+0.001し、奥に折る場合はz座標に-0.001する
   // また、1回押すごとにnumberOfMoveBoardsに1を足す
-  let tmpBoards = isMoveBoardsRight ? rightBoards : leftBoards;
+  const tmpBoards = isMoveBoardsRight ? rightBoards : leftBoards;
   const maxNumberOfMoveBoards = tmpBoards.filter((board) =>
     board.every((point) => point[2] === board[0][2])
   ).length;

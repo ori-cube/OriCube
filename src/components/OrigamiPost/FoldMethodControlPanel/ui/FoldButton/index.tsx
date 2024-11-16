@@ -6,7 +6,6 @@ type Props = {
   currentStep: number;
   totalSteps: number;
   isFrontSide: boolean;
-  isFoldFrontSide: boolean;
 };
 
 export const FoldButton: React.FC<Props> = ({
@@ -14,7 +13,6 @@ export const FoldButton: React.FC<Props> = ({
   currentStep,
   totalSteps,
   isFrontSide,
-  isFoldFrontSide,
 }) => {
   return (
     <button

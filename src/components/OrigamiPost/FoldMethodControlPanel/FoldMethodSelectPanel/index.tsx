@@ -44,14 +44,12 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
             currentStep={isFoldFrontSide ? currentNumber : 0}
             totalSteps={totalNumber}
             isFrontSide={true}
-            isFoldFrontSide={isFoldFrontSide}
           />
           <FoldButton
             handleClick={handleFoldBackSide}
             currentStep={isFoldFrontSide ? 0 : currentNumber}
             totalSteps={totalNumber}
             isFrontSide={false}
-            isFoldFrontSide={isFoldFrontSide}
           />
         </div>
         <section className={styles.h3Section}>
