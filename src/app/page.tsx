@@ -10,21 +10,17 @@ import Footer from "@/components/Footer";
 export default async function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_URL;
   if (!baseUrl) return <div>URL is not found</div>;
-  try {
-    const response = await axios.get(`${baseUrl}/api/data`);
-    const origamiData: Model[] = response.data;
-    return (
-      <OrigamiListPageProvider origamiData={origamiData}>
-        <Header enableSearch={true} origamiData={origamiData} />
-        <main className={styles.main}>
-          <OrigamiList />
-        </main>
-        <AddOrigamiButton />
-        <Footer />
-      </OrigamiListPageProvider>
-    );
-  } catch (error) {
-    console.log(error);
-    return <div>Error is occur</div>;
-  }
+
+  const response = await axios.get(`${baseUrl}/api/data`);
+  const origamiData: Model[] = response.data;
+  return (
+    <OrigamiListPageProvider origamiData={origamiData}>
+      <Header enableSearch={true} origamiData={origamiData} />
+      <main className={styles.main}>
+        <OrigamiList />
+      </main>
+      <AddOrigamiButton />
+      <Footer />
+    </OrigamiListPageProvider>
+  );
 }
