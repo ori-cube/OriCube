@@ -16,5 +16,7 @@ export function SetHiragana(
       console.log(err);
     }
   };
-  getHiraganaData();
+  if (sentence != "") {
+    getHiraganaData();
+  }
 }

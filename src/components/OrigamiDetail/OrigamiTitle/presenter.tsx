@@ -22,7 +22,9 @@ export const OrigamiTitlePresenter: React.FC<OrigamiTitlePresenterProps> = (
   const [description, setDescription] = useState("");
   useEffect(() => {
     if (isChildren) {
-      SetHiragana(props.description, setDescription);
+      if (props.description != "") {
+        SetHiragana(props.description, setDescription);
+      }
     } else {
       setDescription(props.description);
     }
