@@ -7,7 +7,7 @@ import { Model } from "@/types/model";
 
 export default async function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_URL;
-  return <div>URL is not found</div>;
+  if (!baseUrl) return <div>URL is not found</div>;
   try {
     const response = await axios.get(`${baseUrl}/api/data`);
     const origamiData: Model[] = response.data;
