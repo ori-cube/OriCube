@@ -425,6 +425,7 @@ export const OrigamiPost = () => {
       boards: foldBoards,
       rotateAxis,
       angle: foldingAngle,
+      isFoldingDirectionFront: isFoldingDirectionFront,
     });
     const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
 
@@ -471,6 +472,7 @@ export const OrigamiPost = () => {
       boards: foldBoards,
       rotateAxis,
       angle: foldingAngle,
+      isFoldingDirectionFront: isFoldingDirectionFront,
     });
     const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
 

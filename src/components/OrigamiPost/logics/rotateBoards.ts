@@ -8,9 +8,15 @@ type rotateBoards = (props: {
   boards: Board[];
   rotateAxis: [Point, Point];
   angle: number;
+  isFoldingDirectionFront: boolean;
 }) => Board[];
 
-export const rotateBoards: rotateBoards = ({ boards, rotateAxis, angle }) => {
+export const rotateBoards: rotateBoards = ({
+  boards,
+  rotateAxis,
+  angle,
+  isFoldingDirectionFront,
+}) => {
   // 重なっている板を回転するとき、板のz座標が一番大きい板のz座標を基準に回転する
   let z;
   //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
@@ -38,7 +44,9 @@ export const rotateBoards: rotateBoards = ({ boards, rotateAxis, angle }) => {
     subNode = new THREE.Vector3(rotateAxis[0][0], rotateAxis[0][1], z);
   }
 
-  const theta = THREE.MathUtils.degToRad(angle);
+  const theta = THREE.MathUtils.degToRad(
+    isFoldingDirectionFront ? angle : -angle
+  );
 
   const newBoards = [];
   for (let i = 0; i < boards.length; i++) {
