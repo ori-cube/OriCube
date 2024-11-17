@@ -145,7 +145,7 @@ export const OrigamiPost = () => {
     return () => {
       window.removeEventListener("resize", resizeListener);
     };
-  }, [fixBoards, inputStep, origamiColor]);
+  }, [fixBoards, inputStep, origamiColor, popup]);
 
   // pointが追加されたとき
   useEffect(() => {
@@ -206,7 +206,7 @@ export const OrigamiPost = () => {
     return () => {
       canvas.removeEventListener("click", clickListener);
     };
-  }, [selectedPoints, inputStep]);
+  }, [selectedPoints, inputStep, popup]);
 
   const handleDecideRotateAxis = (scene: THREE.Scene) => {
     if (selectedPoints.length < 2)
@@ -220,7 +220,8 @@ export const OrigamiPost = () => {
     const lefts: Board[] = [];
     const rights: Board[] = [];
 
-    fixBoards.forEach((board) => {
+    for (let i = 0; i < fixBoards.length; i++) {
+      const board = fixBoards[i];
       const intersections = getAllIntersections({
         board,
         rotateAxis: axis,
@@ -256,10 +257,13 @@ export const OrigamiPost = () => {
         } else if (isAllRight) {
           rights.push(board);
         } else {
-          console.log("板が回転軸の左右にまたがっている");
+          return setPopup({
+            message: "板が回転軸の左右にまたがっているため、分割できません。",
+            type: "error",
+          });
         }
       }
-    });
+    }
     // sceneから板、線を削除
     scene.children = scene.children.filter(
       (child) => child.type !== "Mesh" && child.type !== "LineSegments"
@@ -715,6 +719,7 @@ export const OrigamiPost = () => {
     setNumberOfMoveBoards(0);
     setProcedureIndex(procedureIndex + 1);
     setProcedure({ ...procedure, [procedureIndex]: newProcedure });
+    setOrigamiDescription("");
   };
 
   const handleRegisterOrigami = () => {
