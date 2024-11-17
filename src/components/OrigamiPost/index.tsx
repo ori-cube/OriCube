@@ -719,6 +719,7 @@ export const OrigamiPost = () => {
     setNumberOfMoveBoards(0);
     setProcedureIndex(procedureIndex + 1);
     setProcedure({ ...procedure, [procedureIndex]: newProcedure });
+    setOrigamiDescription("");
   };
 
   const handleRegisterOrigami = () => {
