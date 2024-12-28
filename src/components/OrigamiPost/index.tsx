@@ -22,6 +22,7 @@ import { useSession } from "next-auth/react";
 import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
 import { redirect } from "next/navigation";
 import Popup from "./Popup";
+import { useInitScene } from "./hooks/useInitScene";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -69,83 +70,17 @@ export const OrigamiPost = () => {
   const { data: session } = useSession();
 
   // シーンの初期化
-  useEffect(() => {
-    const sizes = {
-      width: window.innerWidth - 320,
-      height: window.innerHeight,
-    };
-    if (inputStep !== "axis") return;
-    const canvas = canvasRef.current!;
-    const scene = new THREE.Scene();
-    let renderer = rendererRef.current;
-    let camera = cameraRef.current;
-    let controls = controlsRef.current;
-    let raycaster = raycasterRef.current;
-
-    sceneRef.current = scene;
-
-    if (!renderer) {
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias: true,
-        alpha: true,
-      });
-      renderer.setSize(sizes.width, sizes.height);
-      renderer.setPixelRatio(window.devicePixelRatio);
-      rendererRef.current = renderer;
-    }
-
-    if (!camera) {
-      camera = new THREE.PerspectiveCamera(
-        40,
-        sizes.width / sizes.height,
-        10,
-        1000
-      );
-      camera.position.set(0, 0, 120);
-      camera.lookAt(new THREE.Vector3(0, 0, 0)); // モデルの中心を見るようにカメラの向きを設定
-      scene.add(camera);
-      cameraRef.current = camera;
-    }
-
-    if (!controls) {
-      controls = new OrbitControls(camera, renderer.domElement);
-      controlsRef.current = controls;
-    }
-
-    const render = () => {
-      controls.update();
-      renderer.render(scene, camera);
-      requestAnimationFrame(render);
-    };
-
-    selectedPoints.forEach((point) => renderPoint({ scene, point }));
-    fixBoards.forEach((board) =>
-      renderBoard({ scene, board, color: origamiColor })
-    );
-
-    if (!raycaster) {
-      raycaster = new THREE.Raycaster();
-      raycasterRef.current = raycaster;
-    }
-
-    render();
-
-    const resizeListener = () => {
-      sizes.width = window.innerWidth - 320;
-      sizes.height = window.innerHeight;
-      camera.aspect = sizes.width / sizes.height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(sizes.width, sizes.height);
-      renderer.setPixelRatio(window.devicePixelRatio);
-    };
-
-    window.addEventListener("resize", resizeListener);
-
-    return () => {
-      window.removeEventListener("resize", resizeListener);
-    };
-  }, [fixBoards, inputStep, origamiColor, popup]);
+  useInitScene({
+    canvasRef,
+    sceneRef,
+    cameraRef,
+    rendererRef,
+    controlsRef,
+    raycasterRef,
+    fixBoards,
+    inputStep,
+    origamiColor,
+  });
 
   // pointが追加されたとき
   useEffect(() => {
