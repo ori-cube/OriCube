@@ -12,7 +12,6 @@ import { renderBoard } from "./logics/renderBoard";
 import { Point, Board } from "@/types/three";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
 import { Step } from "./FoldMethodControlPanel";
-import { renderPoint } from "./logics/renderPoint";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
@@ -23,6 +22,7 @@ import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
 import { redirect } from "next/navigation";
 import Popup from "./Popup";
 import { useInitScene } from "./hooks/useInitScene";
+import { useSelectPoints } from "./hooks/useSelectPoints";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -43,7 +43,6 @@ export const OrigamiPost = () => {
   const [moveBoards, setMoveBoards] = useState<Board[]>([]);
   const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
 
-  const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
   const [inputStep, setInputStep] = useState<Step>("axis");
 
   const [isMoveBoardsRight, setIsMoveBoardsRight] = useState(true);
@@ -82,66 +81,14 @@ export const OrigamiPost = () => {
     origamiColor,
   });
 
-  // pointが追加されたとき
-  useEffect(() => {
-    const sizes = {
-      width: window.innerWidth - 320,
-      height: window.innerHeight,
-    };
-    if (inputStep !== "axis") return;
-    const canvas = canvasRef.current!;
-    const scene = sceneRef.current!;
-    const renderer = rendererRef.current!;
-    const camera = cameraRef.current!;
-    const raycaster = raycasterRef.current!;
-
-    const clickListener = (event: MouseEvent) => {
-      const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / sizes.width) * 2 - 1;
-      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
-
-      // Raycasterのセットアップ
-      raycaster.setFromCamera(mouse, camera);
-
-      // エッジに対してRaycasterを適用して交差を調べる
-      const edges = scene.children.filter(
-        (child) => child.type === "LineSegments"
-      );
-      const intersects = raycaster.intersectObjects(edges, true);
-
-      if (intersects.length > 0) {
-        const point = intersects[0].point; // 最初の交差点の座標を取得
-
-        // 現在記録している点の数が2個未満の場合は、新しい点を追加, 2個以上の場合は最初の点を消して、新しい点を追加
-        let newPoints = [...selectedPoints];
-
-        if (selectedPoints.length < 2) {
-          newPoints.push([point.x, point.y, point.z]);
-        } else {
-          newPoints = newPoints.slice(1);
-          newPoints.push([point.x, point.y, point.z]);
-        }
-
-        // 既存のpointを削除する
-        scene.children = scene.children.filter(
-          (child) => child.name !== "Point"
-        );
-        // pointsを描画し直す
-        newPoints.forEach((point) => {
-          renderPoint({ scene, point });
-        });
-        setSelectedPoints(newPoints);
-
-        renderer.render(scene, camera);
-      }
-    };
-
-    canvas.addEventListener("click", clickListener);
-
-    return () => {
-      canvas.removeEventListener("click", clickListener);
-    };
-  }, [selectedPoints, inputStep, popup]);
+  const { selectedPoints } = useSelectPoints({
+    canvasRef,
+    sceneRef,
+    cameraRef,
+    rendererRef,
+    raycasterRef,
+    inputStep,
+  });
 
   const handleDecideRotateAxis = (scene: THREE.Scene) => {
     if (selectedPoints.length < 2)
