@@ -4,15 +4,11 @@ import React, { useEffect, useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { isOnLeftSide } from "./logics/isOnLeftSide";
 import { rotateBoards } from "./logics/rotateBoards";
 import { renderBoard } from "./logics/renderBoard";
 import { Point, Board } from "@/types/three";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
 import { Step } from "./FoldMethodControlPanel";
-import { LineGeometry } from "three/examples/jsm/Addons.js";
-import { LineMaterial } from "three/examples/jsm/Addons.js";
-import { Line2 } from "three/examples/jsm/Addons.js";
 import { Procedure, Model } from "@/types/model";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
@@ -22,6 +18,7 @@ import Popup from "./Popup";
 import { useInitScene } from "./hooks/useInitScene";
 import { useSelectPoints } from "./hooks/useSelectPoints";
 import { useDecideRotateAxis } from "./hooks/useDecideRotateAxis";
+import { useDecideTargetBoard } from "./hooks/useDecideTargetBoard";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -41,8 +38,6 @@ export const OrigamiPost = () => {
   const [inputStep, setInputStep] = useState<Step>("axis");
   const [fixBoards, setFixBoards] = useState<Board[]>([initialBoard]);
   const [moveBoards, setMoveBoards] = useState<Board[]>([]);
-
-  const [isMoveBoardsRight, setIsMoveBoardsRight] = useState(true);
 
   const [foldingAngle, setFoldingAngle] = useState(180);
   const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(0);
@@ -101,140 +96,17 @@ export const OrigamiPost = () => {
   });
 
   // 板を折る対象を決定する関数
-  useEffect(() => {
-    const sizes = {
-      width: window.innerWidth - 320,
-      height: window.innerHeight,
-    };
-    if (inputStep !== "target") return;
-    if (rotateAxis.length === 0) return;
-    const canvas = canvasRef.current;
-    const scene = sceneRef.current;
-    const camera = cameraRef.current;
-
-    // Raycasterのセットアップ
-    raycasterRef.current = new THREE.Raycaster();
-    const raycaster = raycasterRef.current;
-
-    if (!canvas || !scene || !camera) return;
-
-    const hoverListener = (event: MouseEvent) => {
-      const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / sizes.width) * 2 - 1;
-      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(scene.children, true);
-      if (intersects.length > 0) {
-        const firstIntersect = intersects[0].object;
-        if (firstIntersect.type === "Mesh") {
-          const mesh = firstIntersect as THREE.Mesh;
-          const edges = Array.from(mesh.geometry.attributes.position.array);
-          const firstVertex = edges.slice(0, 3);
-          edges.push(...firstVertex);
-          const lineGeometry = new LineGeometry();
-          lineGeometry.setPositions(edges);
-          const lineMaterial = new LineMaterial({
-            color: 0x009dff,
-            linewidth: 3,
-          });
-          const line = new Line2(lineGeometry, lineMaterial);
-          line.name = "Border";
-          scene.add(line);
-        } else {
-          scene.children = scene.children.filter(
-            (child) => child.name !== "Border"
-          );
-        }
-      } else {
-        scene.children = scene.children.filter(
-          (child) => child.name !== "Border"
-        );
-      }
-    };
-
-    canvas.addEventListener("mousemove", hoverListener);
-
-    const clickListener = (event: MouseEvent) => {
-      // クリックしたオブジェクトを取得
-      // そいつが軸の右か左かを判定 isOnLeftSideを使う
-      // isMoveBoardsRightを変更する
-      const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / sizes.width) * 2 - 1;
-      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(scene.children, true);
-      if (intersects.length > 0) {
-        const point = intersects[0].point;
-
-        const isTargetLeft = isOnLeftSide({
-          point: [point.x, point.y, point.z],
-          axis1: rotateAxis[0],
-          axis2: rotateAxis[1],
-        });
-
-        setIsMoveBoardsRight(!isTargetLeft);
-
-        scene.children = scene.children.filter(
-          (child) => child.name !== "SelectedBorder"
-        );
-
-        if (isTargetLeft) {
-          // leftBoardsのそれぞれの板にBoarderを描画
-          leftBoards.forEach((board) => {
-            const edges = Array.from(board.flat());
-            const firstVertex = edges.slice(0, 3);
-            edges.push(...firstVertex);
-            const lineGeometry = new LineGeometry();
-            lineGeometry.setPositions(edges);
-            const lineMaterial = new LineMaterial({
-              color: 0x4400ff,
-              linewidth: 3,
-            });
-            const line = new Line2(lineGeometry, lineMaterial);
-            line.name = "SelectedBorder";
-            scene.add(line);
-          });
-        } else {
-          rightBoards.forEach((board) => {
-            const edges = Array.from(board.flat());
-            const firstVertex = edges.slice(0, 3);
-            edges.push(...firstVertex);
-            const lineGeometry = new LineGeometry();
-            lineGeometry.setPositions(edges);
-            const lineMaterial = new LineMaterial({
-              color: 0x4400ff,
-              linewidth: 3,
-            });
-            const line = new Line2(lineGeometry, lineMaterial);
-            line.name = "SelectedBorder";
-            scene.add(line);
-          });
-        }
-      }
-    };
-
-    canvas.addEventListener("click", clickListener);
-
-    return () => {
-      canvas.removeEventListener("mousemove", hoverListener);
-      canvas.removeEventListener("click", clickListener);
-    };
-  }, [inputStep]);
-
-  const handleDecideFoldTarget = () => {
-    // ここで、moveBoardsとfixBoardsに振り分ける
-    if (isMoveBoardsRight) {
-      setMoveBoards(rightBoards);
-      setFixBoards(leftBoards);
-    } else {
-      setMoveBoards(leftBoards);
-      setFixBoards(rightBoards);
-    }
-
-    setInputStep("fold");
-  };
+  const { handleDecideFoldTarget, isMoveBoardsRight } = useDecideTargetBoard({
+    setInputStep,
+    inputStep,
+    rotateAxis,
+    leftBoards,
+    rightBoards,
+    canvasRef,
+    sceneRef,
+    cameraRef,
+    raycasterRef,
+  });
 
   // rightBoardsのz座標にすべて+0.001する。板の重なりを避けるため
   // TODO: ここは確定したステップでやること
