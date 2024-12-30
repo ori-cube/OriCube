@@ -4,8 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { separateBoard } from "./logics/separateBoard";
-import { getAllIntersections } from "./logics/getAllIntersections";
 import { isOnLeftSide } from "./logics/isOnLeftSide";
 import { rotateBoards } from "./logics/rotateBoards";
 import { renderBoard } from "./logics/renderBoard";
@@ -23,6 +21,7 @@ import { redirect } from "next/navigation";
 import Popup from "./Popup";
 import { useInitScene } from "./hooks/useInitScene";
 import { useSelectPoints } from "./hooks/useSelectPoints";
+import { useDecideRotateAxis } from "./hooks/useDecideRotateAxis";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -39,15 +38,11 @@ export const OrigamiPost = () => {
   const controlsRef = useRef<OrbitControls | null>(null);
   const raycasterRef = useRef<THREE.Raycaster | null>(null);
 
+  const [inputStep, setInputStep] = useState<Step>("axis");
   const [fixBoards, setFixBoards] = useState<Board[]>([initialBoard]);
   const [moveBoards, setMoveBoards] = useState<Board[]>([]);
-  const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
-
-  const [inputStep, setInputStep] = useState<Step>("axis");
 
   const [isMoveBoardsRight, setIsMoveBoardsRight] = useState(true);
-  const [leftBoards, setLeftBoards] = useState<Board[]>([]);
-  const [rightBoards, setRightBoards] = useState<Board[]>([]);
 
   const [foldingAngle, setFoldingAngle] = useState(180);
   const [numberOfMoveBoards, setNumberOfMoveBoards] = useState(0);
@@ -81,6 +76,7 @@ export const OrigamiPost = () => {
     origamiColor,
   });
 
+  // 折り線の点の選択
   const { selectedPoints } = useSelectPoints({
     canvasRef,
     sceneRef,
@@ -90,109 +86,19 @@ export const OrigamiPost = () => {
     inputStep,
   });
 
-  const handleDecideRotateAxis = (scene: THREE.Scene) => {
-    if (selectedPoints.length < 2)
-      return console.error("点が2つ選択されていません");
-
-    const axis: [Point, Point] = [
-      [...selectedPoints[0]],
-      [...selectedPoints[1]],
-    ];
-
-    const lefts: Board[] = [];
-    const rights: Board[] = [];
-
-    for (let i = 0; i < fixBoards.length; i++) {
-      const board = fixBoards[i];
-      const intersections = getAllIntersections({
-        board,
-        rotateAxis: axis,
-      });
-      if (intersections.length === 2) {
-        // 板を分割する場合
-        const separatedBoard = separateBoard({
-          board,
-          rotateAxis: axis,
-        });
-        if (!separatedBoard) return alert("Failed to separate board.");
-        const { leftBoard, rightBoard } = separatedBoard;
-        lefts.push(leftBoard);
-        rights.push(rightBoard);
-      } else {
-        // 板を分割しない場合
-        // 板が回転軸の左側にあるか、右側にあるかを判定
-        // TODO: 一部分だけ回転軸の左右にある場合はエラーになる。
-
-        const isLeftSide = board.map((point) =>
-          isOnLeftSide({
-            point,
-            axis1: axis[0],
-            axis2: axis[1],
-          })
-        );
-
-        const isAllLeft = isLeftSide.every((b) => b);
-        const isAllRight = isLeftSide.every((b) => !b);
-
-        if (isAllLeft) {
-          lefts.push(board);
-        } else if (isAllRight) {
-          rights.push(board);
-        } else {
-          return setPopup({
-            message: "板が回転軸の左右にまたがっているため、分割できません。",
-            type: "error",
-          });
-        }
-      }
-    }
-    // sceneから板、線を削除
-    scene.children = scene.children.filter(
-      (child) => child.type !== "Mesh" && child.type !== "LineSegments"
-    );
-    // pointを削除する
-    scene.children = scene.children.filter((child) => child.type !== "Points");
-
-    // 折り線を描画
-    const lineGeometry = new LineGeometry();
-    lineGeometry.setPositions([
-      axis[0][0],
-      axis[0][1],
-      axis[0][2],
-      axis[1][0],
-      axis[1][1],
-      axis[1][2],
-    ]);
-    const lineMaterial = new LineMaterial({
-      color: 0xff00ff,
-      linewidth: 3,
-    });
-    const lineMesh = new Line2(lineGeometry, lineMaterial);
-    lineMesh.name = "Axis";
-    scene.add(lineMesh);
-
-    setRotateAxis(axis);
-    setInputStep("target");
-    lefts.forEach((board) =>
-      renderBoard({ scene, board, color: origamiColor })
-    );
-    rights.forEach((board) =>
-      renderBoard({ scene, board, color: origamiColor })
-    );
-
-    console.log("lefts", lefts);
-    console.log("rights", rights);
-    setLeftBoards(lefts);
-    setRightBoards(rights);
-  };
-
-  const handleCancelRotateAxis = () => {
-    setRotateAxis([]);
-    // TODO: 状態を保持しておいて、一個前の状態に戻すようにする
-    setFixBoards([initialBoard]);
-    setMoveBoards([]);
-    setInputStep("axis");
-  };
+  // 回転軸を決定
+  const {
+    handleDecideRotateAxis,
+    handleCancelRotateAxis,
+    leftBoards,
+    rightBoards,
+    rotateAxis,
+  } = useDecideRotateAxis({
+    selectedPoints,
+    fixBoards,
+    setInputStep,
+    origamiColor,
+  });
 
   // 板を折る対象を決定する関数
   useEffect(() => {
@@ -594,9 +500,9 @@ export const OrigamiPost = () => {
 
     setFixBoards(roundedBoards);
     setMoveBoards([]);
-    setRotateAxis([]);
+    // setRotateAxis([]);
     setFoldingAngle(180);
-    setSelectedPoints([]);
+    // setSelectedPoints([]);
     setInputStep("axis");
     setNumberOfMoveBoards(0);
     setProcedureIndex(procedureIndex + 1);
