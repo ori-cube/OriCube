@@ -4,14 +4,11 @@ import React, { useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { Point, Board } from "@/types/three";
+import { Board } from "@/types/three";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
 import { Step } from "./FoldMethodControlPanel";
-import { Procedure, Model } from "@/types/model";
-import { insertData } from "@/utils/upload-data";
-import { useSession } from "next-auth/react";
+import { Procedure } from "@/types/model";
 import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
-import { redirect } from "next/navigation";
 import Popup from "./Popup";
 import { useInitScene } from "./hooks/useInitScene";
 import { useSelectPoints } from "./hooks/useSelectPoints";
@@ -20,6 +17,7 @@ import { useDecideTargetBoard } from "./hooks/useDecideTargetBoard";
 import { useSelectSideAndNumberOfBoards } from "./hooks/useSelectSideAndNumberOfBoards";
 import { useRotateBoards } from "./hooks/useRotateBoards";
 import { useDecideFoldMethod } from "./hooks/useDecideFoldMethod";
+import { useRegisterOrigami } from "./hooks/useRegisterOrigami";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -55,8 +53,6 @@ export const OrigamiPost = () => {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
-
-  const { data: session } = useSession();
 
   // シーンの初期化
   useInitScene({
@@ -154,115 +150,22 @@ export const OrigamiPost = () => {
     setMoveBoards,
   });
 
-  const handleRegisterOrigami = () => {
-    // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
-    // それ以外の板は無条件で折る
-    let xyPlaneBoards: Board[] = [];
-    const notXyPlaneBoards: Board[] = [];
-    for (let i = 0; i < moveBoards.length; i++) {
-      const board = moveBoards[i];
-      const isEquallyZ = board.every((point) => point[2] === board[0][2]);
-      if (isEquallyZ) {
-        xyPlaneBoards.push(board);
-      } else {
-        notXyPlaneBoards.push(board);
-      }
-    }
-
-    // xy平面上の板をz座標が大きい順にソート
-    xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
-
-    const foldBoards = [
-      ...xyPlaneBoards.slice(0, numberOfMoveBoards),
-      ...notXyPlaneBoards,
-    ];
-    const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
-
-    if (rotateAxis.length === 0) return;
-    // rotateAxisをソート
-    let sortedRotateAxis = rotateAxis;
-    if (isMoveBoardsRight) {
-      sortedRotateAxis =
-        rotateAxis[0][0] < rotateAxis[1][0]
-          ? rotateAxis
-          : [rotateAxis[1], rotateAxis[0]];
-    } else {
-      sortedRotateAxis =
-        rotateAxis[0][0] > rotateAxis[1][0]
-          ? rotateAxis
-          : [rotateAxis[1], rotateAxis[0]];
-    }
-
-    console.log("foldBoards", foldBoards);
-
-    let z = 0;
-    //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
-    if (Math.abs(sortedRotateAxis[0][2] - sortedRotateAxis[1][2]) < 0.01) {
-      for (let i = 0; i < foldBoards.length; i++) {
-        const board = foldBoards[i];
-        const isEquallyZ = board.every((point) => point[2] === board[0][2]);
-        if (isEquallyZ) {
-          if (isFoldingDirectionFront) {
-            if (z === undefined || board[0][2] > z) {
-              z = board[0][2];
-            }
-          } else {
-            if (z === undefined || board[0][2] < z) {
-              z = board[0][2];
-            }
-          }
-        }
-      }
-    }
-
-    // sortedRotateAxisのz座標にzを加える
-    sortedRotateAxis = sortedRotateAxis.map((point) => {
-      return [point[0], point[1], point[2] + z];
-    }) as [Point, Point];
-
-    // isFoldingDirectionFrontがfalseなら、sortedRotateAxisの順序を逆にする
-    if (isFoldingDirectionFront === false) {
-      sortedRotateAxis = [sortedRotateAxis[1], sortedRotateAxis[0]];
-    }
-
-    // Procedureを作成する
-    const newProcedure = {
-      description: origamiDescription,
-      fixBoards: [...fixBoards, notFoldBoards],
-      moveBoards: foldBoards,
-      rotateAxis: sortedRotateAxis,
-    };
-
-    const procedures = { ...procedure, [procedureIndex]: newProcedure };
-
-    const model: Model = {
-      name: origamiName,
-      color: origamiColor,
-      procedure: procedures,
-    };
-
-    const scene = sceneRef.current;
-    const camera = cameraRef.current;
-    const renderer = rendererRef.current;
-    if (!scene || !camera || !renderer) {
-      console.error("Failed to register origami.");
-      return;
-    }
-
-    renderer.render(scene, camera);
-
-    renderer.domElement.toBlob((blob) => {
-      if (!blob) return;
-      const file = new File([blob], "model.png", { type: "image/png" });
-      setPopup({ message: "データ送信中です", type: "info" });
-      insertData(file, session, model).then(() => {
-        setPopup({ message: "データの挿入に成功しました！", type: "success" });
-        setTimeout(() => {
-          redirect("/");
-        }, 1500);
-      });
-    });
-  };
+  const { handleRegisterOrigami } = useRegisterOrigami({
+    fixBoards,
+    moveBoards,
+    numberOfMoveBoards,
+    rotateAxis,
+    isFoldingDirectionFront,
+    isMoveBoardsRight,
+    origamiDescription,
+    procedureIndex,
+    procedure,
+    origamiName,
+    origamiColor,
+    sceneRef,
+    cameraRef,
+    rendererRef,
+  });
 
   const handleClosePopup = () => {
     setPopup(null);
