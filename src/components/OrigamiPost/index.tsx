@@ -19,6 +19,7 @@ import { useRotateBoards } from "./hooks/useRotateBoards";
 import { useDecideFoldMethod } from "./hooks/useDecideFoldMethod";
 import { useRegisterOrigami } from "./hooks/useRegisterOrigami";
 import { useOrigamiName } from "./hooks/useOrigamiName";
+import { useOrigamiColor } from "./hooks/useOrigamiColor";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -42,8 +43,6 @@ export const OrigamiPost = () => {
   const [procedureIndex, setProcedureIndex] = useState(1);
   const [procedure, setProcedure] = useState<Procedure>({});
 
-  // TODO: STEP2で色の変更が反映されない
-  const [origamiColor, setOrigamiColor] = useState("#ff0000");
   const [origamiDescription, setOrigamiDescription] = useState("");
   const [foldingAngle, setFoldingAngle] = useState(180);
 
@@ -62,11 +61,8 @@ export const OrigamiPost = () => {
     setInputStep("axis");
   };
 
-  const handleOrigamiColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOrigamiColor(e.target.value);
-  };
-
   const { origamiName, handleOrigamiNameChange } = useOrigamiName();
+  const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
 
   // シーンの初期化
   useInitScene({
