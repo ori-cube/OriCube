@@ -18,6 +18,7 @@ import { useSelectSideAndNumberOfBoards } from "./hooks/useSelectSideAndNumberOf
 import { useRotateBoards } from "./hooks/useRotateBoards";
 import { useDecideFoldMethod } from "./hooks/useDecideFoldMethod";
 import { useRegisterOrigami } from "./hooks/useRegisterOrigami";
+import { useOrigamiName } from "./hooks/useOrigamiName";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -41,9 +42,6 @@ export const OrigamiPost = () => {
   const [procedureIndex, setProcedureIndex] = useState(1);
   const [procedure, setProcedure] = useState<Procedure>({});
 
-  // -----------------
-
-  const [origamiName, setOrigamiName] = useState("");
   // TODO: STEP2で色の変更が反映されない
   const [origamiColor, setOrigamiColor] = useState("#ff0000");
   const [origamiDescription, setOrigamiDescription] = useState("");
@@ -53,6 +51,22 @@ export const OrigamiPost = () => {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+
+  const handleClosePopup = () => {
+    setPopup(null);
+  };
+
+  const handleCancelFoldTarget = () => {
+    setMoveBoards([]);
+    setFixBoards([initialBoard]);
+    setInputStep("axis");
+  };
+
+  const handleOrigamiColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOrigamiColor(e.target.value);
+  };
+
+  const { origamiName, handleOrigamiNameChange } = useOrigamiName();
 
   // シーンの初期化
   useInitScene({
@@ -166,24 +180,6 @@ export const OrigamiPost = () => {
     cameraRef,
     rendererRef,
   });
-
-  const handleClosePopup = () => {
-    setPopup(null);
-  };
-
-  const handleCancelFoldTarget = () => {
-    setMoveBoards([]);
-    setFixBoards([initialBoard]);
-    setInputStep("axis");
-  };
-
-  const handleOrigamiNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOrigamiName(e.target.value);
-  };
-
-  const handleOrigamiColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOrigamiColor(e.target.value);
-  };
 
   return (
     <>
