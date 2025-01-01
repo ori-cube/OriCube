@@ -72,9 +72,6 @@ export const OrigamiPost = () => {
     rendererRef,
     controlsRef,
     raycasterRef,
-    fixBoards,
-    inputStep,
-    origamiColor,
   });
 
   // 折り線の点の選択
@@ -85,6 +82,8 @@ export const OrigamiPost = () => {
     rendererRef,
     raycasterRef,
     inputStep,
+    fixBoards,
+    origamiColor,
   });
 
   // 回転軸を決定
