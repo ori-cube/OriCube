@@ -1,13 +1,12 @@
+/* 
+回転軸を決定し、板を左右に分割するカスタムフック
+**/
+
 import { Point, Board } from "@/types/three";
-import * as THREE from "three";
 import { getAllIntersections } from "../../logics/getAllIntersections";
 import { separateBoard } from "../../logics/separateBoard";
 import { useState } from "react";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
-import { LineGeometry } from "three/examples/jsm/Addons.js";
-import { LineMaterial } from "three/examples/jsm/Addons.js";
-import { Line2 } from "three/examples/jsm/Addons.js";
-import { renderBoard } from "../../logics/renderBoard";
 import { Step } from "../../FoldMethodControlPanel";
 
 type UseDecideRotateAxis = (props: {
@@ -16,7 +15,7 @@ type UseDecideRotateAxis = (props: {
   setInputStep: React.Dispatch<React.SetStateAction<Step>>;
   origamiColor: string;
 }) => {
-  handleDecideRotateAxis: (scene: THREE.Scene) => void;
+  handleDecideRotateAxis: () => void;
   handleCancelRotateAxis: () => void;
   leftBoards: Board[];
   rightBoards: Board[];
@@ -27,13 +26,12 @@ export const useDecideRotateAxis: UseDecideRotateAxis = ({
   selectedPoints,
   fixBoards,
   setInputStep,
-  origamiColor,
 }) => {
   const [leftBoards, setLeftBoards] = useState<Board[]>([]);
   const [rightBoards, setRightBoards] = useState<Board[]>([]);
   const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
 
-  const handleDecideRotateAxis = (scene: THREE.Scene) => {
+  const handleDecideRotateAxis = () => {
     if (selectedPoints.length < 2)
       return console.error("点が2つ選択されていません");
 
@@ -89,51 +87,15 @@ export const useDecideRotateAxis: UseDecideRotateAxis = ({
         }
       }
     }
-    // sceneから板、線を削除
-    scene.children = scene.children.filter(
-      (child) => child.type !== "Mesh" && child.type !== "LineSegments"
-    );
-    // pointを削除する
-    scene.children = scene.children.filter((child) => child.type !== "Points");
-
-    // 折り線を描画
-    const lineGeometry = new LineGeometry();
-    lineGeometry.setPositions([
-      axis[0][0],
-      axis[0][1],
-      axis[0][2],
-      axis[1][0],
-      axis[1][1],
-      axis[1][2],
-    ]);
-    const lineMaterial = new LineMaterial({
-      color: 0xff00ff,
-      linewidth: 3,
-    });
-    const lineMesh = new Line2(lineGeometry, lineMaterial);
-    lineMesh.name = "Axis";
-    scene.add(lineMesh);
 
     setRotateAxis(axis);
-    setInputStep("target");
-    lefts.forEach((board) =>
-      renderBoard({ scene, board, color: origamiColor })
-    );
-    rights.forEach((board) =>
-      renderBoard({ scene, board, color: origamiColor })
-    );
-
-    console.log("lefts", lefts);
-    console.log("rights", rights);
     setLeftBoards(lefts);
     setRightBoards(rights);
+
+    setInputStep("target");
   };
 
   const handleCancelRotateAxis = () => {
-    setRotateAxis([]);
-    // TODO: 状態を保持しておいて、一個前の状態に戻すようにする
-    // setFixBoards([initialBoard]);
-    // setMoveBoards([]);
     setInputStep("axis");
   };
 
