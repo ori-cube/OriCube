@@ -4,6 +4,7 @@ import styles from "./index.module.scss";
 import { AxisSelectPanel } from "./AxisSelectPanel";
 import { FoldTargetSelectPanel } from "./FoldTargetSelectPanel";
 import { FoldMethodSelectPanel } from "./FoldMethodSelectPanel";
+import { FoldStepSegmentedControl } from "./ui/FoldStepSegmentedControl";
 import React from "react";
 
 export type Step = "axis" | "target" | "fold";
@@ -72,6 +73,9 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
           setOrigamiDescription={setOrigamiDescription}
         />
       )}
+      <div className={styles.segmentedControl}>
+        <FoldStepSegmentedControl />
+      </div>
     </section>
   );
 };
