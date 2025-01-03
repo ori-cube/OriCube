@@ -56,9 +56,10 @@ export const OrigamiPost = () => {
   };
 
   const handleCancelFoldTarget = () => {
+    // TODO: fixBoardsを元に戻す処理
     setMoveBoards([]);
     setFixBoards([initialBoard]);
-    setInputStep("axis");
+    setInputStep("target");
   };
 
   const { origamiName, handleOrigamiNameChange } = useOrigamiName();
@@ -72,12 +73,10 @@ export const OrigamiPost = () => {
     rendererRef,
     controlsRef,
     raycasterRef,
-    fixBoards,
-    inputStep,
-    origamiColor,
   });
 
-  // 折り線の点の選択
+  // step1：折り線の点の選択
+  // 板と点の描画を行う
   const { selectedPoints } = useSelectPoints({
     canvasRef,
     sceneRef,
@@ -85,9 +84,11 @@ export const OrigamiPost = () => {
     rendererRef,
     raycasterRef,
     inputStep,
+    fixBoards,
+    origamiColor,
   });
 
-  // 回転軸を決定
+  // 入力された点から回転軸を決定。板を左右に分割する。
   const {
     handleDecideRotateAxis,
     handleCancelRotateAxis,
@@ -101,7 +102,8 @@ export const OrigamiPost = () => {
     origamiColor,
   });
 
-  // 板を折る対象を決定する関数
+  // step2：板を折る対象を決定
+  // 板を選択できるように描画する
   const { handleDecideFoldTarget, isMoveBoardsRight } = useDecideTargetBoard({
     setInputStep,
     inputStep,
@@ -112,8 +114,10 @@ export const OrigamiPost = () => {
     sceneRef,
     cameraRef,
     raycasterRef,
+    origamiColor,
   });
 
+  // step3：板を折る方向と枚数を決定
   const {
     handleFoldFrontSide,
     handleFoldBackSide,
@@ -190,9 +194,7 @@ export const OrigamiPost = () => {
       </div>
       <div className={styles.panelContainer}>
         <FoldMethodControlPanel
-          handleDecideRotateAxis={() =>
-            handleDecideRotateAxis(sceneRef.current!)
-          }
+          handleDecideRotateAxis={handleDecideRotateAxis}
           handleCancelRotateAxis={handleCancelRotateAxis}
           handleDecideFoldTarget={handleDecideFoldTarget}
           handleCancelFoldTarget={handleCancelFoldTarget}

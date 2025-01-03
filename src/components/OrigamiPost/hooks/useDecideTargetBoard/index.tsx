@@ -6,6 +6,7 @@ import { isOnLeftSide } from "../../logics/isOnLeftSide";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
+import { renderBoard } from "../../logics/renderBoard";
 
 type UseDecideTargetBoard = (props: {
   setInputStep: React.Dispatch<React.SetStateAction<Step>>;
@@ -17,6 +18,7 @@ type UseDecideTargetBoard = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
+  origamiColor: string;
 }) => {
   handleDecideFoldTarget: () => void;
   isMoveBoardsRight: boolean;
@@ -32,15 +34,55 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
   sceneRef,
   cameraRef,
   raycasterRef,
+  origamiColor,
 }) => {
   const [isMoveBoardsRight, setIsMoveBoardsRight] = useState(true);
+
+  // 板の描画
   useEffect(() => {
+    if (inputStep !== "target") return;
+    if (rotateAxis.length === 0) return;
+
+    // sceneの初期化
+    const scene = sceneRef.current;
+    if (!scene) return;
+    scene.children = [];
+
+    // 折り線を描画
+    const lineGeometry = new LineGeometry();
+    lineGeometry.setPositions([
+      rotateAxis[0][0],
+      rotateAxis[0][1],
+      rotateAxis[0][2],
+      rotateAxis[1][0],
+      rotateAxis[1][1],
+      rotateAxis[1][2],
+    ]);
+    const lineMaterial = new LineMaterial({
+      color: 0xff00ff,
+      linewidth: 3,
+    });
+    const lineMesh = new Line2(lineGeometry, lineMaterial);
+    lineMesh.name = "Axis";
+    scene.add(lineMesh);
+
+    leftBoards.forEach((board) =>
+      renderBoard({ scene, board, color: origamiColor })
+    );
+    rightBoards.forEach((board) =>
+      renderBoard({ scene, board, color: origamiColor })
+    );
+  }, [inputStep, sceneRef, rotateAxis, leftBoards, rightBoards, origamiColor]);
+
+  // 板をホバー、クリックしたときの処理
+  useEffect(() => {
+    if (inputStep !== "target") return;
+    if (rotateAxis.length === 0) return;
+
     const sizes = {
       width: window.innerWidth - 320,
       height: window.innerHeight,
     };
-    if (inputStep !== "target") return;
-    if (rotateAxis.length === 0) return;
     const canvas = canvasRef.current;
     const scene = sceneRef.current;
     const camera = cameraRef.current;

@@ -1,12 +1,12 @@
 /* 
 シーンの初期化をするカスタムフック。
+canvas要素、scene、camera、renderer、controls、raycasterを初期化する。
+また、リサイズ時にカメラのアスペクト比を変更するリスナーの設定を行う。
 **/
 
 import * as THREE from "three";
 import { useEffect } from "react";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { Board } from "@/types/three";
-import { renderBoard } from "../../logics/renderBoard";
 
 type UseInitScene = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -15,9 +15,6 @@ type UseInitScene = (props: {
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   controlsRef: React.MutableRefObject<OrbitControls | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
-  fixBoards: Board[];
-  inputStep: string;
-  origamiColor: string;
 }) => void;
 
 export const useInitScene: UseInitScene = ({
@@ -27,16 +24,12 @@ export const useInitScene: UseInitScene = ({
   rendererRef,
   controlsRef,
   raycasterRef,
-  fixBoards,
-  inputStep,
-  origamiColor,
 }) => {
   useEffect(() => {
     const sizes = {
       width: window.innerWidth - 320,
       height: window.innerHeight,
     };
-    if (inputStep !== "axis") return;
     const canvas = canvasRef.current!;
     const scene = new THREE.Scene();
     let renderer = rendererRef.current;
@@ -81,11 +74,6 @@ export const useInitScene: UseInitScene = ({
       requestAnimationFrame(render);
     };
 
-    // selectedPoints.forEach((point) => renderPoint({ scene, point }));
-    fixBoards.forEach((board) =>
-      renderBoard({ scene, board, color: origamiColor })
-    );
-
     if (!raycaster) {
       raycaster = new THREE.Raycaster();
       raycasterRef.current = raycaster;
@@ -107,15 +95,5 @@ export const useInitScene: UseInitScene = ({
     return () => {
       window.removeEventListener("resize", resizeListener);
     };
-  }, [
-    cameraRef,
-    canvasRef,
-    controlsRef,
-    fixBoards,
-    inputStep,
-    origamiColor,
-    raycasterRef,
-    rendererRef,
-    sceneRef,
-  ]);
+  }, [cameraRef, canvasRef, controlsRef, raycasterRef, rendererRef, sceneRef]);
 };
