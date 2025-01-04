@@ -6,6 +6,7 @@ import { FoldTargetSelectPanel } from "./FoldTargetSelectPanel";
 import { FoldMethodSelectPanel } from "./FoldMethodSelectPanel";
 import { FoldStepSegmentedControl } from "./ui/FoldStepSegmentedControl";
 import React from "react";
+import { Procedure } from "@/types/model";
 
 export type Step = "axis" | "target" | "fold";
 
@@ -26,6 +27,9 @@ type Props = {
   handleRegisterOrigami: () => void;
   origamiDescription: string;
   setOrigamiDescription: React.Dispatch<React.SetStateAction<string>>;
+  procedure: Procedure;
+  procedureIndex: number;
+  handleChangeStep: (step: number) => void;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -45,7 +49,12 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   handleRegisterOrigami,
   origamiDescription,
   setOrigamiDescription,
+  procedure,
+  procedureIndex,
+  handleChangeStep,
 }) => {
+  const procedureLength = procedure ? Object.keys(procedure).length : 1;
+
   return (
     <section className={styles.container}>
       {currentStep === "axis" && (
@@ -74,7 +83,11 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
         />
       )}
       <div className={styles.segmentedControl}>
-        <FoldStepSegmentedControl />
+        <FoldStepSegmentedControl
+          procedureLength={procedureLength}
+          currentStep={procedureIndex}
+          handleChangeStep={handleChangeStep}
+        />
       </div>
     </section>
   );

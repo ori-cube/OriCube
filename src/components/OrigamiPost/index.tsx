@@ -62,6 +62,10 @@ export const OrigamiPost = () => {
     setInputStep("target");
   };
 
+  const handleChangeStep = (step: number) => {
+    console.log(step);
+  };
+
   const { origamiName, handleOrigamiNameChange } = useOrigamiName();
   const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
 
@@ -210,6 +214,9 @@ export const OrigamiPost = () => {
           handleRegisterOrigami={handleRegisterOrigami}
           origamiDescription={origamiDescription}
           setOrigamiDescription={setOrigamiDescription}
+          procedure={procedure}
+          procedureIndex={procedureIndex}
+          handleChangeStep={handleChangeStep}
         />
       </div>
       {popup && (
