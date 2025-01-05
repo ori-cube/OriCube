@@ -1,4 +1,4 @@
-import { Board, Point } from "@/types/three";
+import { Board, Point } from "@/types/model";
 import { Procedure, Model } from "@/types/model";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
 import { insertData } from "@/utils/upload-data";

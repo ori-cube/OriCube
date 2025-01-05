@@ -4,7 +4,7 @@ import React, { useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { Board } from "@/types/three";
+import { Board } from "@/types/model";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
 import { Step } from "./FoldMethodControlPanel";
 import { Procedure } from "@/types/model";
@@ -29,23 +29,37 @@ export const OrigamiPost = () => {
     [20, -20, 0],
   ];
 
+  // 常に保持しておきたい変数
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const raycasterRef = useRef<THREE.Raycaster | null>(null);
+  const { origamiName, handleOrigamiNameChange } = useOrigamiName();
+  const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
 
+  // 折り方選択で、現在のステップを保持する変数
   const [inputStep, setInputStep] = useState<Step>("axis");
+  const [procedureIndex, setProcedureIndex] = useState(1);
+
+  // 各procedureでの、最終的に必要な情報を保持する変数
+  const [origamiDescription, setOrigamiDescription] = useState("");
   const [fixBoards, setFixBoards] = useState<Board[]>([initialBoard]);
   const [moveBoards, setMoveBoards] = useState<Board[]>([]);
-
-  const [procedureIndex, setProcedureIndex] = useState(1);
-  const [procedure, setProcedure] = useState<Procedure>({});
-
-  const [origamiDescription, setOrigamiDescription] = useState("");
   const [foldingAngle, setFoldingAngle] = useState(180);
 
+  // 最終的に保存したい情報を保持する変数。
+  const [procedure, setProcedure] = useState<Procedure>({
+    "1": {
+      description: "",
+      fixBoards: [],
+      moveBoards: [],
+      rotateAxis: [],
+    },
+  });
+
+  //
   const [popup, setPopup] = useState<{
     message: string;
     type: "success" | "error" | "info";
@@ -65,9 +79,6 @@ export const OrigamiPost = () => {
   const handleChangeStep = (step: number) => {
     console.log(step);
   };
-
-  const { origamiName, handleOrigamiNameChange } = useOrigamiName();
-  const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
 
   // シーンの初期化
   useInitScene({

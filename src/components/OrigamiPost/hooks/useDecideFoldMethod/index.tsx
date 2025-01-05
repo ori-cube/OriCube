@@ -1,4 +1,4 @@
-import { Board, Point } from "@/types/three";
+import { Board, Point } from "@/types/model";
 import { Procedure } from "@/types/model";
 import { rotateBoards } from "../../logics/rotateBoards";
 import { Step } from "../../FoldMethodControlPanel";

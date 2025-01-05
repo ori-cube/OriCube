@@ -5,7 +5,7 @@ inputStepがaxisの時の板の描画と点の選択を行う
 import React, { useState, useEffect } from "react";
 import * as THREE from "three";
 import { renderPoint } from "../../logics/renderPoint";
-import { Board, Point } from "@/types/three";
+import { Board, Point } from "@/types/model";
 import { renderBoard } from "../../logics/renderBoard";
 
 type UseSelectPoints = (props: {

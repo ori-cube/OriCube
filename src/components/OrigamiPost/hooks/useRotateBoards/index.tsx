@@ -1,5 +1,5 @@
 import { Step } from "../../FoldMethodControlPanel";
-import { Board, Point } from "@/types/three";
+import { Board, Point } from "@/types/model";
 import { useEffect } from "react";
 import { renderBoard } from "../../logics/renderBoard";
 import { rotateBoards } from "../../logics/rotateBoards";

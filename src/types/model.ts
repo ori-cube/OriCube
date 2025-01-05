@@ -1,3 +1,7 @@
+export type Point = [number, number, number];
+export type Board = Point[];
+export type RotateAxis = [Point, Point] | [];
+
 export type Model = {
   id?: string;
   name: string;
@@ -9,9 +13,9 @@ export type Model = {
 
 type BaseProcedure = {
   description: string;
-  fixBoards: number[][][];
-  moveBoards: number[][][];
-  rotateAxis: number[][];
+  fixBoards: Board[];
+  moveBoards: Board[];
+  rotateAxis: RotateAxis;
 };
 
 type ConvolutionProcedure = BaseProcedure & {

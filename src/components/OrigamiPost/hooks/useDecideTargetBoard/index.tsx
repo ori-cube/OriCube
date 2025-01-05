@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as THREE from "three";
 import { Step } from "../../FoldMethodControlPanel";
-import { Board, Point } from "@/types/three";
+import { Board, Point } from "@/types/model";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";

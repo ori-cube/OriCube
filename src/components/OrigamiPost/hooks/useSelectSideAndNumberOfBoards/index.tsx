@@ -1,4 +1,4 @@
-import { Board } from "@/types/three";
+import { Board } from "@/types/model";
 import { useState } from "react";
 
 type UseSelectSideAndNumberOfBoards = (props: {

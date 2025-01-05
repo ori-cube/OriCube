@@ -2,7 +2,7 @@
 回転軸を決定し、板を左右に分割するカスタムフック
 **/
 
-import { Point, Board } from "@/types/three";
+import { Point, Board } from "@/types/model";
 import { getAllIntersections } from "../../logics/getAllIntersections";
 import { separateBoard } from "../../logics/separateBoard";
 import { useState } from "react";
