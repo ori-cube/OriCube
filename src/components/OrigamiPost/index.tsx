@@ -48,6 +48,7 @@ export const OrigamiPost = () => {
   const [fixBoards, setFixBoards] = useState<Board[]>([initialBoard]);
   const [moveBoards, setMoveBoards] = useState<Board[]>([]);
   const [foldingAngle, setFoldingAngle] = useState(180);
+  // rotateAxisも必要
 
   // 最終的に保存したい情報を保持する変数。
   const [procedure, setProcedure] = useState<Procedure>({
@@ -59,7 +60,7 @@ export const OrigamiPost = () => {
     },
   });
 
-  //
+  // TODO: あとで綺麗にする
   const [popup, setPopup] = useState<{
     message: string;
     type: "success" | "error" | "info";

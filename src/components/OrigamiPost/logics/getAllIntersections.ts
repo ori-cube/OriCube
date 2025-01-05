@@ -15,6 +15,7 @@ export const getAllIntersections: GetAllIntersections = ({
   rotateAxis,
 }) => {
   const intersections: Point[] = [];
+  if (rotateAxis.length !== 2) return intersections;
   for (let i = 0; i < board.length; i++) {
     const p1 = board[i];
     const p2 = board[(i + 1) % board.length];

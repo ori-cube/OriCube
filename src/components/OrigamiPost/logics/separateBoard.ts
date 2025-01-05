@@ -19,6 +19,10 @@ export const separateBoard: SeparateBoard = ({ board, rotateAxis }) => {
   const leftBoard: Board = [];
   const rightBoard: Board = [];
 
+  if (rotateAxis.length !== 2) {
+    return { leftBoard: [], rightBoard: [] };
+  }
+
   // boardの各辺とrotateAxisの交点を求める
   const allIntersections = getAllIntersections({ board, rotateAxis });
 
