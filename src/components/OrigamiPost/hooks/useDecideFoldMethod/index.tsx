@@ -1,8 +1,9 @@
 import { Board, Point } from "@/types/model";
 import { Procedure } from "@/types/model";
 import { rotateBoards } from "../../logics/rotateBoards";
-import { Step } from "../../FoldMethodControlPanel";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { useAtom } from "jotai";
 
 type UseDecideFoldMethod = (props: {
   fixBoards: Board[];
@@ -13,10 +14,7 @@ type UseDecideFoldMethod = (props: {
   isMoveBoardsRight: boolean;
   origamiDescription: string;
   foldingAngle: number;
-  procedureIndex: number;
   procedure: Procedure;
-  setInputStep: React.Dispatch<React.SetStateAction<Step>>;
-  setProcedureIndex: React.Dispatch<React.SetStateAction<number>>;
   setProcedure: React.Dispatch<React.SetStateAction<Procedure>>;
   setFixBoards: React.Dispatch<React.SetStateAction<Board[]>>;
   setMoveBoards: React.Dispatch<React.SetStateAction<Board[]>>;
@@ -33,14 +31,14 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
   isMoveBoardsRight,
   origamiDescription,
   foldingAngle,
-  procedureIndex,
   procedure,
-  setInputStep,
-  setProcedureIndex,
   setProcedure,
   setFixBoards,
   setMoveBoards,
 }) => {
+  const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
+  const procedureIndex = currentStep.procedureIndex;
+
   const handleDecideFoldMethod = () => {
     // moveBoardsを回転した後の板を、fixBoardsに追加する
     if (moveBoards.length === 0) return;
@@ -82,8 +80,12 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
     // setFoldingAngle(180);
     setFixBoards(roundedBoards);
     setMoveBoards([]);
-    setInputStep("axis");
-    setProcedureIndex(procedureIndex + 1);
+    // setInputStep("axis");
+    // setProcedureIndex(procedureIndex + 1);
+    setCurrentStep({
+      inputStep: "axis",
+      procedureIndex: procedureIndex + 1,
+    });
     setProcedure({ ...procedure, [procedureIndex]: newProcedure });
   };
 

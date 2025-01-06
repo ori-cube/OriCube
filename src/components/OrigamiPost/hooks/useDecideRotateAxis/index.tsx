@@ -7,12 +7,12 @@ import { getAllIntersections } from "../../logics/getAllIntersections";
 import { separateBoard } from "../../logics/separateBoard";
 import { useState } from "react";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
-import { Step } from "../../FoldMethodControlPanel";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { useAtom } from "jotai";
 
 type UseDecideRotateAxis = (props: {
   selectedPoints: Point[];
   fixBoards: Board[];
-  setInputStep: React.Dispatch<React.SetStateAction<Step>>;
   origamiColor: string;
 }) => {
   handleDecideRotateAxis: () => void;
@@ -25,11 +25,11 @@ type UseDecideRotateAxis = (props: {
 export const useDecideRotateAxis: UseDecideRotateAxis = ({
   selectedPoints,
   fixBoards,
-  setInputStep,
 }) => {
   const [leftBoards, setLeftBoards] = useState<Board[]>([]);
   const [rightBoards, setRightBoards] = useState<Board[]>([]);
   const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
+  const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
 
   const handleDecideRotateAxis = () => {
     if (selectedPoints.length < 2)
@@ -92,11 +92,17 @@ export const useDecideRotateAxis: UseDecideRotateAxis = ({
     setLeftBoards(lefts);
     setRightBoards(rights);
 
-    setInputStep("target");
+    setCurrentStep({
+      ...currentStep,
+      inputStep: "target",
+    });
   };
 
   const handleCancelRotateAxis = () => {
-    setInputStep("axis");
+    setCurrentStep({
+      ...currentStep,
+      inputStep: "axis",
+    });
   };
 
   return {

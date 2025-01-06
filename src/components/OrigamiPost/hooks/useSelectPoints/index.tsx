@@ -7,6 +7,8 @@ import * as THREE from "three";
 import { renderPoint } from "../../logics/renderPoint";
 import { Board, Point } from "@/types/model";
 import { renderBoard } from "../../logics/renderBoard";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { useAtomValue } from "jotai";
 
 type UseSelectPoints = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -14,7 +16,6 @@ type UseSelectPoints = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
-  inputStep: string;
   fixBoards: Board[];
   origamiColor: string;
 }) => {
@@ -27,11 +28,12 @@ export const useSelectPoints: UseSelectPoints = ({
   cameraRef,
   rendererRef,
   raycasterRef,
-  inputStep,
   fixBoards,
   origamiColor,
 }) => {
   const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
+  const currentStep = useAtomValue(currentStepAtom);
+  const inputStep = currentStep.inputStep;
 
   // boardとpointの初期描画をする処理
   useEffect(() => {

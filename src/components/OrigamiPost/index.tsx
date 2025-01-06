@@ -6,7 +6,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { Board } from "@/types/model";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
-import { Step } from "./FoldMethodControlPanel";
 import { Procedure } from "@/types/model";
 import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
 import Popup from "./Popup";
@@ -20,6 +19,8 @@ import { useDecideFoldMethod } from "./hooks/useDecideFoldMethod";
 import { useRegisterOrigami } from "./hooks/useRegisterOrigami";
 import { useOrigamiName } from "./hooks/useOrigamiName";
 import { useOrigamiColor } from "./hooks/useOrigamiColor";
+import { currentStepAtom } from "./atoms/currentStepAtom";
+import { useAtomValue } from "jotai";
 
 export const OrigamiPost = () => {
   const initialBoard: Board = [
@@ -40,8 +41,9 @@ export const OrigamiPost = () => {
   const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
 
   // 折り方選択で、現在のステップを保持する変数
-  const [inputStep, setInputStep] = useState<Step>("axis");
-  const [procedureIndex, setProcedureIndex] = useState(1);
+  const currentStep = useAtomValue(currentStepAtom);
+  const inputStep = currentStep.inputStep;
+  const procedureIndex = currentStep.procedureIndex;
 
   // 各procedureでの、最終的に必要な情報を保持する変数
   const [origamiDescription, setOrigamiDescription] = useState("");
@@ -74,7 +76,7 @@ export const OrigamiPost = () => {
     // TODO: fixBoardsを元に戻す処理
     setMoveBoards([]);
     setFixBoards([initialBoard]);
-    setInputStep("target");
+    // setInputStep("target");
   };
 
   const handleChangeStep = (step: number) => {
@@ -99,7 +101,6 @@ export const OrigamiPost = () => {
     cameraRef,
     rendererRef,
     raycasterRef,
-    inputStep,
     fixBoards,
     origamiColor,
   });
@@ -114,15 +115,12 @@ export const OrigamiPost = () => {
   } = useDecideRotateAxis({
     selectedPoints,
     fixBoards,
-    setInputStep,
     origamiColor,
   });
 
   // step2：板を折る対象を決定
   // 板を選択できるように描画する
   const { handleDecideFoldTarget, isMoveBoardsRight } = useDecideTargetBoard({
-    setInputStep,
-    inputStep,
     rotateAxis,
     leftBoards,
     rightBoards,
@@ -151,7 +149,6 @@ export const OrigamiPost = () => {
   // 回転に応じて板を描画
   useRotateBoards({
     sceneRef,
-    inputStep,
     rotateAxis,
     foldingAngle,
     isFoldingDirectionFront,
@@ -171,10 +168,7 @@ export const OrigamiPost = () => {
     isMoveBoardsRight,
     origamiDescription,
     foldingAngle,
-    procedureIndex,
     procedure,
-    setInputStep,
-    setProcedureIndex,
     setProcedure,
     setFixBoards,
     setMoveBoards,
@@ -188,7 +182,6 @@ export const OrigamiPost = () => {
     isFoldingDirectionFront,
     isMoveBoardsRight,
     origamiDescription,
-    procedureIndex,
     procedure,
     origamiName,
     origamiColor,

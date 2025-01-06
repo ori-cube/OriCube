@@ -5,6 +5,8 @@ import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import * as THREE from "three";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { useAtomValue } from "jotai";
 
 type UseRegisterOrigami = (props: {
   fixBoards: Board[];
@@ -14,7 +16,6 @@ type UseRegisterOrigami = (props: {
   isFoldingDirectionFront: boolean;
   isMoveBoardsRight: boolean;
   origamiDescription: string;
-  procedureIndex: number;
   procedure: Procedure;
   origamiName: string;
   origamiColor: string;
@@ -33,7 +34,6 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
   isFoldingDirectionFront,
   isMoveBoardsRight,
   origamiDescription,
-  procedureIndex,
   procedure,
   origamiName,
   origamiColor,
@@ -41,6 +41,8 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
   cameraRef,
   rendererRef,
 }) => {
+  const currentStep = useAtomValue(currentStepAtom);
+  const procedureIndex = currentStep.procedureIndex;
   const { data: session } = useSession();
 
   const handleRegisterOrigami = () => {

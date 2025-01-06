@@ -1,13 +1,13 @@
-import { Step } from "../../FoldMethodControlPanel";
 import { Board, Point } from "@/types/model";
 import { useEffect } from "react";
 import { renderBoard } from "../../logics/renderBoard";
 import { rotateBoards } from "../../logics/rotateBoards";
 import * as THREE from "three";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { useAtomValue } from "jotai";
 
 type UseRotateBoards = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
-  inputStep: Step;
   rotateAxis: [Point, Point] | [];
   foldingAngle: number;
   isFoldingDirectionFront: boolean;
@@ -20,7 +20,6 @@ type UseRotateBoards = (props: {
 
 export const useRotateBoards: UseRotateBoards = ({
   sceneRef,
-  inputStep,
   rotateAxis,
   foldingAngle,
   numberOfMoveBoards,
@@ -30,6 +29,9 @@ export const useRotateBoards: UseRotateBoards = ({
   fixBoards,
   origamiColor,
 }) => {
+  const currentStep = useAtomValue(currentStepAtom);
+  const inputStep = currentStep.inputStep;
+
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;

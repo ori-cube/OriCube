@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import * as THREE from "three";
-import { Step } from "../../FoldMethodControlPanel";
 import { Board, Point } from "@/types/model";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
 import { renderBoard } from "../../logics/renderBoard";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { useAtom } from "jotai";
 
 type UseDecideTargetBoard = (props: {
-  setInputStep: React.Dispatch<React.SetStateAction<Step>>;
-  inputStep: Step;
   rotateAxis: [Point, Point] | [];
   leftBoards: Board[];
   rightBoards: Board[];
@@ -25,8 +24,6 @@ type UseDecideTargetBoard = (props: {
 };
 
 export const useDecideTargetBoard: UseDecideTargetBoard = ({
-  setInputStep,
-  inputStep,
   rotateAxis,
   leftBoards,
   rightBoards,
@@ -37,6 +34,8 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
   origamiColor,
 }) => {
   const [isMoveBoardsRight, setIsMoveBoardsRight] = useState(true);
+  const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
+  const inputStep = currentStep.inputStep;
 
   // 板の描画
   useEffect(() => {
@@ -208,7 +207,7 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
   ]);
 
   const handleDecideFoldTarget = () => {
-    setInputStep("fold");
+    setCurrentStep({ ...currentStep, inputStep: "fold" });
   };
 
   return {
