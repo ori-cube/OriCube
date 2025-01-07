@@ -10,14 +10,14 @@ type Props = {
   handleFoldFrontSide: () => void;
   handleFoldBackSide: () => void;
   foldAngle: number;
-  setFoldAngle: React.Dispatch<React.SetStateAction<number>>;
+  handleFoldAngleChange: (angle: number) => void;
   handleNextStep: () => void;
   totalNumber: number;
   currentNumber: number;
   isFoldFrontSide: boolean;
   handleRegisterOrigami: () => void;
   origamiDescription: string;
-  setOrigamiDescription: React.Dispatch<React.SetStateAction<string>>;
+  handleOrigamiDescriptionChange: (description: string) => void;
 };
 
 export const FoldMethodSelectPanel: React.FC<Props> = ({
@@ -26,13 +26,13 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
   handleFoldFrontSide,
   handleFoldBackSide,
   foldAngle,
-  setFoldAngle,
+  handleFoldAngleChange,
   totalNumber,
   currentNumber,
   isFoldFrontSide,
   handleRegisterOrigami,
   origamiDescription,
-  setOrigamiDescription,
+  handleOrigamiDescriptionChange,
 }) => {
   return (
     <div className={styles.container}>
@@ -62,7 +62,7 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
               max={180}
               size="3"
               onValueChange={(value) => {
-                setFoldAngle(value[0]);
+                handleFoldAngleChange(value[0]);
               }}
               defaultValue={[180]}
               value={[foldAngle]}
@@ -76,7 +76,7 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
             placeholder="半分に折る"
             className={styles.textArea}
             value={origamiDescription}
-            onChange={(e) => setOrigamiDescription(e.target.value)}
+            onChange={(e) => handleOrigamiDescriptionChange(e.target.value)}
           />
         </section>
         <div className={styles.stepButtons}>

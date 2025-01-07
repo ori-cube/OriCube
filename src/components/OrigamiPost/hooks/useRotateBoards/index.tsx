@@ -4,33 +4,33 @@ import { renderBoard } from "../../logics/renderBoard";
 import { rotateBoards } from "../../logics/rotateBoards";
 import * as THREE from "three";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtomValue } from "jotai";
 
 type UseRotateBoards = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
-  rotateAxis: [Point, Point] | [];
-  foldingAngle: number;
-  isFoldingDirectionFront: boolean;
-  numberOfMoveBoards: number;
-  isMoveBoardsRight: boolean;
-  moveBoards: Board[];
-  fixBoards: Board[];
   origamiColor: string;
 }) => void;
 
 export const useRotateBoards: UseRotateBoards = ({
   sceneRef,
-  rotateAxis,
-  foldingAngle,
-  numberOfMoveBoards,
-  isFoldingDirectionFront,
-  isMoveBoardsRight,
-  moveBoards,
-  fixBoards,
   origamiColor,
 }) => {
   const currentStep = useAtomValue(currentStepAtom);
   const inputStep = currentStep.inputStep;
+  const procedureIndex = currentStep.procedureIndex;
+
+  const inputStepObject = useAtomValue(inputStepObjectAtom);
+  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
+  const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
+  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
+  const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
+  const numberOfMoveBoards =
+    inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
+  const isFoldingDirectionFront =
+    inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
+  const isMoveBoardsRight =
+    inputStepObject[procedureIndex.toString()].isMoveBoardsRight;
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -38,7 +38,6 @@ export const useRotateBoards: UseRotateBoards = ({
     if (inputStep !== "fold") return;
     if (rotateAxis.length === 0) return;
 
-    // TODO: 共通化する
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
     let xyPlaneBoards: Board[] = [];
