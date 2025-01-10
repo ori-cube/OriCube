@@ -1,5 +1,4 @@
 import { Board } from "@/types/model";
-import { useState } from "react";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom, useAtomValue } from "jotai";

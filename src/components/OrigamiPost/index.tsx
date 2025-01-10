@@ -4,9 +4,7 @@ import React, { useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { Board } from "@/types/model";
 import { FoldMethodControlPanel } from "./FoldMethodControlPanel";
-import { Procedure } from "@/types/model";
 import { NameAndColorControlPanel } from "./NameAndColorControlPanel";
 import Popup from "./Popup";
 import { useInitScene } from "./hooks/useInitScene";
@@ -21,7 +19,7 @@ import { useOrigamiName } from "./hooks/useOrigamiName";
 import { useOrigamiColor } from "./hooks/useOrigamiColor";
 import { currentStepAtom } from "./atoms/currentStepAtom";
 import { inputStepObjectAtom } from "./atoms/inputStepObjectAtom";
-import { useAtomValue, useAtom } from "jotai";
+import { useAtom } from "jotai";
 
 export const OrigamiPost = () => {
   // 常に保持しておきたい変数
@@ -35,7 +33,7 @@ export const OrigamiPost = () => {
   const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
 
   // 折り方選択で、現在のステップを保持する変数
-  const currentStep = useAtomValue(currentStepAtom);
+  const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
 
@@ -89,7 +87,7 @@ export const OrigamiPost = () => {
   };
 
   const handleChangeStep = (step: number) => {
-    console.log(step);
+    setCurrentStep({ inputStep: "fold", procedureIndex: step });
   };
 
   // シーンの初期化

@@ -1,4 +1,4 @@
-import { Board, Point } from "@/types/model";
+import { Board } from "@/types/model";
 import { useEffect } from "react";
 import { renderBoard } from "../../logics/renderBoard";
 import { rotateBoards } from "../../logics/rotateBoards";

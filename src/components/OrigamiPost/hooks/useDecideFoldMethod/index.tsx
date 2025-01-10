@@ -1,4 +1,4 @@
-import { Board, Point } from "@/types/model";
+import { Point } from "@/types/model";
 import { rotateBoards } from "../../logics/rotateBoards";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
@@ -17,6 +17,8 @@ export const useDecideFoldMethod: UseDecideFoldMethod = () => {
 
   const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
   const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
+  const leftBoards = inputStepObject[procedureIndex.toString()].leftBoards;
+  const rightBoards = inputStepObject[procedureIndex.toString()].rightBoards;
   const numberOfMoveBoards =
     inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
   const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
@@ -35,7 +37,7 @@ export const useDecideFoldMethod: UseDecideFoldMethod = () => {
     // TODO: procedureがinputStepObjectと違いがわかりづらいので修正する。
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
-    const { foldBoards, notFoldBoards, newProcedure } = decideNewProcedure({
+    const { foldBoards, notFoldBoards } = decideNewProcedure({
       fixBoards,
       moveBoards,
       numberOfMoveBoards,
@@ -66,28 +68,44 @@ export const useDecideFoldMethod: UseDecideFoldMethod = () => {
       inputStep: "axis",
       procedureIndex: procedureIndex + 1,
     });
-    setInputStepObject((prev) => ({
-      ...prev,
-      [procedureIndex.toString()]: {
-        ...prev[procedureIndex.toString()],
-        fixBoards: notFoldBoards,
-        moveBoards: foldBoards,
-      },
-      [procedureIndex + 1]: {
-        selectedPoints: [],
-        rightBoards: [],
-        leftBoards: [],
-        isMoveBoardsRight: false,
-        rotateAxis: [],
-        numberOfMoveBoards: 0,
-        maxNumberOfMoveBoards: 0,
-        isFoldingDirectionFront: true,
-        fixBoards: roundedBoards,
-        moveBoards: [],
-        foldingAngle: 180,
-        description: "",
-      },
-    }));
+    setInputStepObject((prev) => {
+      // 現在のデータより先の手順がある場合削除するようにする。
+      const newStepObject = Object.keys(prev)
+        .filter((key) => parseInt(key) <= procedureIndex)
+        .reduce(
+          (obj, key) => ({
+            ...obj,
+            [key]: prev[key],
+          }),
+          {}
+        );
+
+      return {
+        ...newStepObject,
+        [procedureIndex.toString()]: {
+          ...prev[procedureIndex.toString()],
+          fixBoards: [
+            ...(isMoveBoardsRight ? leftBoards : rightBoards),
+            ...notFoldBoards,
+          ],
+          moveBoards: foldBoards,
+        },
+        [procedureIndex + 1]: {
+          selectedPoints: [],
+          rightBoards: [],
+          leftBoards: [],
+          isMoveBoardsRight: false,
+          rotateAxis: [],
+          numberOfMoveBoards: 0,
+          maxNumberOfMoveBoards: 0,
+          isFoldingDirectionFront: true,
+          fixBoards: roundedBoards,
+          moveBoards: [],
+          foldingAngle: 180,
+          description: "",
+        },
+      };
+    });
   };
 
   return {
