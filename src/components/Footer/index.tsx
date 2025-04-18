@@ -8,16 +8,6 @@ const Footer: React.FC = () => {
         <p className={styles.copy}>
           &copy; {new Date().getFullYear()} OriCube. All rights reserved.
         </p>
-        <nav className={styles.nav}>
-          <a href="http://www.goo.ne.jp/">
-            <img
-              src="https://u.xgoo.jp/img/sgoo.png"
-              alt="supported by goo"
-              title="supported by goo"
-              width={100}
-            />
-          </a>
-        </nav>
       </div>
     </footer>
   );
