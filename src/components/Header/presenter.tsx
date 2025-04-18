@@ -6,7 +6,6 @@ import { SearchBoxPresenter } from "./SearchBox";
 import { GoogleAuthButton } from "./GoogleAuth";
 import { Model } from "@/types/model";
 import MobileMenu from "./HamburgerMenu";
-import ChildrenModeButton from "./ChildButton";
 
 export type HeaderPresenterProps =
   | { enableSearch: true; origamiData: Model[] } // enableSearch が true の場合
@@ -38,9 +37,7 @@ export const HeaderPresenter: React.FC<HeaderPresenterProps> = ({
             <SearchBoxPresenter origamiData={origamiData} />
           </Flex>
         ) : (
-          <div className={style.children_mode_button}>
-            <ChildrenModeButton />
-          </div>
+          <></>
         )}
         <Flex
           id="navigation-container"

@@ -7,7 +7,6 @@ import { RxHamburgerMenu } from "react-icons/rx";
 import { HiMiniXMark } from "react-icons/hi2";
 import { IconButton } from "@/components/ui/IconButton";
 import { GoogleAuthButton } from "../GoogleAuth";
-import ChildrenModeButton from "../ChildButton";
 import styles from "./index.module.scss"; // Sassファイルをインポート
 import { ButtonSizeProp } from "@/types/button";
 import { useSession } from "next-auth/react";
@@ -75,9 +74,6 @@ export default function MobileMenu() {
           </ul>
 
           <div className={styles.menu_auth}>
-            <div className={styles.menu_child_mode}>
-              <ChildrenModeButton />
-            </div>
             <GoogleAuthButton />
           </div>
         </nav>
