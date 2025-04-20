@@ -2,34 +2,27 @@
 回転軸を決定し、板を左右に分割するカスタムフック
 **/
 
-import { Point, Board } from "@/types/three";
+import { Point, Board } from "@/types/model";
 import { getAllIntersections } from "../../logics/getAllIntersections";
 import { separateBoard } from "../../logics/separateBoard";
-import { useState } from "react";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
-import { Step } from "../../FoldMethodControlPanel";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
+import { useAtom } from "jotai";
 
-type UseDecideRotateAxis = (props: {
-  selectedPoints: Point[];
-  fixBoards: Board[];
-  setInputStep: React.Dispatch<React.SetStateAction<Step>>;
-  origamiColor: string;
-}) => {
+type UseDecideRotateAxis = () => {
   handleDecideRotateAxis: () => void;
   handleCancelRotateAxis: () => void;
-  leftBoards: Board[];
-  rightBoards: Board[];
-  rotateAxis: [Point, Point] | [];
 };
 
-export const useDecideRotateAxis: UseDecideRotateAxis = ({
-  selectedPoints,
-  fixBoards,
-  setInputStep,
-}) => {
-  const [leftBoards, setLeftBoards] = useState<Board[]>([]);
-  const [rightBoards, setRightBoards] = useState<Board[]>([]);
-  const [rotateAxis, setRotateAxis] = useState<[Point, Point] | []>([]);
+export const useDecideRotateAxis: UseDecideRotateAxis = () => {
+  const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
+  const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
+
+  const procedureIndex = currentStep.procedureIndex;
+  const selectedPoints =
+    inputStepObject[procedureIndex.toString()].selectedPoints;
+  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
 
   const handleDecideRotateAxis = () => {
     if (selectedPoints.length < 2)
@@ -88,22 +81,31 @@ export const useDecideRotateAxis: UseDecideRotateAxis = ({
       }
     }
 
-    setRotateAxis(axis);
-    setLeftBoards(lefts);
-    setRightBoards(rights);
+    setInputStepObject({
+      ...inputStepObject,
+      [procedureIndex.toString()]: {
+        ...inputStepObject[procedureIndex.toString()],
+        rotateAxis: axis,
+        leftBoards: lefts,
+        rightBoards: rights,
+      },
+    });
 
-    setInputStep("target");
+    setCurrentStep({
+      ...currentStep,
+      inputStep: "target",
+    });
   };
 
   const handleCancelRotateAxis = () => {
-    setInputStep("axis");
+    setCurrentStep({
+      ...currentStep,
+      inputStep: "axis",
+    });
   };
 
   return {
     handleDecideRotateAxis,
     handleCancelRotateAxis,
-    leftBoards,
-    rightBoards,
-    rotateAxis,
   };
 };

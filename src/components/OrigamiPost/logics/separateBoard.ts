@@ -6,7 +6,7 @@ import { isBoardFrontSide } from "./isBoardFrontSide";
 import { sortBoardCoordinate } from "./sortBoardCoordinate";
 import { getAllIntersections } from "./getAllIntersections";
 import { isOnLeftSide } from "./isOnLeftSide";
-import { Board, RotateAxis } from "@/types/three";
+import { Board, RotateAxis } from "@/types/model";
 
 type Props = {
   board: Board;
@@ -18,6 +18,10 @@ type SeparateBoard = (props: Props) => { leftBoard: Board; rightBoard: Board };
 export const separateBoard: SeparateBoard = ({ board, rotateAxis }) => {
   const leftBoard: Board = [];
   const rightBoard: Board = [];
+
+  if (rotateAxis.length !== 2) {
+    return { leftBoard: [], rightBoard: [] };
+  }
 
   // boardの各辺とrotateAxisの交点を求める
   const allIntersections = getAllIntersections({ board, rotateAxis });

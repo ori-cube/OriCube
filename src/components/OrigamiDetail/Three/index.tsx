@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import styles from "./index.module.scss";
-import { Procedure, isConvolutionProcedure } from "@/types/model";
+import { Board, Procedure, isConvolutionProcedure } from "@/types/model";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
@@ -144,9 +144,10 @@ export const Three: React.FC<Props> = ({
           const node = new THREE.Vector3(...nodes[board[j]]);
           newBoard.push([node.x, node.y, node.z]);
         }
-        boards.push(newBoard);
+        boards.push(newBoard as Board);
       }
     } else {
+      if (!procedure.rotateAxis.length) return;
       // 通常の折り方の場合
       holds_line.push(
         new Float32Array([
@@ -168,7 +169,7 @@ export const Three: React.FC<Props> = ({
           rotateNode.add(subNode);
           return [rotateNode.x, rotateNode.y, rotateNode.z];
         });
-        boards.push(newBoard);
+        boards.push(newBoard as Board);
       }
     }
 

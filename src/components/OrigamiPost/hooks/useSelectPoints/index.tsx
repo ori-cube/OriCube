@@ -2,11 +2,13 @@
 step1での、点の選択を管理するカスタムフック
 inputStepがaxisの時の板の描画と点の選択を行う
 **/
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import * as THREE from "three";
 import { renderPoint } from "../../logics/renderPoint";
-import { Board, Point } from "@/types/three";
 import { renderBoard } from "../../logics/renderBoard";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
+import { useAtom, useAtomValue } from "jotai";
 
 type UseSelectPoints = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -14,12 +16,8 @@ type UseSelectPoints = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
-  inputStep: string;
-  fixBoards: Board[];
   origamiColor: string;
-}) => {
-  selectedPoints: Point[];
-};
+}) => void;
 
 export const useSelectPoints: UseSelectPoints = ({
   canvasRef,
@@ -27,11 +25,16 @@ export const useSelectPoints: UseSelectPoints = ({
   cameraRef,
   rendererRef,
   raycasterRef,
-  inputStep,
-  fixBoards,
   origamiColor,
 }) => {
-  const [selectedPoints, setSelectedPoints] = useState<Point[]>([]);
+  const currentStep = useAtomValue(currentStepAtom);
+  const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
+
+  const inputStep = currentStep.inputStep;
+  const procedureIndex = currentStep.procedureIndex;
+  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
+  const selectedPoints =
+    inputStepObject[procedureIndex.toString()].selectedPoints;
 
   // boardとpointの初期描画をする処理
   useEffect(() => {
@@ -104,7 +107,13 @@ export const useSelectPoints: UseSelectPoints = ({
         newPoints.forEach((point) => {
           renderPoint({ scene, point });
         });
-        setSelectedPoints(newPoints);
+        setInputStepObject((prev) => ({
+          ...prev,
+          [procedureIndex.toString()]: {
+            ...prev[procedureIndex.toString()],
+            selectedPoints: newPoints,
+          },
+        }));
 
         renderer.render(scene, camera);
       }
@@ -123,8 +132,4 @@ export const useSelectPoints: UseSelectPoints = ({
     cameraRef,
     raycasterRef,
   ]);
-
-  return {
-    selectedPoints,
-  };
 };

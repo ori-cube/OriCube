@@ -1,4 +1,4 @@
-import { Board, Point } from "@/types/three";
+import { Board, Point } from "@/types/model";
 import { Procedure } from "@/types/model";
 
 type DecideNewProcedure = (props: {
@@ -8,7 +8,7 @@ type DecideNewProcedure = (props: {
   rotateAxis: [Point, Point];
   isFoldingDirectionFront: boolean;
   isMoveBoardsRight: boolean;
-  origamiDescription: string;
+  description: string;
 }) => {
   foldBoards: Board[];
   notFoldBoards: Board[];
@@ -22,7 +22,7 @@ export const decideNewProcedure: DecideNewProcedure = ({
   rotateAxis,
   isFoldingDirectionFront,
   isMoveBoardsRight,
-  origamiDescription,
+  description,
 }) => {
   let xyPlaneBoards: Board[] = [];
   const notXyPlaneBoards: Board[] = [];
@@ -93,7 +93,7 @@ export const decideNewProcedure: DecideNewProcedure = ({
 
   // Procedureを作成する
   const newProcedure = {
-    description: origamiDescription,
+    description: description,
     fixBoards: [...fixBoards, ...notFoldBoards],
     moveBoards: foldBoards,
     rotateAxis: sortedRotateAxis,

@@ -1,19 +1,20 @@
-import { useEffect, useState } from "react";
+/* 
+右左どちらの板を折るかを決定するための処理をまとめたカスタムフック
+isMoveBoardsRightを決定する。
+**/
+
+import { useEffect } from "react";
 import * as THREE from "three";
-import { Step } from "../../FoldMethodControlPanel";
-import { Board, Point } from "@/types/three";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
 import { renderBoard } from "../../logics/renderBoard";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
+import { useAtom } from "jotai";
 
 type UseDecideTargetBoard = (props: {
-  setInputStep: React.Dispatch<React.SetStateAction<Step>>;
-  inputStep: Step;
-  rotateAxis: [Point, Point] | [];
-  leftBoards: Board[];
-  rightBoards: Board[];
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
@@ -21,22 +22,24 @@ type UseDecideTargetBoard = (props: {
   origamiColor: string;
 }) => {
   handleDecideFoldTarget: () => void;
-  isMoveBoardsRight: boolean;
 };
 
 export const useDecideTargetBoard: UseDecideTargetBoard = ({
-  setInputStep,
-  inputStep,
-  rotateAxis,
-  leftBoards,
-  rightBoards,
   canvasRef,
   sceneRef,
   cameraRef,
   raycasterRef,
   origamiColor,
 }) => {
-  const [isMoveBoardsRight, setIsMoveBoardsRight] = useState(true);
+  const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
+  const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
+
+  const inputStep = currentStep.inputStep;
+  const procedureIndex = currentStep.procedureIndex;
+
+  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
+  const leftBoards = inputStepObject[procedureIndex.toString()].leftBoards;
+  const rightBoards = inputStepObject[procedureIndex.toString()].rightBoards;
 
   // 板の描画
   useEffect(() => {
@@ -149,7 +152,13 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
           axis2: rotateAxis[1],
         });
 
-        setIsMoveBoardsRight(!isTargetLeft);
+        setInputStepObject((prev) => ({
+          ...prev,
+          [procedureIndex.toString()]: {
+            ...prev[procedureIndex.toString()],
+            isMoveBoardsRight: !isTargetLeft,
+          },
+        }));
 
         scene.children = scene.children.filter(
           (child) => child.name !== "SelectedBorder"
@@ -208,11 +217,10 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
   ]);
 
   const handleDecideFoldTarget = () => {
-    setInputStep("fold");
+    setCurrentStep({ ...currentStep, inputStep: "fold" });
   };
 
   return {
     handleDecideFoldTarget,
-    isMoveBoardsRight,
   };
 };

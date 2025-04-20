@@ -1,21 +1,14 @@
-import { Board, Point } from "@/types/three";
-import { Procedure, Model } from "@/types/model";
+import { Model } from "@/types/model";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import * as THREE from "three";
+import { currentStepAtom } from "../../atoms/currentStepAtom";
+import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
+import { useAtomValue } from "jotai";
 
 type UseRegisterOrigami = (props: {
-  fixBoards: Board[];
-  moveBoards: Board[];
-  numberOfMoveBoards: number;
-  rotateAxis: [Point, Point] | [];
-  isFoldingDirectionFront: boolean;
-  isMoveBoardsRight: boolean;
-  origamiDescription: string;
-  procedureIndex: number;
-  procedure: Procedure;
   origamiName: string;
   origamiColor: string;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -26,22 +19,29 @@ type UseRegisterOrigami = (props: {
 };
 
 export const useRegisterOrigami: UseRegisterOrigami = ({
-  fixBoards,
-  moveBoards,
-  numberOfMoveBoards,
-  rotateAxis,
-  isFoldingDirectionFront,
-  isMoveBoardsRight,
-  origamiDescription,
-  procedureIndex,
-  procedure,
   origamiName,
   origamiColor,
   sceneRef,
   cameraRef,
   rendererRef,
 }) => {
+  const currentStep = useAtomValue(currentStepAtom);
+  const procedureIndex = currentStep.procedureIndex;
   const { data: session } = useSession();
+
+  const inputStepObject = useAtomValue(inputStepObjectAtom);
+
+  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
+  const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
+  const numberOfMoveBoards =
+    inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
+  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
+  // const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
+  const isFoldingDirectionFront =
+    inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
+  const isMoveBoardsRight =
+    inputStepObject[procedureIndex.toString()].isMoveBoardsRight;
+  const description = inputStepObject[procedureIndex.toString()].description;
 
   const handleRegisterOrigami = () => {
     if (moveBoards.length === 0) return;
@@ -55,10 +55,12 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
       rotateAxis,
       isFoldingDirectionFront,
       isMoveBoardsRight,
-      origamiDescription,
+      description,
     });
 
-    const procedures = { ...procedure, [procedureIndex]: newProcedure };
+    // TODO: ProcedureとinputStepObjectの整合性を取る
+    // 現在はnewProcedureだけが入っているが、それまでの手順は入っていない
+    const procedures = { [procedureIndex]: newProcedure };
 
     const model: Model = {
       name: origamiName,

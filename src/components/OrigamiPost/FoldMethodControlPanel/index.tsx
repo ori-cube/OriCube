@@ -4,6 +4,7 @@ import styles from "./index.module.scss";
 import { AxisSelectPanel } from "./AxisSelectPanel";
 import { FoldTargetSelectPanel } from "./FoldTargetSelectPanel";
 import { FoldMethodSelectPanel } from "./FoldMethodSelectPanel";
+import { FoldStepSegmentedControl } from "./ui/FoldStepSegmentedControl";
 import React from "react";
 
 export type Step = "axis" | "target" | "fold";
@@ -16,7 +17,7 @@ type Props = {
   handleFoldFrontSide: () => void;
   handleFoldBackSide: () => void;
   foldAngle: number;
-  setFoldAngle: React.Dispatch<React.SetStateAction<number>>;
+  handleFoldingAngleChange: (angle: number) => void;
   handleDecideFoldMethod: () => void;
   currentStep: Step;
   totalNumber: number;
@@ -24,7 +25,10 @@ type Props = {
   isFoldFrontSide: boolean;
   handleRegisterOrigami: () => void;
   origamiDescription: string;
-  setOrigamiDescription: React.Dispatch<React.SetStateAction<string>>;
+  handleOrigamiDescriptionChange: (description: string) => void;
+  inputStepLength: number;
+  procedureIndex: number;
+  handleChangeStep: (step: number) => void;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -35,7 +39,7 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   handleFoldFrontSide,
   handleFoldBackSide,
   foldAngle,
-  setFoldAngle,
+  handleFoldingAngleChange,
   handleDecideFoldMethod,
   currentStep,
   totalNumber,
@@ -43,7 +47,10 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   isFoldFrontSide,
   handleRegisterOrigami,
   origamiDescription,
-  setOrigamiDescription,
+  handleOrigamiDescriptionChange,
+  inputStepLength,
+  procedureIndex,
+  handleChangeStep,
 }) => {
   return (
     <section className={styles.container}>
@@ -62,16 +69,23 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
           handleFoldFrontSide={handleFoldFrontSide}
           handleFoldBackSide={handleFoldBackSide}
           foldAngle={foldAngle}
-          setFoldAngle={setFoldAngle}
+          handleFoldAngleChange={handleFoldingAngleChange}
           handleNextStep={handleDecideFoldMethod}
           totalNumber={totalNumber}
           currentNumber={currentNumber}
           isFoldFrontSide={isFoldFrontSide}
           handleRegisterOrigami={handleRegisterOrigami}
           origamiDescription={origamiDescription}
-          setOrigamiDescription={setOrigamiDescription}
+          handleOrigamiDescriptionChange={handleOrigamiDescriptionChange}
         />
       )}
+      <div className={styles.segmentedControl}>
+        <FoldStepSegmentedControl
+          procedureLength={inputStepLength}
+          currentStep={procedureIndex}
+          handleChangeStep={handleChangeStep}
+        />
+      </div>
     </section>
   );
 };

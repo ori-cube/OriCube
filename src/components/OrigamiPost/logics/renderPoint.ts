@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Point } from "@/types/three";
+import { Point } from "@/types/model";
 
 type RenderPoint = (props: { scene: THREE.Scene; point: Point }) => void;
 

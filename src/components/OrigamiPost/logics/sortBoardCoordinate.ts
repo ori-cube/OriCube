@@ -2,7 +2,7 @@
 板の頂点を左回りまたは右回りにソートする関数。
 isFrontSideがtrueの場合は左回り、falseの場合は右回りにソートする。
 **/
-import { Point, Board } from "@/types/three";
+import { Point, Board } from "@/types/model";
 
 type Props = {
   board: Board;

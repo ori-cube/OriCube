@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Board } from "@/types/three";
+import { Board } from "@/types/model";
 
 type RenderBoard = (props: {
   scene: THREE.Scene;
