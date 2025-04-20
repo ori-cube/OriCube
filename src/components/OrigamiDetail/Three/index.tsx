@@ -147,6 +147,7 @@ export const Three: React.FC<Props> = ({
         boards.push(newBoard as Board);
       }
     } else {
+      if (!procedure.rotateAxis.length) return;
       // 通常の折り方の場合
       holds_line.push(
         new Float32Array([

@@ -5,7 +5,6 @@
 import { Point, Board } from "@/types/model";
 import { getAllIntersections } from "../../logics/getAllIntersections";
 import { separateBoard } from "../../logics/separateBoard";
-import { useState } from "react";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";

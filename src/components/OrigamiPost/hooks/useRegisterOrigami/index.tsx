@@ -1,5 +1,4 @@
-import { Board, Point } from "@/types/model";
-import { Procedure, Model } from "@/types/model";
+import { Model } from "@/types/model";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
@@ -7,7 +6,7 @@ import { redirect } from "next/navigation";
 import * as THREE from "three";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
-import { useAtomValue, useAtom } from "jotai";
+import { useAtomValue } from "jotai";
 
 type UseRegisterOrigami = (props: {
   origamiName: string;
@@ -30,14 +29,14 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
   const procedureIndex = currentStep.procedureIndex;
   const { data: session } = useSession();
 
-  const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
+  const inputStepObject = useAtomValue(inputStepObjectAtom);
 
   const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
   const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
   const numberOfMoveBoards =
     inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
   const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
-  const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
+  // const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
   const isFoldingDirectionFront =
     inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
   const isMoveBoardsRight =
@@ -60,7 +59,8 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
     });
 
     // TODO: ProcedureとinputStepObjectの整合性を取る
-    const procedures = { ...procedure, [procedureIndex]: newProcedure };
+    // 現在はnewProcedureだけが入っているが、それまでの手順は入っていない
+    const procedures = { [procedureIndex]: newProcedure };
 
     const model: Model = {
       name: origamiName,
