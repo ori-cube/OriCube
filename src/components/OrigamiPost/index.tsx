@@ -20,6 +20,7 @@ import { useOrigamiColor } from "./hooks/useOrigamiColor";
 import { currentStepAtom } from "./atoms/currentStepAtom";
 import { inputStepObjectAtom } from "./atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
+import { useCancelFoldTarget } from "./hooks/useCancelFoldTarget";
 
 export const OrigamiPost = () => {
   // 常に保持しておきたい変数
@@ -79,20 +80,11 @@ export const OrigamiPost = () => {
     setPopup(null);
   };
 
-  const handleCancelFoldTarget = () => {
-    /* 
-    折り紙の折る側の面を選択する画面に戻り
-    - [x] procedureIndexが1の時戻ることができる
-    - [x] procedureIndexがどこでも戻ることができる
-    折り紙の状態も戻る。
-    - [ ] foldの段階で登録されるものを初期化する
-    **/
-    setCurrentStep({ inputStep: "target", procedureIndex: procedureIndex });
-  };
-
   const handleChangeStep = (step: number) => {
     setCurrentStep({ inputStep: "fold", procedureIndex: step });
   };
+
+  const { handleCancelFoldTarget } = useCancelFoldTarget();
 
   // シーンの初期化
   useInitScene({
