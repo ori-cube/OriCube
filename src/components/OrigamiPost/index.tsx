@@ -80,10 +80,14 @@ export const OrigamiPost = () => {
   };
 
   const handleCancelFoldTarget = () => {
-    // TODO: fixBoardsを元に戻す処理
-    // setMoveBoards([]);
-    // setFixBoards([initialBoard]);
-    // setInputStep("target");
+    /* 
+    折り紙の折る側の面を選択する画面に戻り
+    - [x] procedureIndexが1の時戻ることができる
+    - [x] procedureIndexがどこでも戻ることができる
+    折り紙の状態も戻る。
+    - [ ] foldの段階で登録されるものを初期化する
+    **/
+    setCurrentStep({ inputStep: "target", procedureIndex: procedureIndex });
   };
 
   const handleChangeStep = (step: number) => {
