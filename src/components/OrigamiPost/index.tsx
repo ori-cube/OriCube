@@ -21,6 +21,7 @@ import { currentStepAtom } from "./atoms/currentStepAtom";
 import { inputStepObjectAtom } from "./atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
 import { useCancelFoldTarget } from "./hooks/useCancelFoldTarget";
+import { PopupType } from "@/types/popup";
 
 export const OrigamiPost = () => {
   // 常に保持しておきたい変数
@@ -32,11 +33,7 @@ export const OrigamiPost = () => {
   const raycasterRef = useRef<THREE.Raycaster | null>(null);
   const { origamiName, handleOrigamiNameChange } = useOrigamiName();
   const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
-  // TODO: あとで綺麗にする
-  const [popup, setPopup] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-  } | null>(null);
+  const [popup, setPopup] = useState<PopupType>(null);
 
   // 折り方選択で、現在のステップを保持する変数
   const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
