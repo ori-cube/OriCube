@@ -107,12 +107,12 @@ export const OrigamiPost = () => {
     try {
       await handleDecideRotateAxis();
       setPopup({
-        message: "回転軸が正常に決定されました。",
+        message: "折り線がひけました！",
         type: "success",
       });
     } catch (error) {
       setPopup({
-        message: String(error) || "回転軸の決定中にエラーが発生しました。",
+        message: String(error) || "折り線をひけませんでした",
         type: "error",
       });
     }
