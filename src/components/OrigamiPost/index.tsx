@@ -20,6 +20,7 @@ import { useOrigamiColor } from "./hooks/useOrigamiColor";
 import { currentStepAtom } from "./atoms/currentStepAtom";
 import { inputStepObjectAtom } from "./atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
+import { useCancelFoldTarget } from "./hooks/useCancelFoldTarget";
 
 export const OrigamiPost = () => {
   // 常に保持しておきたい変数
@@ -74,16 +75,11 @@ export const OrigamiPost = () => {
     }));
   };
 
-  const handleCancelFoldTarget = () => {
-    // TODO: fixBoardsを元に戻す処理
-    // setMoveBoards([]);
-    // setFixBoards([initialBoard]);
-    // setInputStep("target");
-  };
-
   const handleChangeStep = (step: number) => {
     setCurrentStep({ inputStep: "fold", procedureIndex: step });
   };
+
+  const { handleCancelFoldTarget } = useCancelFoldTarget();
 
   // シーンの初期化
   useInitScene({
