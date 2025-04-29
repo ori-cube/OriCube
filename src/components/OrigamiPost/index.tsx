@@ -31,6 +31,11 @@ export const OrigamiPost = () => {
   const raycasterRef = useRef<THREE.Raycaster | null>(null);
   const { origamiName, handleOrigamiNameChange } = useOrigamiName();
   const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
+  // TODO: あとで綺麗にする
+  const [popup, setPopup] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   // 折り方選択で、現在のステップを保持する変数
   const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
@@ -69,16 +74,6 @@ export const OrigamiPost = () => {
     }));
   };
 
-  // TODO: あとで綺麗にする
-  const [popup, setPopup] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-  } | null>(null);
-
-  const handleClosePopup = () => {
-    setPopup(null);
-  };
-
   const handleCancelFoldTarget = () => {
     // TODO: fixBoardsを元に戻す処理
     // setMoveBoards([]);
@@ -115,6 +110,21 @@ export const OrigamiPost = () => {
   const { handleDecideRotateAxis, handleCancelRotateAxis } =
     useDecideRotateAxis();
 
+  const handleDecideRotateAxisWithPopup = async () => {
+    try {
+      await handleDecideRotateAxis();
+      setPopup({
+        message: "回転軸が正常に決定されました。",
+        type: "success",
+      });
+    } catch (error) {
+      setPopup({
+        message: String(error) || "回転軸の決定中にエラーが発生しました。",
+        type: "error",
+      });
+    }
+  };
+
   // step2：板を折る対象を決定
   // 板の描画を行う。左右どちらの板を対象にするかを選択できるようにする。
   const { handleDecideFoldTarget } = useDecideTargetBoard({
@@ -145,6 +155,10 @@ export const OrigamiPost = () => {
     rendererRef,
   });
 
+  const handleClosePopup = () => {
+    setPopup(null);
+  };
+
   return (
     <>
       <canvas ref={canvasRef} id="canvas" className={styles.model} />
@@ -158,7 +172,7 @@ export const OrigamiPost = () => {
       </div>
       <div className={styles.panelContainer}>
         <FoldMethodControlPanel
-          handleDecideRotateAxis={handleDecideRotateAxis}
+          handleDecideRotateAxis={handleDecideRotateAxisWithPopup}
           handleCancelRotateAxis={handleCancelRotateAxis}
           handleDecideFoldTarget={handleDecideFoldTarget}
           handleCancelFoldTarget={handleCancelFoldTarget}
@@ -179,7 +193,7 @@ export const OrigamiPost = () => {
           handleChangeStep={handleChangeStep}
         />
       </div>
-      {popup && (
+      {popup?.message.length && (
         <Popup
           message={popup.message}
           type={popup.type}
