@@ -1,10 +1,8 @@
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom, useAtomValue } from "jotai";
-import {
-  calculateSelectedBoardCount,
-  processBoardsForFolding,
-} from "../../logics/handleFolding";
+import { calculateSelectedBoardCount } from "./calculateSelectedBoardCount";
+import { processBoardsForFolding } from "./processBoardsForFolding";
 
 type UseSelectSideAndNumberOfBoards = () => {
   handleFoldFrontSide: () => void;

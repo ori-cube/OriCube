@@ -1,20 +1,5 @@
 import { Board } from "@/types/model";
 
-// 折る枚数を計算
-export const calculateSelectedBoardCount = (
-  isFoldingDirectionFront: boolean,
-  numberOfMoveBoards: number,
-  maxNumberOfMoveBoards: number
-): number => {
-  const selectedBoardCount = isFoldingDirectionFront
-    ? 1
-    : (numberOfMoveBoards + 1) % (maxNumberOfMoveBoards + 1);
-
-  validateFold(selectedBoardCount, maxNumberOfMoveBoards);
-
-  return selectedBoardCount;
-};
-
 // 板を分類し、折る板と折らない板を処理
 export const processBoardsForFolding = (
   boards: Board[],
@@ -39,17 +24,6 @@ export const processBoardsForFolding = (
   const notFoldBoards = xyPlaneBoards.slice(selectedBoardCount);
 
   return { foldBoards, notFoldBoards };
-};
-
-// エラーチェック
-// TODO: 後で別のファイルに移動する
-const validateFold = (
-  selectedBoardCount: number,
-  maxNumberOfMoveBoards: number
-) => {
-  if (selectedBoardCount < 0 || selectedBoardCount > maxNumberOfMoveBoards) {
-    throw new Error("折る枚数が不正です");
-  }
 };
 
 // 板を分類する
