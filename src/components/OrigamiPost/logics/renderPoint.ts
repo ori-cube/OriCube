@@ -11,3 +11,18 @@ export const renderPoint: RenderPoint = ({ scene, point }) => {
   pointMesh.name = "Point";
   scene.add(pointMesh);
 };
+
+export const renderHighlightPoint = ({
+  scene,
+  point,
+}: {
+  scene: THREE.Scene;
+  point: Point;
+}) => {
+  const geometry = new THREE.SphereGeometry(1, 32, 32).scale(0.7, 0.7, 0.7);
+  const material = new THREE.MeshBasicMaterial({ color: 0xfff000 });
+  const sphere = new THREE.Mesh(geometry, material);
+  sphere.position.set(point[0], point[1], point[2]);
+  sphere.name = "HighlightPoint";
+  scene.add(sphere);
+};

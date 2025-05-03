@@ -9,6 +9,7 @@ import { renderBoard } from "../../logics/renderBoard";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom, useAtomValue } from "jotai";
+import { renderHighlightPoint } from "../../logics/renderPoint";
 
 type UseSelectPoints = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -36,6 +37,11 @@ export const useSelectPoints: UseSelectPoints = ({
   const selectedPoints =
     inputStepObject[procedureIndex.toString()].selectedPoints;
 
+  // スナップ用の状態を追加
+  const [highlightedVertex, setHighlightedVertex] =
+    React.useState<THREE.Vector3 | null>(null);
+  const SNAP_THRESHOLD = 2; // スナップする距離の閾値
+
   // boardとpointの初期描画をする処理
   useEffect(() => {
     if (inputStep !== "axis") return;
@@ -61,6 +67,80 @@ export const useSelectPoints: UseSelectPoints = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputStep, sceneRef, rendererRef, cameraRef, fixBoards, origamiColor]);
 
+  // マウスの移動を監視する処理を追加
+  useEffect(() => {
+    if (inputStep !== "axis") return;
+    const canvas = canvasRef.current!;
+    const scene = sceneRef.current!;
+    const camera = cameraRef.current!;
+    const renderer = rendererRef.current!;
+
+    const mouseMoveListener = (event: MouseEvent) => {
+      const sizes = {
+        width: window.innerWidth - 320,
+        height: window.innerHeight,
+      };
+
+      // マウス座標の正規化
+      const mouse = new THREE.Vector2();
+      mouse.x = (event.clientX / sizes.width) * 2 - 1;
+      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+
+      // マウス位置をワールド座標に変換
+      const mouseVector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+      mouseVector.unproject(camera);
+
+      // 全ての板の頂点を取得
+      let closestVertex: THREE.Vector3 | null = null;
+      let minDistance = Infinity;
+
+      fixBoards.forEach((board) => {
+        board.forEach((vertex) => {
+          const vertexVector = new THREE.Vector3(
+            vertex[0],
+            vertex[1],
+            vertex[2]
+          );
+          // 頂点をスクリーン座標に変換
+          const vertexScreenPos = vertexVector.clone().project(camera);
+
+          // マウスとの距離を計算
+          const distance = new THREE.Vector2(mouse.x, mouse.y).distanceTo(
+            new THREE.Vector2(vertexScreenPos.x, vertexScreenPos.y)
+          );
+
+          if (distance < SNAP_THRESHOLD && distance < minDistance) {
+            minDistance = distance;
+            closestVertex = vertexVector;
+          }
+        });
+      });
+
+      // 既存のハイライトを削除
+      scene.children = scene.children.filter(
+        (child) => child.name !== "HighlightPoint"
+      );
+
+      // 新しいハイライトを描画
+      if (closestVertex) {
+        renderHighlightPoint({
+          scene,
+          point: [closestVertex.x, closestVertex.y, closestVertex.z],
+        });
+        setHighlightedVertex(closestVertex);
+      } else {
+        setHighlightedVertex(null);
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    canvas.addEventListener("mousemove", mouseMoveListener);
+    return () => {
+      canvas.removeEventListener("mousemove", mouseMoveListener);
+    };
+  }, [inputStep, canvasRef, sceneRef, cameraRef, rendererRef, fixBoards]);
+
   // モデル上の点を選択できるようにする処理
   useEffect(() => {
     const sizes = {
@@ -75,28 +155,23 @@ export const useSelectPoints: UseSelectPoints = ({
     const raycaster = raycasterRef.current!;
 
     const clickListener = (event: MouseEvent) => {
-      // マウスの座標を正規化して取得
-      const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / sizes.width) * 2 - 1;
-      mouse.y = -(event.clientY / sizes.height) * 2 + 1;
-
-      // エッジに対してRaycasterを適用して交差を調べる
-      raycaster.setFromCamera(mouse, camera);
-      const edges = scene.children.filter(
-        (child) => child.type === "LineSegments"
-      );
-      const intersects = raycaster.intersectObjects(edges, true);
-
-      // 現在記録している点の数が2個未満の場合は、新しい点を追加, 2個以上の場合は最初の点を消して、新しい点を追加
-      if (intersects.length > 0) {
-        const point = intersects[0].point; // 新しく選択された点
+      if (highlightedVertex) {
+        // ハイライトされている頂点があれば、その点を選択
         let newPoints = [...selectedPoints];
 
         if (selectedPoints.length < 2) {
-          newPoints.push([point.x, point.y, point.z]);
+          newPoints.push([
+            highlightedVertex.x,
+            highlightedVertex.y,
+            highlightedVertex.z,
+          ]);
         } else {
           newPoints = newPoints.slice(1);
-          newPoints.push([point.x, point.y, point.z]);
+          newPoints.push([
+            highlightedVertex.x,
+            highlightedVertex.y,
+            highlightedVertex.z,
+          ]);
         }
 
         // 既存のpointを削除する
@@ -116,6 +191,49 @@ export const useSelectPoints: UseSelectPoints = ({
         }));
 
         renderer.render(scene, camera);
+      } else {
+        // マウスの座標を正規化して取得
+        const mouse = new THREE.Vector2();
+        mouse.x = (event.clientX / sizes.width) * 2 - 1;
+        mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+
+        // エッジに対してRaycasterを適用して交差を調べる
+        raycaster.setFromCamera(mouse, camera);
+        const edges = scene.children.filter(
+          (child) => child.type === "LineSegments"
+        );
+        const intersects = raycaster.intersectObjects(edges, true);
+
+        // 現在記録している点の数が2個未満の場合は、新しい点を追加, 2個以上の場合は最初の点を消して、新しい点を追加
+        if (intersects.length > 0) {
+          const point = intersects[0].point; // 新しく選択された点
+          let newPoints = [...selectedPoints];
+
+          if (selectedPoints.length < 2) {
+            newPoints.push([point.x, point.y, point.z]);
+          } else {
+            newPoints = newPoints.slice(1);
+            newPoints.push([point.x, point.y, point.z]);
+          }
+
+          // 既存のpointを削除する
+          scene.children = scene.children.filter(
+            (child) => child.name !== "Point"
+          );
+          // pointsを描画し直す
+          newPoints.forEach((point) => {
+            renderPoint({ scene, point });
+          });
+          setInputStepObject((prev) => ({
+            ...prev,
+            [procedureIndex.toString()]: {
+              ...prev[procedureIndex.toString()],
+              selectedPoints: newPoints,
+            },
+          }));
+
+          renderer.render(scene, camera);
+        }
       }
     };
 
@@ -131,5 +249,6 @@ export const useSelectPoints: UseSelectPoints = ({
     rendererRef,
     cameraRef,
     raycasterRef,
+    highlightedVertex,
   ]);
 };
