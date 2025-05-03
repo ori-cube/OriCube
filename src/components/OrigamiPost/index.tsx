@@ -106,10 +106,6 @@ export const OrigamiPost = () => {
   const handleDecideRotateAxisWithPopup = async () => {
     try {
       await handleDecideRotateAxis();
-      setPopup({
-        message: "折り線がひけました！",
-        type: "success",
-      });
     } catch (error) {
       setPopup({
         message: String(error) || "折り線をひけませんでした",
