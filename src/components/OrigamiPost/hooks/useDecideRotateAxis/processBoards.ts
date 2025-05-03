@@ -1,7 +1,7 @@
 import { Point, Board } from "@/types/model";
-import { getAllIntersections } from "./getAllIntersections";
-import { isOnLeftSide } from "./isOnLeftSide";
-import { separateBoard } from "./separateBoard";
+import { getAllIntersections } from "../../logics/getAllIntersections";
+import { isOnLeftSide } from "../../logics/isOnLeftSide";
+import { separateBoard } from "../../logics/separateBoard";
 
 //板を分割するか、左右どちらに属するかを判定
 export const processBoards = (fixBoards: Board[], axis: [Point, Point]) => {

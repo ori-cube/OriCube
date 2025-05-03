@@ -2,7 +2,7 @@ import { Point } from "@/types/model";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
-import { validateSelectedPoints, processBoards } from "../../logics/rotateAxis";
+import { validateSelectedPoints, processBoards } from "./processBoards";
 
 type UseDecideRotateAxis = () => {
   handleDecideRotateAxis: () => void;
