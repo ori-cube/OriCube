@@ -75,7 +75,7 @@ export const useSelectSideAndNumberOfBoards: UseSelectSideAndNumberOfBoards =
             ...notFoldBoards,
           ],
           numberOfMoveBoards: selectedBoardCount,
-          isFoldingDirectionFront,
+          isFoldingDirectionFront: isFront,
           maxNumberOfMoveBoards,
         },
       }));
