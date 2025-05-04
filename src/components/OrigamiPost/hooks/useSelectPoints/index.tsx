@@ -10,6 +10,8 @@ import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom, useAtomValue } from "jotai";
 import { renderHighlightPoint } from "../../logics/renderPoint";
+import { renderSnapPoint } from "../../logics/renderPoint";
+import { Point } from "@/types/model";
 
 type UseSelectPoints = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -56,9 +58,31 @@ export const useSelectPoints: UseSelectPoints = ({
     selectedPoints.forEach((point) => {
       renderPoint({ scene, point });
     });
+
     // boardsを描画
     fixBoards.forEach((board) => {
       renderBoard({ scene, board, color: origamiColor });
+
+      // 頂点のスナップポイントを描画
+      board.forEach((vertex) => {
+        renderSnapPoint({ scene, point: vertex });
+      });
+
+      // 辺の中心点のスナップポイントを描画
+      for (let i = 0; i < board.length; i++) {
+        const nextIndex = (i + 1) % board.length;
+        const currentVertex = board[i];
+        const nextVertex = board[nextIndex];
+
+        // 中心点を計算
+        const centerPoint: Point = [
+          (currentVertex[0] + nextVertex[0]) / 2,
+          (currentVertex[1] + nextVertex[1]) / 2,
+          (currentVertex[2] + nextVertex[2]) / 2,
+        ];
+
+        renderSnapPoint({ scene, point: centerPoint });
+      }
     });
 
     renderer.render(scene, camera);
