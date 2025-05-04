@@ -40,7 +40,7 @@ export const useSelectPoints: UseSelectPoints = ({
   // スナップ用の状態を追加
   const [highlightedVertex, setHighlightedVertex] =
     React.useState<THREE.Vector3 | null>(null);
-  const SNAP_THRESHOLD = 2; // スナップする距離の閾値
+  const SNAP_THRESHOLD = 0.1; // スナップする距離の閾値
 
   // boardとpointの初期描画をする処理
   useEffect(() => {
@@ -74,6 +74,7 @@ export const useSelectPoints: UseSelectPoints = ({
     const scene = sceneRef.current!;
     const camera = cameraRef.current!;
     const renderer = rendererRef.current!;
+    const raycaster = raycasterRef.current!;
 
     const mouseMoveListener = (event: MouseEvent) => {
       const sizes = {
@@ -94,6 +95,7 @@ export const useSelectPoints: UseSelectPoints = ({
       let closestVertex: THREE.Vector3 | null = null;
       let minDistance = Infinity;
 
+      // 頂点のチェック
       fixBoards.forEach((board) => {
         board.forEach((vertex) => {
           const vertexVector = new THREE.Vector3(
@@ -101,20 +103,33 @@ export const useSelectPoints: UseSelectPoints = ({
             vertex[1],
             vertex[2]
           );
-          // 頂点をスクリーン座標に変換
+          // 頂点をスクリーン座標(マウスの位置)に変換
           const vertexScreenPos = vertexVector.clone().project(camera);
-
           // マウスとの距離を計算
           const distance = new THREE.Vector2(mouse.x, mouse.y).distanceTo(
             new THREE.Vector2(vertexScreenPos.x, vertexScreenPos.y)
           );
-
+          // 距離が閾値より小さい場合は、頂点を更新
           if (distance < SNAP_THRESHOLD && distance < minDistance) {
             minDistance = distance;
             closestVertex = vertexVector;
           }
         });
       });
+
+      // 頂点が見つからない場合は、エッジ上の最近点を探す
+      if (!closestVertex) {
+        // Raycasterを使用してエッジとの交差を確認
+        raycaster.setFromCamera(mouse, camera);
+        const edges = scene.children.filter(
+          (child) => child.type === "LineSegments"
+        );
+        const intersects = raycaster.intersectObjects(edges, true);
+
+        if (intersects.length > 0) {
+          closestVertex = intersects[0].point;
+        }
+      }
 
       // 既存のハイライトを削除
       scene.children = scene.children.filter(
@@ -139,7 +154,15 @@ export const useSelectPoints: UseSelectPoints = ({
     return () => {
       canvas.removeEventListener("mousemove", mouseMoveListener);
     };
-  }, [inputStep, canvasRef, sceneRef, cameraRef, rendererRef, fixBoards]);
+  }, [
+    inputStep,
+    canvasRef,
+    sceneRef,
+    cameraRef,
+    rendererRef,
+    fixBoards,
+    raycasterRef,
+  ]);
 
   // モデル上の点を選択できるようにする処理
   useEffect(() => {
