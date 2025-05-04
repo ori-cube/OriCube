@@ -63,7 +63,7 @@ export const useSelectPoints: UseSelectPoints = ({
 
     renderer.render(scene, camera);
 
-    // selectedPointsが変更されたときの描画は、下のuseEffectで行う
+    // selectedPointsが変更されたときの描画は、下のuseEffectで行うため、依存配列に含めない
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputStep, sceneRef, rendererRef, cameraRef, fixBoards, origamiColor]);
 
@@ -87,16 +87,13 @@ export const useSelectPoints: UseSelectPoints = ({
       mouse.x = (event.clientX / sizes.width) * 2 - 1;
       mouse.y = -(event.clientY / sizes.height) * 2 + 1;
 
-      // マウス位置をワールド座標に変換
-      const mouseVector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-      mouseVector.unproject(camera);
-
-      // 全ての板の頂点を取得
+      // 全ての板の頂点と辺の中心点を取得
       let closestVertex: THREE.Vector3 | null = null;
       let minDistance = Infinity;
 
-      // 頂点のチェック
+      // 頂点と辺の中心点のチェック
       fixBoards.forEach((board) => {
+        // 頂点のチェック
         board.forEach((vertex) => {
           const vertexVector = new THREE.Vector3(
             vertex[0],
@@ -115,9 +112,33 @@ export const useSelectPoints: UseSelectPoints = ({
             closestVertex = vertexVector;
           }
         });
+
+        // 辺の中心点のチェック
+        for (let i = 0; i < board.length; i++) {
+          const nextIndex = (i + 1) % board.length;
+          const currentVertex = board[i];
+          const nextVertex = board[nextIndex];
+
+          // 辺の中心点を計算
+          const centerPoint = new THREE.Vector3(
+            (currentVertex[0] + nextVertex[0]) / 2,
+            (currentVertex[1] + nextVertex[1]) / 2,
+            (currentVertex[2] + nextVertex[2]) / 2
+          );
+
+          const centerScreenPos = centerPoint.clone().project(camera);
+          const distance = new THREE.Vector2(mouse.x, mouse.y).distanceTo(
+            new THREE.Vector2(centerScreenPos.x, centerScreenPos.y)
+          );
+
+          if (distance < SNAP_THRESHOLD && distance < minDistance) {
+            minDistance = distance;
+            closestVertex = centerPoint;
+          }
+        }
       });
 
-      // 頂点が見つからない場合は、エッジ上の最近点を探す
+      // 頂点も辺の中心点も見つからない場合は、エッジ上の最近点を探す
       if (!closestVertex) {
         // Raycasterを使用してエッジとの交差を確認
         raycaster.setFromCamera(mouse, camera);
@@ -273,5 +294,7 @@ export const useSelectPoints: UseSelectPoints = ({
     cameraRef,
     raycasterRef,
     highlightedVertex,
+    procedureIndex,
+    setInputStepObject,
   ]);
 };
