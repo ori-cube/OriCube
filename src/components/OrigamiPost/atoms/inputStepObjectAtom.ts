@@ -23,7 +23,7 @@ type InputStep = {
   description: string;
 };
 
-type InputStepObject = {
+export type InputStepObject = {
   [key: string]: InputStep;
 };
 
