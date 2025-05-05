@@ -5,13 +5,11 @@ inputStepがaxisの時の板の描画と点の選択を行う
 import React, { useEffect } from "react";
 import * as THREE from "three";
 import { renderPoint } from "../../logics/renderPoint";
-import { renderBoard } from "../../logics/renderBoard";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom, useAtomValue } from "jotai";
 import { renderHighlightPoint } from "../../logics/renderPoint";
-import { renderSnapPoint } from "../../logics/renderPoint";
-import { Point } from "@/types/model";
+import { useInitialRender } from "./useInitialRender";
 
 type UseSelectPoints = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -44,52 +42,16 @@ export const useSelectPoints: UseSelectPoints = ({
     React.useState<THREE.Vector3 | null>(null);
   const SNAP_THRESHOLD = 0.1; // スナップする距離の閾値
 
-  // boardとpointの初期描画をする処理
-  useEffect(() => {
-    if (inputStep !== "axis") return;
-    const scene = sceneRef.current!;
-    const renderer = rendererRef.current!;
-    const camera = cameraRef.current!;
-
-    // sceneの初期化
-    scene.children = [];
-
-    // pointsを描画
-    selectedPoints.forEach((point) => {
-      renderPoint({ scene, point });
-    });
-
-    // boardsを描画
-    fixBoards.forEach((board) => {
-      renderBoard({ scene, board, color: origamiColor });
-
-      // 頂点のスナップポイントを描画
-      board.forEach((vertex) => {
-        renderSnapPoint({ scene, point: vertex });
-      });
-
-      // 辺の中心点のスナップポイントを描画
-      for (let i = 0; i < board.length; i++) {
-        const nextIndex = (i + 1) % board.length;
-        const currentVertex = board[i];
-        const nextVertex = board[nextIndex];
-
-        // 中心点を計算
-        const centerPoint: Point = [
-          (currentVertex[0] + nextVertex[0]) / 2,
-          (currentVertex[1] + nextVertex[1]) / 2,
-          (currentVertex[2] + nextVertex[2]) / 2,
-        ];
-
-        renderSnapPoint({ scene, point: centerPoint });
-      }
-    });
-
-    renderer.render(scene, camera);
-
-    // selectedPointsが変更されたときの描画は、下のuseEffectで行うため、依存配列に含めない
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputStep, sceneRef, rendererRef, cameraRef, fixBoards, origamiColor]);
+  // 初期描画のロジックを分離
+  useInitialRender({
+    inputStep,
+    sceneRef,
+    rendererRef,
+    cameraRef,
+    fixBoards,
+    selectedPoints,
+    origamiColor,
+  });
 
   // マウスの移動を監視する処理を追加
   useEffect(() => {
