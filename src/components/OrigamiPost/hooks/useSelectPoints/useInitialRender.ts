@@ -1,3 +1,10 @@
+/* 
+step1で、点の選択を行うための初期描画を行うフック
+- sceneの初期化
+- 板の描画
+- スナップポイント(頂点と辺の中心点)の描画
+**/
+
 import { useEffect } from "react";
 import * as THREE from "three";
 import { renderPoint, renderSnapPoint } from "../../logics/renderPoint";
