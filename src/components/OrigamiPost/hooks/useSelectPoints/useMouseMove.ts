@@ -10,7 +10,7 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
-import { renderHighlightPoint } from "../../logics/renderPoint";
+import { renderHighlightPoint } from "./renderPoint";
 
 type UseMouseMoveProps = {
   inputStep: string;

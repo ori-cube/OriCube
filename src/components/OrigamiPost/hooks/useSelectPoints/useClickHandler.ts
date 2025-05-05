@@ -9,7 +9,7 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
-import { renderPoint } from "../../logics/renderPoint";
+import { renderPoint } from "./renderPoint";
 import { InputStepObject } from "../../atoms/inputStepObjectAtom";
 
 type UseClickHandlerProps = {
