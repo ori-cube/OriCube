@@ -9,7 +9,7 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
-import { renderPoint } from "./renderPoint";
+import { renderSelectedPoint } from "./renderPoint";
 import { InputStepObject } from "../../atoms/inputStepObjectAtom";
 
 type UseClickHandler = (props: {
@@ -69,7 +69,7 @@ export const useClickHandler: UseClickHandler = ({
       scene.children = scene.children.filter((child) => child.name !== "Point");
       // pointsを描画し直す
       newPoints.forEach((point) => {
-        renderPoint({ scene, point });
+        renderSelectedPoint({ scene, point });
       });
       setInputStepObject((prev) => ({
         ...prev,

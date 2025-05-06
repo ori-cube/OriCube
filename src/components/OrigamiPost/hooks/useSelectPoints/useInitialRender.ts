@@ -7,7 +7,7 @@ step1で、点の選択を行うための初期描画を行うフック
 
 import { useEffect } from "react";
 import * as THREE from "three";
-import { renderPoint, renderSnapPoint } from "./renderPoint";
+import { renderSelectedPoint, renderSnapPoint } from "./renderPoint";
 import { renderBoard } from "../../logics/renderBoard";
 import { Point } from "@/types/model";
 
@@ -41,7 +41,7 @@ export const useInitialRender: UseInitialRender = ({
 
     // pointsを描画
     selectedPoints.forEach((point) => {
-      renderPoint({ scene, point });
+      renderSelectedPoint({ scene, point });
     });
 
     // boardsを描画
