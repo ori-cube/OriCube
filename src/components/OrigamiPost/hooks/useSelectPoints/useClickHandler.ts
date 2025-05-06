@@ -12,7 +12,7 @@ import { Point } from "@/types/model";
 import { renderPoint } from "./renderPoint";
 import { InputStepObject } from "../../atoms/inputStepObjectAtom";
 
-type UseClickHandlerProps = {
+type UseClickHandler = (props: {
   inputStep: string;
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -24,9 +24,9 @@ type UseClickHandlerProps = {
   setInputStepObject: (
     updater: (prev: InputStepObject) => InputStepObject
   ) => void;
-};
+}) => void;
 
-export const useClickHandler = ({
+export const useClickHandler: UseClickHandler = ({
   inputStep,
   canvasRef,
   sceneRef,
@@ -36,7 +36,7 @@ export const useClickHandler = ({
   highlightedVertex,
   procedureIndex,
   setInputStepObject,
-}: UseClickHandlerProps) => {
+}) => {
   useEffect(() => {
     if (inputStep !== "axis") return;
     const canvas = canvasRef.current!;

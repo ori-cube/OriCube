@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# TypeScriptルール
+
+## カスタムフックの型定義について
+
+- カスタムフック（useXXX）のprops型は、Props型エイリアス（例: XxxProps）として定義せず、式単位（関数型）で定義すること。
+- 具体的には、以下のように型を定義し、関数宣言に適用する。
+
+```
+type UseXxx = (props: {
+  // 必要なpropsをここに記述
+}) => void;
+
+export const useXxx: UseXxx = ({ ... }) => {
+  // ...実装...
+};
+```
+
+- このルールにより、propsの過不足が型レベルで厳密にチェックされ、関数の型と実装が1対1で対応し、可読性・保守性が向上する。
+- props型を他で再利用する必要がある場合のみ、型エイリアスとして切り出すことを許容する。
+
+---
+
+## 例
+
+NG例（Props型エイリアスを使う）
+```ts
+type XxxProps = { ... };
+export const useXxx = (props: XxxProps) => { ... }
+```
+
+OK例（式単位で型を定義）
+```ts
+type UseXxx = (props: { ... }) => void;
+export const useXxx: UseXxx = ({ ... }) => { ... }
+```

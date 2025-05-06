@@ -11,7 +11,7 @@ import { renderPoint, renderSnapPoint } from "./renderPoint";
 import { renderBoard } from "../../logics/renderBoard";
 import { Point } from "@/types/model";
 
-type UseInitialRenderProps = {
+type UseInitialRender = (props: {
   inputStep: string;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
@@ -19,9 +19,9 @@ type UseInitialRenderProps = {
   fixBoards: Point[][];
   selectedPoints: Point[];
   origamiColor: string;
-};
+}) => void;
 
-export const useInitialRender = ({
+export const useInitialRender: UseInitialRender = ({
   inputStep,
   sceneRef,
   rendererRef,
@@ -29,7 +29,7 @@ export const useInitialRender = ({
   fixBoards,
   selectedPoints,
   origamiColor,
-}: UseInitialRenderProps) => {
+}) => {
   useEffect(() => {
     if (inputStep !== "axis") return;
     const scene = sceneRef.current!;

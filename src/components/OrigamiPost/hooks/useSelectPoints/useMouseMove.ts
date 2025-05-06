@@ -12,7 +12,7 @@ import * as THREE from "three";
 import { Point } from "@/types/model";
 import { renderHighlightPoint } from "./renderPoint";
 
-type UseMouseMoveProps = {
+type UseMouseMove = (props: {
   inputStep: string;
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -21,9 +21,9 @@ type UseMouseMoveProps = {
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   fixBoards: Point[][];
   setHighlightedVertex: (vertex: THREE.Vector3 | null) => void;
-};
+}) => void;
 
-export const useMouseMove = ({
+export const useMouseMove: UseMouseMove = ({
   inputStep,
   canvasRef,
   sceneRef,
@@ -32,7 +32,7 @@ export const useMouseMove = ({
   raycasterRef,
   fixBoards,
   setHighlightedVertex,
-}: UseMouseMoveProps) => {
+}) => {
   const SNAP_THRESHOLD = 0.1; // スナップする距離の閾値
 
   useEffect(() => {
