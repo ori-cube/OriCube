@@ -68,9 +68,12 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
     // 現在はnewProcedureだけが入っているが、それまでの手順は入っていない
     const procedures = { [procedureIndex]: newProcedure };
 
+    // idとimageUrlはDBから取得するため、空文字を設定
     const model: Model = {
+      id: "",
       name: origamiName,
       color: origamiColor,
+      imageUrl: "",
       procedure: procedures,
     };
 
