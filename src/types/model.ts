@@ -37,7 +37,7 @@ export type Step = BaseStep | ConvolutionStep;
 3: Step,
 ...
 **/
-export type StepObject = {
+export type Procedure = {
   [key: string]: Step;
 };
 
@@ -48,5 +48,5 @@ export type Model = {
   color: string;
   imageUrl: string;
   searchKeyword?: string[];
-  procedure: StepObject;
+  procedure: Procedure;
 };
