@@ -17,7 +17,7 @@
     "@aws-sdk/client-s3": "^3.687.0",
     "@nextui-org/pagination": "^2.0.36",
     "@nextui-org/react": "^2.4.8",
-    "@prisma/client": "6.7.0",
+    "@prisma/client": "^6.7.0",
     "@radix-ui/themes": "^3.1.4",
     "axios": "^1.7.7",
     "class-variance-authority": "^0.7.0",

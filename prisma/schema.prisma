@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -14,10 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Profile {
-  id        String   @id @db.Uuid
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
   name      String
-  avatarUrl String?  @map("avatar_url")
+  email     String
+  avatarUrl String   @map("avatar_url")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -35,5 +35,5 @@ model Model {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  user Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
