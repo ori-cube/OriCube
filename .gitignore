@@ -43,3 +43,6 @@ firestore-admin-key.json
 
 # prismaの自動生成ファイル
 generated
+
+# databaseの自動生成ファイル
+database
