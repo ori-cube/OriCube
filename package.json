@@ -13,7 +13,7 @@
     "db:migrate:prod": "dotenv -e .env.production -- prisma migrate dev --name init",
     "db:generate:dev": "dotenv -e .env.development -- prisma generate",
     "db:generate:prod": "dotenv -e .env.production -- prisma generate",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
