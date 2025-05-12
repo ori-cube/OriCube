@@ -4,8 +4,8 @@
 
 ## 各種リンク
 
-- サイトURL：https://oricube.vercel.app/
-- デモ動画URL：https://www.youtube.com/watch?v=-ON8P8Axjng
+- サイト URL：https://oricube.vercel.app/
+- デモ動画 URL：https://www.youtube.com/watch?v=-ON8P8Axjng
 
 ## 製品概要
 
@@ -106,7 +106,6 @@ Three.js を用いて、誰でもアクセス可能な Web 上で、折り紙の
 - Three.js
   - web で 3D コンテンツを描画するための JavaScript ライブラリ
   - 折り紙の 3D モデルを表示するために使用
-
 
 #### デバイス
 
