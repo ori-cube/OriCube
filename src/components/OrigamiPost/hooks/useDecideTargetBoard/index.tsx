@@ -3,7 +3,7 @@
 isMoveBoardsRightを決定する。
 **/
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { isOnLeftSide } from "../../logics/isOnLeftSide";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
@@ -36,13 +36,26 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
 
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
+  const step = inputStepObject[procedureIndex.toString()];
 
-  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
-  const leftBoards = inputStepObject[procedureIndex.toString()].leftBoards;
-  const rightBoards = inputStepObject[procedureIndex.toString()].rightBoards;
+  // React Hooksは条件分岐の中で呼び出せない
+  // step.type === "Base"の早期リターンができないため、ダミーを用意
+  const rotateAxis = useMemo(
+    () => (step.type === "Base" ? step.rotateAxis : []),
+    [step]
+  );
+  const leftBoards = useMemo(
+    () => (step.type === "Base" ? step.leftBoards : []),
+    [step]
+  );
+  const rightBoards = useMemo(
+    () => (step.type === "Base" ? step.rightBoards : []),
+    [step]
+  );
 
   // 板の描画
   useEffect(() => {
+    if (step.type !== "Base") return;
     if (inputStep !== "target") return;
     if (rotateAxis.length === 0) return;
 
@@ -75,10 +88,19 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
     rightBoards.forEach((board) =>
       renderBoard({ scene, board, color: origamiColor })
     );
-  }, [inputStep, sceneRef, rotateAxis, leftBoards, rightBoards, origamiColor]);
+  }, [
+    step.type,
+    inputStep,
+    sceneRef,
+    rotateAxis,
+    leftBoards,
+    rightBoards,
+    origamiColor,
+  ]);
 
   // 板をホバー、クリックしたときの処理
   useEffect(() => {
+    if (step.type !== "Base") return;
     if (inputStep !== "target") return;
     if (rotateAxis.length === 0) return;
 
@@ -206,6 +228,7 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
       canvas.removeEventListener("click", clickListener);
     };
   }, [
+    step.type,
     inputStep,
     cameraRef,
     canvasRef,

@@ -1,5 +1,5 @@
-import { Board } from "@/types/model";
-import { useEffect } from "react";
+import { Board, RotateAxis } from "@/types/model";
+import { useEffect, useMemo } from "react";
 import { renderBoard } from "../../logics/renderBoard";
 import { rotateBoards } from "../../logics/rotateBoards";
 import * as THREE from "three";
@@ -19,21 +19,50 @@ export const useRotateBoards: UseRotateBoards = ({
   const currentStep = useAtomValue(currentStepAtom);
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
-
   const inputStepObject = useAtomValue(inputStepObjectAtom);
-  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
-  const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
-  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
-  const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
-  const numberOfMoveBoards =
-    inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
-  const isFoldingDirectionFront =
-    inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
-  const isMoveBoardsRight =
-    inputStepObject[procedureIndex.toString()].isMoveBoardsRight;
+  const step = inputStepObject[procedureIndex.toString()];
+  // if (step.type !== "Base") return;
+
+  // const fixBoards = step.fixBoards;
+  // const moveBoards = step.moveBoards;
+  // const rotateAxis = step.rotateAxis;
+  // const foldingAngle = step.foldingAngle;
+  // const numberOfMoveBoards = step.numberOfMoveBoards;
+  // const isFoldingDirectionFront = step.isFoldingDirectionFront;
+  // const isMoveBoardsRight = step.isMoveBoardsRight;
+
+  const fixBoards = useMemo(
+    () => (step.type === "Base" ? step.fixBoards : []),
+    [step]
+  );
+  const moveBoards = useMemo(
+    () => (step.type === "Base" ? step.moveBoards : []),
+    [step]
+  );
+  const rotateAxis: RotateAxis = useMemo(
+    () => (step.type === "Base" ? step.rotateAxis : []),
+    [step]
+  );
+  const numberOfMoveBoards = useMemo(
+    () => (step.type === "Base" ? step.numberOfMoveBoards : 0),
+    [step]
+  );
+  const isFoldingDirectionFront = useMemo(
+    () => (step.type === "Base" ? step.isFoldingDirectionFront : false),
+    [step]
+  );
+  const isMoveBoardsRight = useMemo(
+    () => (step.type === "Base" ? step.isMoveBoardsRight : false),
+    [step]
+  );
+  const foldingAngle = useMemo(
+    () => (step.type === "Base" ? step.foldingAngle : 0),
+    [step]
+  );
 
   useEffect(() => {
     const scene = sceneRef.current;
+    if (step.type !== "Base") return;
     if (!scene) return;
     if (inputStep !== "fold") return;
     if (rotateAxis.length === 0) return;
@@ -89,5 +118,6 @@ export const useRotateBoards: UseRotateBoards = ({
     inputStep,
     isFoldingDirectionFront,
     isMoveBoardsRight,
+    step.type,
   ]);
 };

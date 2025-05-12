@@ -8,8 +8,11 @@ export const useCancelFoldTarget = () => {
 
   const handleCancelFoldTarget = () => {
     const procedureIndex = currentStep.procedureIndex;
-    const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
-    const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
+    const step = inputStepObject[procedureIndex.toString()];
+    if (step.type !== "Base") return;
+
+    const fixBoards = step.fixBoards;
+    const moveBoards = step.moveBoards;
 
     setCurrentStep({ inputStep: "target", procedureIndex: procedureIndex });
     setInputStepObject((prev) => ({

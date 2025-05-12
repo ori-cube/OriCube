@@ -28,20 +28,18 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
   const currentStep = useAtomValue(currentStepAtom);
   const procedureIndex = currentStep.procedureIndex;
   const { data: session } = useSession();
-
   const inputStepObject = useAtomValue(inputStepObjectAtom);
+  const step = inputStepObject[procedureIndex.toString()];
+  if (step.type !== "Base") return { handleRegisterOrigami: () => {} };
 
-  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
-  const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
-  const numberOfMoveBoards =
-    inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
-  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
+  const fixBoards = step.fixBoards;
+  const moveBoards = step.moveBoards;
+  const numberOfMoveBoards = step.numberOfMoveBoards;
+  const rotateAxis = step.rotateAxis;
   // const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
-  const isFoldingDirectionFront =
-    inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
-  const isMoveBoardsRight =
-    inputStepObject[procedureIndex.toString()].isMoveBoardsRight;
-  const description = inputStepObject[procedureIndex.toString()].description;
+  const isFoldingDirectionFront = step.isFoldingDirectionFront;
+  const isMoveBoardsRight = step.isMoveBoardsRight;
+  const description = step.description;
 
   const handleRegisterOrigami = () => {
     //折り面、折り線、タイトルがない場合は登録できない。
@@ -54,6 +52,7 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
 
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
+    // ここはatomから取得した方がいいのでは？
     const { newProcedure } = decideNewProcedure({
       fixBoards,
       moveBoards,

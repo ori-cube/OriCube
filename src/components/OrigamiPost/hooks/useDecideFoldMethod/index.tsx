@@ -1,3 +1,9 @@
+/**
+ * step3(折り方を選択画面)で次へを押した際の処理
+ *
+ *
+ */
+
 import { Point } from "@/types/model";
 import { rotateBoards } from "../../logics/rotateBoards";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
@@ -15,26 +21,30 @@ export const useDecideFoldMethod: UseDecideFoldMethod = () => {
 
   const procedureIndex = currentStep.procedureIndex;
 
-  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
-  const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
-  const leftBoards = inputStepObject[procedureIndex.toString()].leftBoards;
-  const rightBoards = inputStepObject[procedureIndex.toString()].rightBoards;
-  const numberOfMoveBoards =
-    inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
-  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
-  const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
-  const isFoldingDirectionFront =
-    inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
-  const isMoveBoardsRight =
-    inputStepObject[procedureIndex.toString()].isMoveBoardsRight;
-  const description = inputStepObject[procedureIndex.toString()].description;
+  const step = inputStepObject[procedureIndex.toString()];
+  if (step.type !== "Base") return { handleDecideFoldMethod: () => {} };
+
+  const fixBoards = step.fixBoards;
+  const moveBoards = step.moveBoards;
+  const leftBoards = step.leftBoards;
+  const rightBoards = step.rightBoards;
+  const numberOfMoveBoards = step.numberOfMoveBoards;
+  const rotateAxis = step.rotateAxis;
+  const foldingAngle = step.foldingAngle;
+  const isFoldingDirectionFront = step.isFoldingDirectionFront;
+  const isMoveBoardsRight = step.isMoveBoardsRight;
+  const description = step.description;
 
   const handleDecideFoldMethod = () => {
     // moveBoardsを回転した後の板を、fixBoardsに追加する
     if (moveBoards.length === 0) return;
     if (rotateAxis.length === 0) return;
 
-    // TODO: procedureがinputStepObjectと違いがわかりづらいので修正する。
+    /**
+     * 命名をどうにかしたい
+     * foldBoardsとfixBoardsの違いなどが一目でわからない
+     * 関数も何をする関数なのかわからない
+     */
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
     const { foldBoards, notFoldBoards } = decideNewProcedure({

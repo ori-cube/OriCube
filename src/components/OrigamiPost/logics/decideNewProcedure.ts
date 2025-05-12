@@ -1,3 +1,17 @@
+/**
+ * 複数の目的を持つクソ関数
+ *
+ * useDecideFoldMethodでは、
+ *  moveBoardsとnumberOfMoveBoardsから、どの板を何枚折るかを決める関数として機能
+ * useRegisterOrigamiでは、
+ *  procedureを作成する関数として機能
+ *
+ * 座標のフォーマットも担っている
+ *
+ * foldBoards, notFoldBoardsの命名もわかりづらいし、
+ * moveBoardsの中にそもそも折らない板が混在している場合があるのは気持ち悪い
+ */
+
 import { Board, Point } from "@/types/model";
 import { Procedure } from "@/types/model";
 
@@ -91,13 +105,25 @@ export const decideNewProcedure: DecideNewProcedure = ({
     sortedRotateAxis = [sortedRotateAxis[1], sortedRotateAxis[0]];
   }
 
-  // Procedureを作成する
-  const newProcedure = {
+  /**
+   * selectedPoints, rightBoards, leftBoardsは、atomから取得しないといけない
+   * buildを通すために一旦ここでは空にしておく
+   */
+  const newProcedure: Procedure[number] = {
+    type: "Base",
     description: description,
     fixBoards: [...fixBoards, ...notFoldBoards],
     moveBoards: foldBoards,
     rotateAxis: sortedRotateAxis,
-  } as Procedure[number];
+    selectedPoints: [],
+    rightBoards: [],
+    leftBoards: [],
+    isMoveBoardsRight: isMoveBoardsRight,
+    numberOfMoveBoards: numberOfMoveBoards,
+    maxNumberOfMoveBoards: numberOfMoveBoards,
+    isFoldingDirectionFront: isFoldingDirectionFront,
+    foldingAngle: 180,
+  };
 
   return { foldBoards, notFoldBoards, newProcedure };
 };

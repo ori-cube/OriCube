@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
@@ -39,18 +39,27 @@ export const OrigamiPost = () => {
   const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
-
   const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
-  const currentInputStepObject = inputStepObject[procedureIndex.toString()];
-
-  const foldingAngle = currentInputStepObject.foldingAngle;
-  const numberOfMoveBoards = currentInputStepObject.numberOfMoveBoards;
-  const isFoldingDirectionFront =
-    currentInputStepObject.isFoldingDirectionFront;
-  const maxNumberOfMoveBoards = currentInputStepObject.maxNumberOfMoveBoards;
-  const origamiDescription = currentInputStepObject.description;
-
+  const step = inputStepObject[procedureIndex.toString()];
   const inputStepLength = Object.keys(inputStepObject).length;
+
+  const foldingAngle = useMemo(
+    () => (step.type === "Base" ? step.foldingAngle : 0),
+    [step]
+  );
+  const numberOfMoveBoards = useMemo(
+    () => (step.type === "Base" ? step.numberOfMoveBoards : 0),
+    [step]
+  );
+  const isFoldingDirectionFront = useMemo(
+    () => (step.type === "Base" ? step.isFoldingDirectionFront : false),
+    [step]
+  );
+  const maxNumberOfMoveBoards = useMemo(
+    () => (step.type === "Base" ? step.maxNumberOfMoveBoards : 0),
+    [step]
+  );
+  const origamiDescription = step.description;
 
   // TODO: 再レンダリングが増えそう？
   const handleOrigamiDescriptionChange = (description: string) => {

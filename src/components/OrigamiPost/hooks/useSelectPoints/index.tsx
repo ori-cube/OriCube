@@ -2,7 +2,7 @@
 step1での、点の選択を管理するカスタムフック
 inputStepがaxisの時の板の描画と点の選択を行う
 **/
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { renderPoint } from "../../logics/renderPoint";
 import { renderBoard } from "../../logics/renderBoard";
@@ -32,13 +32,20 @@ export const useSelectPoints: UseSelectPoints = ({
 
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
-  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
-  const selectedPoints =
-    inputStepObject[procedureIndex.toString()].selectedPoints;
+  const step = inputStepObject[procedureIndex.toString()];
 
+  const fixBoards = useMemo(
+    () => (step.type === "Base" ? step.fixBoards : []),
+    [step]
+  );
+  const selectedPoints = useMemo(
+    () => (step.type === "Base" ? step.selectedPoints : []),
+    [step]
+  );
   // boardとpointの初期描画をする処理
   useEffect(() => {
     if (inputStep !== "axis") return;
+    if (step.type !== "Base") return;
     const scene = sceneRef.current!;
     const renderer = rendererRef.current!;
     const camera = cameraRef.current!;
@@ -131,5 +138,7 @@ export const useSelectPoints: UseSelectPoints = ({
     rendererRef,
     cameraRef,
     raycasterRef,
+    setInputStepObject,
+    procedureIndex,
   ]);
 };
