@@ -13,7 +13,8 @@
     "db:migrate:prod": "dotenv -e .env.production -- prisma migrate dev --name init",
     "db:generate:dev": "dotenv -e .env.development -- prisma generate",
     "db:generate:prod": "dotenv -e .env.production -- prisma generate",
-    "vercel-build": "prisma generate && next build"
+    "vercel-build": "prisma generate && next build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
@@ -61,6 +62,19 @@
     "sass": "^1.80.4",
     "tailwindcss": "^3.4.14",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@commitlint/cli": "^19.6.1",
+    "commitizen": "^4.3.1",
+    "commitlint-config-gitmoji": "^2.3.1",
+    "cz-customizable": "^7.4.0",
+    "husky": "^9.1.7"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-customizable"
+    },
+    "cz-customizable": {
+      "config": ".cz-config.cts"
+    }
   }
 }
