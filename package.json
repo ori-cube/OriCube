@@ -3,11 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "dotenv -e .env.development -- next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "db:seed:dev": "dotenv -e .env.development -- ts-node prisma/seed.ts",
+    "db:migrate:dev": "dotenv -e .env.development -- prisma migrate dev --name init",
+    "db:migrate:prod": "dotenv -e .env.production -- prisma migrate dev --name init",
+    "db:generate:dev": "dotenv -e .env.development -- prisma generate",
+    "db:generate:prod": "dotenv -e .env.production -- prisma generate",
+    "vercel-build": "prisma generate && next build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
@@ -36,6 +43,7 @@
   },
   "devDependencies": {
     "@babel/preset-react": "^7.26.3",
+    "@prisma/client": "^6.7.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -45,13 +53,28 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.169.0",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^8",
     "eslint-config-next": "15.0.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "prisma": "^6.7.0",
     "sass": "^1.80.4",
     "tailwindcss": "^3.4.14",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@commitlint/cli": "^19.6.1",
+    "commitizen": "^4.3.1",
+    "commitlint-config-gitmoji": "^2.3.1",
+    "cz-customizable": "^7.4.0",
+    "husky": "^9.1.7"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-customizable"
+    },
+    "cz-customizable": {
+      "config": ".cz-config.cts"
+    }
   }
 }
