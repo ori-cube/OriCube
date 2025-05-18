@@ -91,6 +91,7 @@ export const useDecideFoldMethod: UseDecideFoldMethod = () => {
           moveBoards: foldBoards,
         },
         [procedureIndex + 1]: {
+          type: "Base",
           selectedPoints: [],
           rightBoards: [],
           leftBoards: [],

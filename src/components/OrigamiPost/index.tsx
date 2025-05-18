@@ -134,7 +134,8 @@ export const OrigamiPost = () => {
     origamiColor,
   });
 
-  const { handleDecideFoldMethod } = useDecideFoldMethod();
+  const { handleDecideFoldMethod }: { handleDecideFoldMethod: () => void } =
+    useDecideFoldMethod();
 
   const { handleRegisterOrigami } = useRegisterOrigami({
     origamiName,
