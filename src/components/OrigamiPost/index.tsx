@@ -39,18 +39,15 @@ export const OrigamiPost = () => {
   const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
-
   const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
-  const currentInputStepObject = inputStepObject[procedureIndex.toString()];
-
-  const foldingAngle = currentInputStepObject.foldingAngle;
-  const numberOfMoveBoards = currentInputStepObject.numberOfMoveBoards;
-  const isFoldingDirectionFront =
-    currentInputStepObject.isFoldingDirectionFront;
-  const maxNumberOfMoveBoards = currentInputStepObject.maxNumberOfMoveBoards;
-  const origamiDescription = currentInputStepObject.description;
-
+  const step = inputStepObject[procedureIndex.toString()];
   const inputStepLength = Object.keys(inputStepObject).length;
+
+  const numberOfMoveBoards = step.numberOfMoveBoards;
+  const foldingAngle = step.foldingAngle;
+  const isFoldingDirectionFront = step.isFoldingDirectionFront;
+  const origamiDescription = step.description;
+  const maxNumberOfMoveBoards = step.maxNumberOfMoveBoards;
 
   // TODO: 再レンダリングが増えそう？
   const handleOrigamiDescriptionChange = (description: string) => {

@@ -1,4 +1,4 @@
-import { Board } from "@/types/model";
+import { Board, RotateAxis } from "@/types/model";
 import { useEffect } from "react";
 import { renderBoard } from "../../logics/renderBoard";
 import { rotateBoards } from "../../logics/rotateBoards";
@@ -19,18 +19,16 @@ export const useRotateBoards: UseRotateBoards = ({
   const currentStep = useAtomValue(currentStepAtom);
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
-
   const inputStepObject = useAtomValue(inputStepObjectAtom);
-  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
-  const moveBoards = inputStepObject[procedureIndex.toString()].moveBoards;
-  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
-  const foldingAngle = inputStepObject[procedureIndex.toString()].foldingAngle;
-  const numberOfMoveBoards =
-    inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
-  const isFoldingDirectionFront =
-    inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
-  const isMoveBoardsRight =
-    inputStepObject[procedureIndex.toString()].isMoveBoardsRight;
+  const step = inputStepObject[procedureIndex.toString()];
+
+  const fixBoards = step.fixBoards;
+  const moveBoards = step.moveBoards;
+  const rotateAxis = step.rotateAxis;
+  const foldingAngle = step.foldingAngle;
+  const numberOfMoveBoards = step.numberOfMoveBoards;
+  const isFoldingDirectionFront = step.isFoldingDirectionFront;
+  const isMoveBoardsRight = step.isMoveBoardsRight;
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -89,5 +87,6 @@ export const useRotateBoards: UseRotateBoards = ({
     inputStep,
     isFoldingDirectionFront,
     isMoveBoardsRight,
+    step.type,
   ]);
 };
