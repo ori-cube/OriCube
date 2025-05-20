@@ -164,7 +164,6 @@ export const Three: React.FC<Props> = ({
           const rotateNode = moveNode.clone().sub(subNode);
           rotateNode.applyAxisAngle(axis, theta);
           rotateNode.add(subNode);
-          console.log(rotateNode);
           nodes[stepObject.moveNodesIdx[i]] = [
             rotateNode.x,
             rotateNode.y,
@@ -219,7 +218,6 @@ export const Three: React.FC<Props> = ({
 
     // 折り目を描画
     holds_line.forEach((line) => {
-      console.log(line);
       const geometry = new LineGeometry();
       geometry.setPositions(line);
       const lineMaterial = new LineMaterial({
