@@ -1,4 +1,4 @@
-import { Point } from "@/types/model";
+import { RotateAxis } from "@/types/model";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
@@ -14,8 +14,9 @@ export const useDecideRotateAxis: UseDecideRotateAxis = () => {
   const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
 
   const procedureIndex = currentStep.procedureIndex;
-  const selectedPoints =
-    inputStepObject[procedureIndex.toString()].selectedPoints;
+  const step = inputStepObject[procedureIndex.toString()];
+
+  const selectedPoints = step.selectedPoints;
   const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
 
   const handleDecideRotateAxis = async () => {
@@ -24,10 +25,7 @@ export const useDecideRotateAxis: UseDecideRotateAxis = () => {
       validateSelectedPoints(selectedPoints);
 
       // step1:選択された点を元に、回転軸を決定
-      const axis: [Point, Point] = [
-        [...selectedPoints[0]],
-        [...selectedPoints[1]],
-      ];
+      const axis: RotateAxis = [[...selectedPoints[0]], [...selectedPoints[1]]];
 
       // step2:板を分割するか、回転軸が左右どちらに属するかを判定
       const { lefts, rights } = processBoards(fixBoards, axis);
@@ -36,7 +34,7 @@ export const useDecideRotateAxis: UseDecideRotateAxis = () => {
       setInputStepObject({
         ...inputStepObject,
         [procedureIndex.toString()]: {
-          ...inputStepObject[procedureIndex.toString()],
+          ...step,
           rotateAxis: axis,
           leftBoards: lefts,
           rightBoards: rights,

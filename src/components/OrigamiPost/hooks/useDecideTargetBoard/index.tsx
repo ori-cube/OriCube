@@ -36,10 +36,11 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
 
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
+  const step = inputStepObject[procedureIndex.toString()];
 
-  const rotateAxis = inputStepObject[procedureIndex.toString()].rotateAxis;
-  const leftBoards = inputStepObject[procedureIndex.toString()].leftBoards;
-  const rightBoards = inputStepObject[procedureIndex.toString()].rightBoards;
+  const rotateAxis = step.rotateAxis;
+  const leftBoards = step.leftBoards;
+  const rightBoards = step.rightBoards;
 
   // 板の描画
   useEffect(() => {
@@ -75,7 +76,15 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
     rightBoards.forEach((board) =>
       renderBoard({ scene, board, color: origamiColor })
     );
-  }, [inputStep, sceneRef, rotateAxis, leftBoards, rightBoards, origamiColor]);
+  }, [
+    step.type,
+    inputStep,
+    sceneRef,
+    rotateAxis,
+    leftBoards,
+    rightBoards,
+    origamiColor,
+  ]);
 
   // 板をホバー、クリックしたときの処理
   useEffect(() => {
@@ -206,6 +215,7 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
       canvas.removeEventListener("click", clickListener);
     };
   }, [
+    step.type,
     inputStep,
     cameraRef,
     canvasRef,

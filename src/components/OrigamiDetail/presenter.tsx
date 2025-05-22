@@ -30,7 +30,7 @@ export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
   return (
     <div>
       <Three
-        model={modelData.procedure}
+        procedure={modelData.procedure}
         foldAngle={sliderValue}
         procedureIndex={procedureIndex}
         color={color}
