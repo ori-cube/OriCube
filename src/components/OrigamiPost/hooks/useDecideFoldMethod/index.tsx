@@ -4,18 +4,25 @@
  *
  */
 
-import { Point } from "@/types/model";
+import { Board, Point } from "@/types/model";
 import { rotateBoards } from "../../logics/rotateBoards";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
 
-type UseDecideFoldMethod = () => {
+type UseDecideFoldMethod = (props: {
+  // TODO: ここの命名の見直し
+  fixBoards: Board[];
+  moveBoards: Board[];
+}) => {
   handleDecideFoldMethod: () => void;
 };
 
-export const useDecideFoldMethod: UseDecideFoldMethod = () => {
+export const useDecideFoldMethod: UseDecideFoldMethod = ({
+  fixBoards,
+  moveBoards,
+}) => {
   const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
   const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
 
@@ -23,8 +30,6 @@ export const useDecideFoldMethod: UseDecideFoldMethod = () => {
 
   const step = inputStepObject[procedureIndex.toString()];
 
-  const fixBoards = step.fixBoards;
-  const moveBoards = step.moveBoards;
   const leftBoards = step.leftBoards;
   const rightBoards = step.rightBoards;
   const numberOfMoveBoards = step.numberOfMoveBoards;
