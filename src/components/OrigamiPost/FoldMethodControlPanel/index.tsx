@@ -6,6 +6,7 @@ import { FoldTargetSelectPanel } from "./FoldTargetSelectPanel";
 import { FoldMethodSelectPanel } from "./FoldMethodSelectPanel";
 import { FoldStepSegmentedControl } from "./ui/FoldStepSegmentedControl";
 import React from "react";
+import { PreviewPanel } from "./PreviewPanel";
 
 export type Step = "axis" | "target" | "fold";
 
@@ -29,6 +30,8 @@ type Props = {
   inputStepLength: number;
   procedureIndex: number;
   handleChangeStep: (step: number) => void;
+  handleFinishFolding: () => void;
+  isFinishFolding: boolean;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -51,41 +54,57 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   inputStepLength,
   procedureIndex,
   handleChangeStep,
+  handleFinishFolding,
+  isFinishFolding,
 }) => {
   return (
     <section className={styles.container}>
-      {currentStep === "axis" && (
-        <AxisSelectPanel handleNextStep={handleDecideRotateAxis} />
-      )}
-      {currentStep === "target" && (
-        <FoldTargetSelectPanel
-          handlePrevStep={handleCancelRotateAxis}
-          handleNextStep={handleDecideFoldTarget}
-        />
-      )}
-      {currentStep === "fold" && (
-        <FoldMethodSelectPanel
-          handlePrevStep={handleCancelFoldTarget}
-          handleFoldFrontSide={handleFoldFrontSide}
-          handleFoldBackSide={handleFoldBackSide}
-          foldAngle={foldAngle}
-          handleFoldAngleChange={handleFoldingAngleChange}
-          handleNextStep={handleDecideFoldMethod}
-          totalNumber={totalNumber}
-          currentNumber={currentNumber}
-          isFoldFrontSide={isFoldFrontSide}
+      {!isFinishFolding ? (
+        <>
+          {currentStep === "axis" && (
+            <AxisSelectPanel handleNextStep={handleDecideRotateAxis} />
+          )}
+          {currentStep === "target" && (
+            <FoldTargetSelectPanel
+              handlePrevStep={handleCancelRotateAxis}
+              handleNextStep={handleDecideFoldTarget}
+            />
+          )}
+          {currentStep === "fold" && (
+            <FoldMethodSelectPanel
+              handlePrevStep={handleCancelFoldTarget}
+              handleFoldFrontSide={handleFoldFrontSide}
+              handleFoldBackSide={handleFoldBackSide}
+              foldAngle={foldAngle}
+              handleFoldAngleChange={handleFoldingAngleChange}
+              handleNextStep={handleDecideFoldMethod}
+              totalNumber={totalNumber}
+              currentNumber={currentNumber}
+              isFoldFrontSide={isFoldFrontSide}
+              handleFinishFolding={handleFinishFolding}
+              origamiDescription={origamiDescription}
+              handleOrigamiDescriptionChange={handleOrigamiDescriptionChange}
+            />
+          )}
+          <div className={styles.segmentedControl}>
+            <FoldStepSegmentedControl
+              procedureLength={inputStepLength}
+              currentStep={procedureIndex}
+              handleChangeStep={handleChangeStep}
+            />
+          </div>
+        </>
+      ) : (
+        <PreviewPanel
+          handlePrevStep={function (): void {
+            throw new Error("Function not implemented.");
+          }}
+          handleNextStep={function (): void {
+            throw new Error("Function not implemented.");
+          }}
           handleRegisterOrigami={handleRegisterOrigami}
-          origamiDescription={origamiDescription}
-          handleOrigamiDescriptionChange={handleOrigamiDescriptionChange}
         />
       )}
-      <div className={styles.segmentedControl}>
-        <FoldStepSegmentedControl
-          procedureLength={inputStepLength}
-          currentStep={procedureIndex}
-          handleChangeStep={handleChangeStep}
-        />
-      </div>
     </section>
   );
 };
