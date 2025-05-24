@@ -15,6 +15,7 @@ type UseRegisterOrigami = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
 }) => {
+  handleDecideProcedure: () => Model | undefined;
   handleRegisterOrigami: () => void;
 };
 
@@ -39,14 +40,10 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
   const isMoveBoardsRight = step.isMoveBoardsRight;
   const description = step.description;
 
-  const handleRegisterOrigami = () => {
-    //折り面、折り線、タイトルがない場合は登録できない。
+  const handleDecideProcedure = () => {
+    //折り面、折り線がない場合は登録できない。
     if (!moveBoards.length) return;
     if (!rotateAxis.length) return;
-    if (!origamiName.length) {
-      console.error("Origami name is required.");
-      return;
-    }
 
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
@@ -64,6 +61,10 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
     // TODO: ProcedureとinputStepObjectの整合性を取る
     // 現在はnewProcedureだけが入っているが、それまでの手順は入っていない
     const procedures = { [procedureIndex]: newProcedure };
+    if (!procedures) {
+      console.error("Procedure is null.");
+      return;
+    }
 
     // idとimageUrlはDBから取得するため、空文字を設定
     const model: Model = {
@@ -73,6 +74,21 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
       imageUrl: "",
       procedure: procedures,
     };
+
+    return model;
+  };
+
+  const handleRegisterOrigami = () => {
+    // タイトル、折り紙モデルがない場合は登録できない。
+    if (!origamiName.length) {
+      console.error("Origami name is required.");
+      return;
+    }
+    const model = handleDecideProcedure();
+    if (!model) {
+      console.error("Failed to decide procedure.");
+      return;
+    }
 
     const scene = sceneRef.current;
     const camera = cameraRef.current;
@@ -100,5 +116,6 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
 
   return {
     handleRegisterOrigami,
+    handleDecideProcedure,
   };
 };
