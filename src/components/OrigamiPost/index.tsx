@@ -190,6 +190,10 @@ export const OrigamiPost = () => {
           handleChangeStep={handleChangeStep}
           handleFinishFolding={handleFinishFolding}
           isFinishFolding={isFinishFolding}
+          name={origamiName}
+          handleNameChange={handleOrigamiNameChange}
+          color={origamiColor}
+          handleColorChange={handleOrigamiColorChange}
         />
       </div>
       {popup?.message.length && (

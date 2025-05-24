@@ -32,6 +32,10 @@ type Props = {
   handleChangeStep: (step: number) => void;
   handleFinishFolding: () => void;
   isFinishFolding: boolean;
+  name: string;
+  handleNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  color: string;
+  handleColorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -56,6 +60,10 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   handleChangeStep,
   handleFinishFolding,
   isFinishFolding,
+  name,
+  handleNameChange,
+  color,
+  handleColorChange,
 }) => {
   return (
     <section className={styles.container}>
@@ -96,13 +104,13 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
         </>
       ) : (
         <PreviewPanel
-          handlePrevStep={function (): void {
-            throw new Error("Function not implemented.");
-          }}
-          handleNextStep={function (): void {
-            throw new Error("Function not implemented.");
-          }}
+          handlePrevStep={() => console.log("未実装")}
+          handleNextStep={() => console.log("未実装")}
           handleRegisterOrigami={handleRegisterOrigami}
+          name={name}
+          handleNameChange={handleNameChange}
+          color={color}
+          handleColorChange={handleColorChange}
         />
       )}
     </section>
