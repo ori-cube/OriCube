@@ -8,11 +8,15 @@ import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtomValue } from "jotai";
 
 type UseRotateBoards = (props: {
+  foldBoards: Board[];
+  notFoldBoards: Board[];
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   origamiColor: string;
 }) => void;
 
 export const useRotateBoards: UseRotateBoards = ({
+  foldBoards,
+  notFoldBoards,
   sceneRef,
   origamiColor,
 }) => {
@@ -22,8 +26,6 @@ export const useRotateBoards: UseRotateBoards = ({
   const inputStepObject = useAtomValue(inputStepObjectAtom);
   const step = inputStepObject[procedureIndex.toString()];
 
-  const fixBoards = step.fixBoards;
-  const moveBoards = step.moveBoards;
   const rotateAxis = step.rotateAxis;
   const foldingAngle = step.foldingAngle;
   const numberOfMoveBoards = step.numberOfMoveBoards;
@@ -40,8 +42,8 @@ export const useRotateBoards: UseRotateBoards = ({
     // それ以外の板は無条件で折る
     let xyPlaneBoards: Board[] = [];
     const notXyPlaneBoards: Board[] = [];
-    for (let i = 0; i < moveBoards.length; i++) {
-      const board = moveBoards[i];
+    for (let i = 0; i < foldBoards.length; i++) {
+      const board = foldBoards[i];
       const isEquallyZ = board.every((point) => point[2] === board[0][2]);
       if (isEquallyZ) {
         xyPlaneBoards.push(board);
@@ -53,20 +55,24 @@ export const useRotateBoards: UseRotateBoards = ({
     // xy平面上の板をz座標が大きい順にソート
     xyPlaneBoards = xyPlaneBoards.sort((a, b) => b[0][2] - a[0][2]);
 
-    const foldBoards = [
+    const rotateTargetBoards = [
       ...xyPlaneBoards.slice(0, numberOfMoveBoards),
       ...notXyPlaneBoards,
     ];
-    const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
+    const notRotateTargetBoards = xyPlaneBoards.slice(numberOfMoveBoards);
 
     const rotatedBoards = rotateBoards({
-      boards: foldBoards,
+      boards: rotateTargetBoards,
       rotateAxis,
       angle: foldingAngle,
       isFoldingDirectionFront: isFoldingDirectionFront,
       isMoveBoardsRight,
     });
-    const boards = [...fixBoards, ...rotatedBoards, ...notFoldBoards];
+    const boards = [
+      ...notFoldBoards,
+      ...rotatedBoards,
+      ...notRotateTargetBoards,
+    ];
 
     // 前の板を削除
     scene.children = scene.children.filter((child) => {
@@ -78,8 +84,8 @@ export const useRotateBoards: UseRotateBoards = ({
     });
   }, [
     foldingAngle,
-    fixBoards,
-    moveBoards,
+    foldBoards,
+    notFoldBoards,
     rotateAxis,
     numberOfMoveBoards,
     origamiColor,
@@ -87,6 +93,5 @@ export const useRotateBoards: UseRotateBoards = ({
     inputStep,
     isFoldingDirectionFront,
     isMoveBoardsRight,
-    step.type,
   ]);
 };

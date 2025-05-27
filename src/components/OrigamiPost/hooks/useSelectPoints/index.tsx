@@ -37,7 +37,7 @@ export const useSelectPoints: UseSelectPoints = ({
   const procedureIndex = currentStep.procedureIndex;
   const step = inputStepObject[procedureIndex.toString()];
 
-  const fixBoards = step.fixBoards;
+  const initialBoards = step.initialBoards;
   const selectedPoints = step.selectedPoints;
 
   useInitialRender({
@@ -45,7 +45,7 @@ export const useSelectPoints: UseSelectPoints = ({
     sceneRef,
     rendererRef,
     cameraRef,
-    fixBoards,
+    initialBoards,
     selectedPoints,
     origamiColor,
   });
@@ -57,7 +57,7 @@ export const useSelectPoints: UseSelectPoints = ({
     cameraRef,
     rendererRef,
     raycasterRef,
-    fixBoards,
+    initialBoards,
     setHighlightedVertex,
   });
 

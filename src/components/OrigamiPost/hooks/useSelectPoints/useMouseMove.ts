@@ -9,7 +9,7 @@
 
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { Board } from "@/types/model";
 import { renderHighlightPoint } from "./renderPoint";
 
 type UseMouseMove = (props: {
@@ -19,7 +19,7 @@ type UseMouseMove = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
-  fixBoards: Point[][];
+  initialBoards: Board[];
   setHighlightedVertex: (vertex: THREE.Vector3 | null) => void;
 }) => void;
 
@@ -30,7 +30,7 @@ export const useMouseMove: UseMouseMove = ({
   cameraRef,
   rendererRef,
   raycasterRef,
-  fixBoards,
+  initialBoards,
   setHighlightedVertex,
 }) => {
   const SNAP_THRESHOLD = 0.1; // スナップする距離の閾値
@@ -59,7 +59,7 @@ export const useMouseMove: UseMouseMove = ({
       let minDistance = Infinity;
 
       // 頂点と辺の中心点のチェック
-      fixBoards.forEach((board) => {
+      initialBoards.forEach((board) => {
         // 頂点のチェック
         board.forEach((vertex) => {
           const vertexVector = new THREE.Vector3(
@@ -144,7 +144,7 @@ export const useMouseMove: UseMouseMove = ({
     cameraRef,
     rendererRef,
     raycasterRef,
-    fixBoards,
+    initialBoards,
     setHighlightedVertex,
   ]);
 };
