@@ -106,6 +106,7 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
         },
         [procedureIndex + 1]: {
           type: "Base",
+          initialBoards: roundedBoards,
           selectedPoints: [],
           rightBoards: [],
           leftBoards: [],
@@ -114,7 +115,7 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
           numberOfMoveBoards: 0,
           maxNumberOfMoveBoards: 0,
           isFoldingDirectionFront: true,
-          fixBoards: roundedBoards,
+          fixBoards: [],
           moveBoards: [],
           foldingAngle: 180,
           description: "",

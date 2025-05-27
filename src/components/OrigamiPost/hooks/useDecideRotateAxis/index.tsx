@@ -17,7 +17,7 @@ export const useDecideRotateAxis: UseDecideRotateAxis = () => {
   const step = inputStepObject[procedureIndex.toString()];
 
   const selectedPoints = step.selectedPoints;
-  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
+  const initialBoards = step.initialBoards;
 
   const handleDecideRotateAxis = async () => {
     try {
@@ -28,7 +28,7 @@ export const useDecideRotateAxis: UseDecideRotateAxis = () => {
       const axis: RotateAxis = [[...selectedPoints[0]], [...selectedPoints[1]]];
 
       // step2:板を分割するか、回転軸が左右どちらに属するかを判定
-      const { lefts, rights } = processBoards(fixBoards, axis);
+      const { lefts, rights } = processBoards(initialBoards, axis);
 
       // step3:状態を更新
       setInputStepObject({
