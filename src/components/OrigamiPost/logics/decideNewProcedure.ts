@@ -23,6 +23,10 @@ type DecideNewProcedure = (props: {
   isFoldingDirectionFront: boolean;
   isMoveBoardsRight: boolean;
   description: string;
+  initialBoards: Board[];
+  selectedPoints: Point[];
+  rightBoards: Board[];
+  leftBoards: Board[];
 }) => {
   foldBoards: Board[];
   notFoldBoards: Board[];
@@ -37,7 +41,50 @@ export const decideNewProcedure: DecideNewProcedure = ({
   isFoldingDirectionFront,
   isMoveBoardsRight,
   description,
+  initialBoards,
+  selectedPoints,
+  rightBoards,
+  leftBoards,
 }) => {
+  const { foldBoards, notFoldBoards } = getFoldAndNotFoldBoards(
+    moveBoards,
+    numberOfMoveBoards
+  );
+
+  const sortedRotateAxis = getSortedRotateAxis(
+    rotateAxis,
+    isMoveBoardsRight,
+    isFoldingDirectionFront,
+    foldBoards
+  );
+
+  const newProcedure: Procedure[number] = {
+    type: "Base",
+    description: description,
+    fixBoards: [...fixBoards, ...notFoldBoards],
+    moveBoards: foldBoards,
+    rotateAxis: sortedRotateAxis,
+    initialBoards: initialBoards,
+    selectedPoints: selectedPoints,
+    rightBoards: rightBoards,
+    leftBoards: leftBoards,
+    isMoveBoardsRight: isMoveBoardsRight,
+    numberOfMoveBoards: numberOfMoveBoards,
+    maxNumberOfMoveBoards: numberOfMoveBoards,
+    isFoldingDirectionFront: isFoldingDirectionFront,
+    foldingAngle: 180,
+  };
+
+  return { foldBoards, notFoldBoards, newProcedure };
+};
+
+/**
+ * moveBoardsからfoldBoardsとnotFoldBoardsを返す関数
+ */
+export const getFoldAndNotFoldBoards = (
+  moveBoards: Board[],
+  numberOfMoveBoards: number
+): { foldBoards: Board[]; notFoldBoards: Board[] } => {
   let xyPlaneBoards: Board[] = [];
   const notXyPlaneBoards: Board[] = [];
   for (let i = 0; i < moveBoards.length; i++) {
@@ -59,7 +106,18 @@ export const decideNewProcedure: DecideNewProcedure = ({
   ];
   const notFoldBoards = xyPlaneBoards.slice(numberOfMoveBoards);
 
-  // rotateAxisをソートする。
+  return { foldBoards, notFoldBoards };
+};
+
+/**
+ * rotateAxis, isMoveBoardsRight, isFoldingDirectionFront, foldBoards からsortedRotateAxisを返す純粋関数
+ */
+export const getSortedRotateAxis = (
+  rotateAxis: [Point, Point],
+  isMoveBoardsRight: boolean,
+  isFoldingDirectionFront: boolean,
+  foldBoards: Board[]
+): [Point, Point] => {
   let sortedRotateAxis = rotateAxis;
   if (isMoveBoardsRight) {
     sortedRotateAxis =
@@ -74,7 +132,7 @@ export const decideNewProcedure: DecideNewProcedure = ({
   }
 
   let z = 0;
-  //  回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
+  // 回転軸の2つのz座標の差の絶対値が0.01以下の場合、z座標を一番大きい板のz座標に合わせる
   if (Math.abs(sortedRotateAxis[0][2] - sortedRotateAxis[1][2]) < 0.01) {
     for (let i = 0; i < foldBoards.length; i++) {
       const board = foldBoards[i];
@@ -98,33 +156,10 @@ export const decideNewProcedure: DecideNewProcedure = ({
     return [point[0], point[1], point[2] + z];
   }) as [Point, Point];
 
-  console.log("sortedRotateAxis");
-
   // isFoldingDirectionFrontがfalseなら、sortedRotateAxisの順序を逆にする
   if (isFoldingDirectionFront === false) {
     sortedRotateAxis = [sortedRotateAxis[1], sortedRotateAxis[0]];
   }
 
-  /**
-   * selectedPoints, rightBoards, leftBoards, initialBoardsは、atomから取得しないといけない
-   * buildを通すために一旦ここでは空にしておく
-   */
-  const newProcedure: Procedure[number] = {
-    type: "Base",
-    description: description,
-    fixBoards: [...fixBoards, ...notFoldBoards],
-    moveBoards: foldBoards,
-    rotateAxis: sortedRotateAxis,
-    initialBoards: [],
-    selectedPoints: [],
-    rightBoards: [],
-    leftBoards: [],
-    isMoveBoardsRight: isMoveBoardsRight,
-    numberOfMoveBoards: numberOfMoveBoards,
-    maxNumberOfMoveBoards: numberOfMoveBoards,
-    isFoldingDirectionFront: isFoldingDirectionFront,
-    foldingAngle: 180,
-  };
-
-  return { foldBoards, notFoldBoards, newProcedure };
+  return sortedRotateAxis;
 };

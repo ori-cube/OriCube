@@ -1,4 +1,4 @@
-import { Model } from "@/types/model";
+import { Board, Model } from "@/types/model";
 import { decideNewProcedure } from "../../logics/decideNewProcedure";
 import { insertData } from "@/utils/upload-data";
 import { useSession } from "next-auth/react";
@@ -9,6 +9,8 @@ import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtomValue } from "jotai";
 
 type UseRegisterOrigami = (props: {
+  fixBoards: Board[];
+  moveBoards: Board[];
   origamiName: string;
   origamiColor: string;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -19,6 +21,8 @@ type UseRegisterOrigami = (props: {
 };
 
 export const useRegisterOrigami: UseRegisterOrigami = ({
+  fixBoards,
+  moveBoards,
   origamiName,
   origamiColor,
   sceneRef,
@@ -31,13 +35,15 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
   const inputStepObject = useAtomValue(inputStepObjectAtom);
   const step = inputStepObject[procedureIndex.toString()];
 
-  const fixBoards = step.fixBoards;
-  const moveBoards = step.moveBoards;
   const numberOfMoveBoards = step.numberOfMoveBoards;
   const rotateAxis = step.rotateAxis;
   const isFoldingDirectionFront = step.isFoldingDirectionFront;
   const isMoveBoardsRight = step.isMoveBoardsRight;
   const description = step.description;
+  const initialBoards = step.initialBoards;
+  const selectedPoints = step.selectedPoints;
+  const rightBoards = step.rightBoards;
+  const leftBoards = step.leftBoards;
 
   const handleRegisterOrigami = () => {
     //折り面、折り線、タイトルがない場合は登録できない。
@@ -59,6 +65,10 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
       isFoldingDirectionFront,
       isMoveBoardsRight,
       description,
+      initialBoards,
+      selectedPoints,
+      rightBoards,
+      leftBoards,
     });
 
     // TODO: ProcedureとinputStepObjectの整合性を取る
