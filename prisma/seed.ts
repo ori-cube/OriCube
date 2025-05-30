@@ -9,6 +9,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main() {
+  // ──────────────── seed時の既存データ削除 ────────────────
+  await prisma.model.deleteMany();
+  await prisma.user.deleteMany();
+  // ─────────────────────────--------───────────────────
+
   const user = await prisma.user.create({
     data: {
       name: "Ori Duel",

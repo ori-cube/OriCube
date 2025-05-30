@@ -1,8 +1,8 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
-import { getAllModels, getModelsFromId, createModel } from "@/actions/model";
+import { getAllModels, getModelFromId, createModel } from "@/actions/model";
 import { getUserFromEmail } from "@/actions/user";
-import { Model } from "@/types/model";
+import { Model, Procedure } from "@/types/model";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,15 +16,46 @@ export async function GET(req: NextRequest) {
     const id = url.searchParams.get("id");
 
     if (id) {
-      const models = await getModelsFromId(id);
-      const procedures = models.map((m) => m.procedure);
-      return new Response(JSON.stringify(procedures[0] ?? null), {
+      const model = await getModelFromId(id);
+      if (!model) {
+        return new Response(JSON.stringify({ message: "Not Found" }), {
+          status: 404,
+          headers: corsHeaders,
+        });
+      }
+      // データベースに保存されている形式を，フロントに合わせた．
+      const viewModel: Model = {
+        id: model.id,
+        name: model.name,
+        color: model.color,
+        imageUrl: model.imageUrl,
+        searchKeyword: model.searchKeyword,
+        procedure: model.procedure as Procedure,
+      };
+      return new Response(JSON.stringify(viewModel ?? null), {
         headers: corsHeaders,
-        status: procedures.length > 0 ? 200 : 404,
+        status: 200,
       });
     } else {
       const models = await getAllModels();
-      const procedures = models.map((m) => m.procedure);
+      if (!models.length) {
+        return new Response(JSON.stringify({ message: "Not Found" }), {
+          status: 404,
+          headers: corsHeaders,
+        });
+      }
+      const procedures = models.map((model) => {
+        // データベースに保存されている形式を，フロントに合わせた．
+        const viewModel: Model = {
+          id: model.id,
+          name: model.name,
+          color: model.color,
+          imageUrl: model.imageUrl,
+          searchKeyword: model.searchKeyword,
+          procedure: model.procedure as Procedure,
+        };
+        return viewModel;
+      });
       return new Response(JSON.stringify(procedures), { headers: corsHeaders });
     }
   } catch (error) {
@@ -59,6 +90,7 @@ export async function POST(req: NextRequest) {
   // TODO: ここはS3の仕様に沿ったものにする．
   const imageKey = `origami/images/${model.id}.png`;
   const imageUrl = `${process.env.S3_BUCKET_URL}/${imageKey}`;
+
   try {
     const user = await getUserFromEmail(mail);
     if (!user) return;

@@ -36,8 +36,8 @@ export async function getAllModels() {
   return await db.model.findMany();
 }
 
-export async function getModelsFromId(id: string) {
-  return await db.model.findMany({
+export async function getModelFromId(id: string) {
+  return await db.model.findFirst({
     where: {
       id: id,
     },
