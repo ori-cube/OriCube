@@ -1,6 +1,6 @@
-type Point = [number, number, number];
-type Board = Point[];
-type RotateAxis = [Point, Point] | [];
+export type Point = [number, number, number];
+export type Board = Point[];
+export type RotateAxis = [Point, Point] | [];
 
 export type BaseStep = {
   type: "Base";
