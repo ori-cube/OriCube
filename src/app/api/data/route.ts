@@ -1,9 +1,8 @@
-import {
-  PutObjectCommand,
-  S3Client,
-  ListObjectsV2Command,
-} from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { getAllModels, getModelsFromId, createModel } from "@/actions/model";
+import { getUserFromEmail } from "@/actions/user";
+import { Model } from "@/types/model";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,130 +11,75 @@ const corsHeaders = {
 };
 
 export async function GET(req: NextRequest) {
-  /*
-  仕様
-    "api/data"
-      GETを叩くと、折り紙の折り方のJSONをリストに格納したものが返される
-      return:
-        [
-          {Model},
-          {Model},
-          ...
-        ]
-    "api/data"{params: {id: number}}
-      R2の中から、指定idのデータを一つ取得できる
-      return:
-        {Model}
-  */
-  const s3 = new S3Client({
-    region: "auto",
-    endpoint: process.env.R2_ENDPOINT,
-    credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY!,
-      secretAccessKey: process.env.R2_SECRET_KEY!,
-    },
-  });
-
-  const command = new ListObjectsV2Command({ Bucket: "oricube" });
-
-  const response = await s3.send(command);
-  const jsonList: object[] = [];
   try {
-    if (!req.nextUrl.searchParams.get("id")) {
-      // 全てのデータをjson形式で取得する
-      if (response.Contents && response.Contents.length > 0) {
-        await Promise.all(
-          response.Contents?.map(async (item) => {
-            if (!(item.Key?.split("/")[1] === "images")) {
-              const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
-              const jsonFetchData = await fetch(jsonUrl);
-              const jsonData = await jsonFetchData.json();
-              jsonList.push(jsonData);
-            }
-          })
-        );
-      }
+    const url = req.nextUrl;
+    const id = url.searchParams.get("id");
 
-      return new Response(JSON.stringify(jsonList), {
+    if (id) {
+      const models = await getModelsFromId(id);
+      const procedures = models.map((m) => m.procedure);
+      return new Response(JSON.stringify(procedures[0] ?? null), {
         headers: corsHeaders,
+        status: procedures.length > 0 ? 200 : 404,
       });
     } else {
-      const id = req.nextUrl.searchParams.get("id");
-      // 指定idのデータをjson形式で取得する
-      if (response.Contents && response.Contents.length > 0) {
-        await Promise.all(
-          response.Contents?.map(async (item) => {
-            const title = item.Key?.split("/").pop();
-            if (title === id) {
-              const jsonUrl = `${process.env.R2_BUCKET_URL}/${item.Key}`;
-              const jsonFetchData = await fetch(jsonUrl);
-              const jsonData = await jsonFetchData.json();
-              jsonList.push(jsonData);
-            }
-          })
-        );
-      }
-      return new Response(JSON.stringify(jsonList[0]), {
-        headers: corsHeaders,
-      });
+      const models = await getAllModels();
+      const procedures = models.map((m) => m.procedure);
+      return new Response(JSON.stringify(procedures), { headers: corsHeaders });
     }
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ status: 500 });
+    console.error("GET /api/models error:", error);
+    return new Response(JSON.stringify({ message: "Internal Server Error" }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 }
 
 export async function POST(req: NextRequest) {
-  /*
-  仕様
-    "api/data" POST props: mail: string, id: number, data: string
-      引数に与えたdata(Model型)をDBに保存する
-      {user mail}/{id}形式でDBに保存される
-  */
+  // TODO: envを変更する
   const s3 = new S3Client({
-    region: "auto",
-    endpoint: process.env.R2_ENDPOINT,
+    region: process.env.S3_REGION,
+    endpoint: process.env.S3_ENDPOINT,
     credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY!,
-      secretAccessKey: process.env.R2_SECRET_KEY!,
+      accessKeyId: process.env.S3_ACCESS_KEY!,
+      secretAccessKey: process.env.S3_SECRET_KEY!,
     },
   });
   const formData = await req.formData();
 
   // フィールドの取得
-  const mail = formData.get("mail") as string | null;
-  const id = formData.get("id") as string | null;
-  const data = formData.get("data") as string | null;
+  const mail = formData.get("mail") as string;
+  const model = JSON.parse(formData.get("model") as string) as Required<Model>;
   const image = formData.get("image") as File;
+
   const arrayBuffer = await image.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
+
+  // TODO: ここはS3の仕様に沿ったものにする．
+  const imageKey = `origami/images/${model.id}.png`;
+  const imageUrl = `${process.env.S3_BUCKET_URL}/${imageKey}`;
   try {
-    const jsonKey = `origami/${mail}/${id}`;
-    const imageKey = `origami/images/${id}.png`;
+    const user = await getUserFromEmail(mail);
+    if (!user) return;
+    await createModel({
+      userId: user?.id,
+      name: model.name,
+      color: model.color,
+      imageUrl: imageUrl,
+      searchKeyword: model.searchKeyword,
+      procedure: model.procedure,
+    });
+
     await s3.send(
       new PutObjectCommand({
-        Bucket: "oricube",
-        Key: jsonKey,
-        Body: data!, // JSONを送信できる形式に変換
-        ACL: "public-read",
-      })
-    );
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: "oricube",
+        Bucket: "ori-cube",
         Key: imageKey,
         Body: buffer,
         ContentType: "image/png",
         ACL: "public-read",
       })
     );
-
-    const uploadedUrl = `${process.env.R2_ENDPOINT}/${jsonKey}`;
-
-    return NextResponse.json({
-      message: "アップロードに成功しました。",
-      url: uploadedUrl,
-    });
   } catch (error) {
     console.error("Error uploading file:", error);
     return NextResponse.json(
@@ -145,4 +89,9 @@ export async function POST(req: NextRequest) {
       { status: 500, headers: corsHeaders }
     );
   }
+
+  return NextResponse.json({
+    message: "アップロードに成功しました。",
+    url: "",
+  });
 }
