@@ -26,13 +26,15 @@ export const insertData = async (
   if (!session) {
     console.log("ログインしてください");
   } else {
-    const fixedData = touchData(data, uuid, session.user?.email);
+    const fixedData = touchData(
+      data,
+      uuid,
+      session.user?.email
+    ) as Required<Model>;
 
-    const jsonData = JSON.stringify(fixedData);
     const formData = new FormData();
     formData.append("mail", session.user?.email || "");
-    formData.append("id", uuid);
-    formData.append("data", jsonData); // 必要に応じて JSON 文字列に変換
+    formData.append("model", JSON.stringify(fixedData));
     formData.append("image", image); // image は File オブジェクト
     await axios.post("/api/data", formData).then(() => {
       console.log("upload完了");

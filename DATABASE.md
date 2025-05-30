@@ -8,13 +8,14 @@
 
 1. `cd ${プロジェクトルート}`
 2. `docker compose up`を実行することで，docker 上に DB が作成されます．
-3. `psql -U user -d postgres`により，psql のターミナルに入ることができます．
+3. `docker exec -it db /bin/bash`によりコンテナに入る．
+4. `psql -U user -d postgres`により，psql のターミナルに入ることができます．
 
 ### migrate 手順
 
 1. `cd ${プロジェクトルート}`
-2. `npm run migrate:dev`を実行することで，schema.prisma に記述されているスキーマが作成されます．
-3. seed したい場合は`npm run db:seed`を実行してください．
+2. `npm run db:migrate:dev`を実行することで，schema.prisma に記述されているスキーマが作成されます．
+3. seed したい場合は`npm run db:seed:dev`を実行してください．
 4. `npm run db:generate:dev`を実行することで，prisma の設定が client に反映されます．
 
 ## 本番環境
