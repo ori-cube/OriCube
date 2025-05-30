@@ -1,43 +1,44 @@
-export type Point = [number, number, number];
-export type Board = Point[];
-export type RotateAxis = [Point, Point] | [];
+type Point = [number, number, number];
+type Board = Point[];
+type RotateAxis = [Point, Point] | [];
 
-export type Model = {
-  id?: string;
-  name: string;
-  imageUrl?: string;
-  searchKeyword?: string[];
-  color: string;
-  procedure: Procedure;
-};
-
-type BaseProcedure = {
+export type BaseStep = {
+  type: "Base";
+  // 折り方解説の描画に必要なパラメータ
   description: string;
   fixBoards: Board[];
   moveBoards: Board[];
   rotateAxis: RotateAxis;
+  // 折り方入力の際に必要なデータ(これがあれば編集も可能)
+  selectedPoints: Point[];
+  rightBoards: Board[];
+  leftBoards: Board[];
+  isMoveBoardsRight: boolean;
+  numberOfMoveBoards: number;
+  maxNumberOfMoveBoards: number;
+  isFoldingDirectionFront: boolean;
+  foldingAngle: number;
 };
-
-type ConvolutionProcedure = BaseProcedure & {
+// 開いて畳むやつ用
+type ConvolutionStep = {
   type: "convolution";
   nodes: number[][];
   boards: number[][];
   moveNodesIdx: number[];
   rotateAxes: number[][][];
 };
+type Step = BaseStep | ConvolutionStep;
 
-type OtherProcedure = BaseProcedure & {
-  type?: string;
+export type StepObject = {
+  [key: string]: Step;
 };
 
-type ProcedureEntry = ConvolutionProcedure | OtherProcedure;
-
-export type Procedure = {
-  [key: string]: ProcedureEntry;
+// 最終的に保存するもの
+export type Model = {
+  id: string;
+  name: string;
+  color: string;
+  imageUrl: string;
+  searchKeyword?: string[];
+  procedure: StepObject;
 };
-
-export function isConvolutionProcedure(
-  procedure: ProcedureEntry
-): procedure is ConvolutionProcedure {
-  return procedure.type === "convolution";
-}
