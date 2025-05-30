@@ -35,9 +35,10 @@ export const useSelectPoints: UseSelectPoints = ({
 
   const inputStep = currentStep.inputStep;
   const procedureIndex = currentStep.procedureIndex;
-  const fixBoards = inputStepObject[procedureIndex.toString()].fixBoards;
-  const selectedPoints =
-    inputStepObject[procedureIndex.toString()].selectedPoints;
+  const step = inputStepObject[procedureIndex.toString()];
+
+  const fixBoards = step.fixBoards;
+  const selectedPoints = step.selectedPoints;
 
   useInitialRender({
     inputStep,

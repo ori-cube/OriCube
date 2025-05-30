@@ -9,7 +9,7 @@ export type BaseStep = {
   fixBoards: Board[];
   moveBoards: Board[];
   rotateAxis: RotateAxis;
-  // 折り方入力の際に必要なデータ(これがあれば編集も可能)
+  // 折り方入力の際に必要なデータ
   selectedPoints: Point[];
   rightBoards: Board[];
   leftBoards: Board[];
@@ -20,16 +20,24 @@ export type BaseStep = {
   foldingAngle: number;
 };
 // 開いて畳むやつ用
-type ConvolutionStep = {
+export type ConvolutionStep = {
   type: "convolution";
+  description: string;
   nodes: number[][];
   boards: number[][];
   moveNodesIdx: number[];
   rotateAxes: number[][][];
+  fixBoards: Board[];
 };
-type Step = BaseStep | ConvolutionStep;
+export type Step = BaseStep | ConvolutionStep;
 
-export type StepObject = {
+/*
+1: Step,
+2: Step,
+3: Step,
+...
+**/
+export type Procedure = {
   [key: string]: Step;
 };
 
@@ -40,5 +48,5 @@ export type Model = {
   color: string;
   imageUrl: string;
   searchKeyword?: string[];
-  procedure: StepObject;
+  procedure: Procedure;
 };

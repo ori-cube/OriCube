@@ -14,11 +14,11 @@ export const OrigamiList = () => {
       ) : (
         <li className={styles.list}>
           {filteredOrigamiList.map((item) => (
-            <ul className={styles.listItem} key={item?.id}>
+            <ul className={styles.listItem} key={item.id}>
               <OrigamiListItem
-                id={item?.id}
-                name={item?.name}
-                imageUrl={item?.imageUrl}
+                id={item.id}
+                name={item.name}
+                imageUrl={item.imageUrl}
               />
             </ul>
           ))}

@@ -18,14 +18,13 @@ export const useSelectSideAndNumberOfBoards: UseSelectSideAndNumberOfBoards =
     const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
 
     const procedureIndex = currentStep.procedureIndex;
-    const isMoveBoardsRight =
-      inputStepObject[procedureIndex.toString()].isMoveBoardsRight;
-    const leftBoards = inputStepObject[procedureIndex.toString()].leftBoards;
-    const rightBoards = inputStepObject[procedureIndex.toString()].rightBoards;
-    const isFoldingDirectionFront =
-      inputStepObject[procedureIndex.toString()].isFoldingDirectionFront;
-    const numberOfMoveBoards =
-      inputStepObject[procedureIndex.toString()].numberOfMoveBoards;
+    const step = inputStepObject[procedureIndex.toString()];
+
+    const isMoveBoardsRight = step.isMoveBoardsRight;
+    const leftBoards = step.leftBoards;
+    const rightBoards = step.rightBoards;
+    const isFoldingDirectionFront = step.isFoldingDirectionFront;
+    const numberOfMoveBoards = step.numberOfMoveBoards;
 
     const targetBoards = isMoveBoardsRight ? rightBoards : leftBoards;
     const maxNumberOfMoveBoards = targetBoards.filter((board) =>
