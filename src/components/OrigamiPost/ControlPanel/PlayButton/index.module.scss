@@ -1,0 +1,108 @@
+@use "@/styles/variables" as *;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.button {
+  position: relative;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+
+  &:hover {
+    background-color: $hover-color;
+  }
+}
+
+.circle {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background: #1109ad;
+  border-radius: 50%;
+  text-align: center;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.circle::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: -22px;
+  width: 44px;
+  height: 44px;
+  background: #dbdbdb;
+  transform-origin: right 22px;
+  z-index: 2;
+  animation: rotate-circle-left 2.5s linear forwards;
+}
+
+.circle::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0px;
+  left: 22px;
+  width: 44px;
+  height: 44px;
+  background: #dbdbdb;
+  transform-origin: left 22px;
+  z-index: 3;
+  animation: rotate-circle-right 2.5s linear forwards;
+}
+
+.circle_inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 35px;
+  height: 35px;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 4;
+  @include flex-center; /* Flexboxで中央配置 */
+}
+
+@keyframes rotate-circle-right {
+  0% {
+    transform: rotate(0deg);
+    background: #dbdbdb;
+  }
+  50% {
+    transform: rotate(180deg);
+    background: #dbdbdb;
+  }
+  50.01% {
+    transform: rotate(360deg);
+    background: #1109ad;
+  }
+  100% {
+    transform: rotate(360deg);
+    background: #1109ad;
+  }
+}
+
+@keyframes rotate-circle-left {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(180deg);
+  }
+}

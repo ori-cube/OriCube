@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
@@ -22,6 +22,7 @@ import { inputStepObjectAtom } from "./atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
 import { useCancelFoldTarget } from "./hooks/useCancelFoldTarget";
 import { PopupType } from "@/types/popup";
+import { ControlPanel } from "./ControlPanel";
 
 export const OrigamiPost = () => {
   // 常に保持しておきたい変数
@@ -49,6 +50,14 @@ export const OrigamiPost = () => {
   const isFoldingDirectionFront = step.isFoldingDirectionFront;
   const origamiDescription = step.description;
   const maxNumberOfMoveBoards = step.maxNumberOfMoveBoards;
+
+  const [sliderValue, setSliderValue] = useState(0); //折り紙の折る進行状況を保持
+  const [previewProcedureIndex, setPreviewProcedureIndex] = useState(1); //折り紙の手順を保持
+  const [procedureLength, setProcedureLength] = useState(0);
+
+  useEffect(() => {
+    setSliderValue(0);
+  }, [procedureIndex]);
 
   // TODO: 再レンダリングが増えそう？
   const handleOrigamiDescriptionChange = (description: string) => {
@@ -151,6 +160,7 @@ export const OrigamiPost = () => {
     const model = handleDecideProcedure();
     if (model) {
       setIsFinishFolding(true);
+      setProcedureLength(Number(Object.keys(model.procedure)));
     } else {
       console.error("Failed to decide procedure.");
     }
@@ -159,6 +169,19 @@ export const OrigamiPost = () => {
   return (
     <>
       <canvas ref={canvasRef} id="canvas" className={styles.model} />
+      {isFinishFolding && (
+        <div className={styles.control}>
+          <ControlPanel
+            stepNum={5}
+            value={sliderValue}
+            setSliderValue={setSliderValue}
+            maxArg={179.99}
+            procedureIndex={previewProcedureIndex}
+            setProcedureIndex={setPreviewProcedureIndex}
+            procedureLength={procedureLength}
+          />
+        </div>
+      )}
       <div className={styles.namePanelContainer}>
         <NameAndColorControlPanel
           name={origamiName}
