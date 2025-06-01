@@ -1,0 +1,21 @@
+@use "@/styles/variables" as *;
+
+.namePanelContainer {
+  position: fixed;
+  top: 6rem;
+  left: 1rem;
+  z-index: 100;
+}
+
+.panelContainer {
+  position: fixed;
+  height: 100vh;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  background-color: $background-color;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+  border-left: solid 1px #d1d1d1;
+  width: 20rem;
+}

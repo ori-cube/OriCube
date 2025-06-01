@@ -60,7 +60,10 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
 
     // TODO: ProcedureとinputStepObjectの整合性を取る
     // 現在はnewProcedureだけが入っているが、それまでの手順は入っていない
-    const procedures = { [procedureIndex]: newProcedure };
+    const procedures = {
+      ...inputStepObject,
+      [procedureIndex]: newProcedure,
+    };
     if (!procedures) {
       console.error("Procedure is null.");
       return;

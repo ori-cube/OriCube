@@ -1,0 +1,27 @@
+@use "@/styles/variables" as *;
+// .container {
+//   position: fixed;
+//   bottom: 56px;
+//   left: 50%;
+//   transform: translate(-50%);
+//   /* 自分の幅と高さの50%分逆方向に移動 */
+// }
+.control {
+  position: fixed;
+  bottom: 32px;
+  right: 50%;
+  transform: translateX(50%);
+}
+
+.panelContainer {
+  position: fixed;
+  height: 100vh;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  background-color: $background-color;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+  border-left: solid 1px #d1d1d1;
+  width: 20rem;
+}
