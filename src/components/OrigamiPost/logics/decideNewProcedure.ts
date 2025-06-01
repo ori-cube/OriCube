@@ -106,7 +106,7 @@ export const decideNewProcedure: DecideNewProcedure = ({
   }
 
   /**
-   * selectedPoints, rightBoards, leftBoardsは、atomから取得しないといけない
+   * selectedPoints, rightBoards, leftBoards, initialBoardsは、atomから取得しないといけない
    * buildを通すために一旦ここでは空にしておく
    */
   const newProcedure: Procedure[number] = {
@@ -115,6 +115,7 @@ export const decideNewProcedure: DecideNewProcedure = ({
     fixBoards: [...fixBoards, ...notFoldBoards],
     moveBoards: foldBoards,
     rotateAxis: sortedRotateAxis,
+    initialBoards: [],
     selectedPoints: [],
     rightBoards: [],
     leftBoards: [],

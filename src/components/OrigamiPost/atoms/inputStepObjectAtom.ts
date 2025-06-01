@@ -1,7 +1,7 @@
 import { atom } from "jotai";
 import { Board, BaseStep } from "@/types/model";
 
-const initialBoard: Board = [
+export const initialBoard: Board = [
   [20, 20, 0],
   [-20, 20, 0],
   [-20, -20, 0],
@@ -21,6 +21,7 @@ export type InputStepObject = {
 export const inputStepObjectAtom = atom<InputStepObject>({
   "1": {
     type: "Base",
+    initialBoards: [initialBoard],
     selectedPoints: [],
     rightBoards: [],
     leftBoards: [],
@@ -30,7 +31,7 @@ export const inputStepObjectAtom = atom<InputStepObject>({
     isFoldingDirectionFront: true,
     foldingAngle: 180,
     description: "",
-    fixBoards: [initialBoard],
+    fixBoards: [],
     moveBoards: [],
     rotateAxis: [],
   },
