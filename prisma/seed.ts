@@ -23,6 +23,7 @@ async function main() {
     },
   });
 
+  // idの発番はDB側で自動的に行っているため，型がtype Modelと異なることに注意
   const baseModels = [
     {
       name: "トラック",

@@ -24,7 +24,6 @@ export async function getUserFromId(id: string) {
   });
 }
 
-// Emailで検索したいユースケースがあるかも，と考え作成．
 export async function getUserFromEmail(email: string) {
   return await db.user.findFirst({
     where: {
