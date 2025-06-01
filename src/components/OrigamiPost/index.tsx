@@ -34,6 +34,7 @@ export const OrigamiPost = () => {
   const { origamiName, handleOrigamiNameChange } = useOrigamiName();
   const { origamiColor, handleOrigamiColorChange } = useOrigamiColor();
   const [popup, setPopup] = useState<PopupType>(null);
+  const [isFinishFolding, setIsFinishFolding] = useState<boolean>(false);
 
   // 折り方選択で、現在のステップを保持する変数
   const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
@@ -134,7 +135,7 @@ export const OrigamiPost = () => {
   const { handleDecideFoldMethod }: { handleDecideFoldMethod: () => void } =
     useDecideFoldMethod();
 
-  const { handleRegisterOrigami } = useRegisterOrigami({
+  const { handleDecideProcedure, handleRegisterOrigami } = useRegisterOrigami({
     origamiName,
     origamiColor,
     sceneRef,
@@ -144,6 +145,15 @@ export const OrigamiPost = () => {
 
   const handleClosePopup = () => {
     setPopup(null);
+  };
+
+  const handleFinishFolding = () => {
+    const model = handleDecideProcedure();
+    if (model) {
+      setIsFinishFolding(true);
+    } else {
+      console.error("Failed to decide procedure.");
+    }
   };
 
   return (
@@ -178,6 +188,12 @@ export const OrigamiPost = () => {
           inputStepLength={inputStepLength}
           procedureIndex={procedureIndex}
           handleChangeStep={handleChangeStep}
+          handleFinishFolding={handleFinishFolding}
+          isFinishFolding={isFinishFolding}
+          name={origamiName}
+          handleNameChange={handleOrigamiNameChange}
+          color={origamiColor}
+          handleColorChange={handleOrigamiColorChange}
         />
       </div>
       {popup?.message.length && (
