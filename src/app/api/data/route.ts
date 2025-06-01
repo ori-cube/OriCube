@@ -68,10 +68,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // TODO: envを変更する
   const s3 = new S3Client({
     region: process.env.S3_REGION,
-    endpoint: process.env.S3_ENDPOINT,
     credentials: {
       accessKeyId: process.env.S3_ACCESS_KEY!,
       secretAccessKey: process.env.S3_SECRET_KEY!,
@@ -87,8 +85,7 @@ export async function POST(req: NextRequest) {
   const arrayBuffer = await image.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  // TODO: ここはS3の仕様に沿ったものにする．
-  const imageKey = `origami/images/${model.id}.png`;
+  const imageKey = `${model.id}.png`;
   const imageUrl = `${process.env.S3_BUCKET_URL}/${imageKey}`;
 
   try {
@@ -105,11 +102,10 @@ export async function POST(req: NextRequest) {
 
     await s3.send(
       new PutObjectCommand({
-        Bucket: "ori-cube",
+        Bucket: process.env.S3_BUCKET_NAME,
         Key: imageKey,
         Body: buffer,
         ContentType: "image/png",
-        ACL: "public-read",
       })
     );
   } catch (error) {

@@ -11,9 +11,10 @@ const touchData = (
   if (!mail) return;
   data["id"] = uuid;
   data["searchKeyword"] = [data.name];
+  // TODO: ファイルパスがS3の仕様と齟齬ないか確認
   data[
     "imageUrl"
-  ] = `${process.env.NEXT_PUBLIC_R2_BUCKET_URL}/origami/images/${uuid}.png`;
+  ] = `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/origami/images/${uuid}.png`;
   return data;
 };
 

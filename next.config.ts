@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       "placehold.jp",
       "images.unsplash.com",
       "plus.unsplash.com",
+      "ori-cube.s3.ap-northeast-1.amazonaws.com",
     ],
   },
 };
