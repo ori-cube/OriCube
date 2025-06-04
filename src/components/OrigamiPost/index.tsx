@@ -155,6 +155,8 @@ export const OrigamiPost = () => {
   });
 
   const { handleRegisterOrigami } = useRegisterOrigami({
+    fixBoards: notFoldBoards,
+    moveBoards: foldBoards,
     origamiName,
     origamiColor,
     sceneRef,

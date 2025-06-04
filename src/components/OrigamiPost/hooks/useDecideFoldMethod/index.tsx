@@ -6,7 +6,7 @@
 
 import { Board, Point } from "@/types/model";
 import { rotateBoards } from "../../logics/rotateBoards";
-import { decideNewProcedure } from "../../logics/decideNewProcedure";
+import { getFoldAndNotFoldBoards } from "../../logics/decideNewProcedure";
 import { currentStepAtom } from "../../atoms/currentStepAtom";
 import { inputStepObjectAtom } from "../../atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
@@ -37,7 +37,6 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
   const foldingAngle = step.foldingAngle;
   const isFoldingDirectionFront = step.isFoldingDirectionFront;
   const isMoveBoardsRight = step.isMoveBoardsRight;
-  const description = step.description;
 
   const handleDecideFoldMethod = () => {
     // moveBoardsを回転した後の板を、fixBoardsに追加する
@@ -51,15 +50,10 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
      */
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
-    const { foldBoards, notFoldBoards } = decideNewProcedure({
-      fixBoards,
+    const { foldBoards, notFoldBoards } = getFoldAndNotFoldBoards(
       moveBoards,
-      numberOfMoveBoards,
-      rotateAxis,
-      isFoldingDirectionFront,
-      isMoveBoardsRight,
-      description,
-    });
+      numberOfMoveBoards
+    );
 
     const rotatedBoards = rotateBoards({
       boards: foldBoards,
