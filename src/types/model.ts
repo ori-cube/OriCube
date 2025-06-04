@@ -10,6 +10,7 @@ export type BaseStep = {
   moveBoards: Board[];
   rotateAxis: RotateAxis;
   // 折り方入力の際に必要なデータ
+  initialBoards: Board[];
   selectedPoints: Point[];
   rightBoards: Board[];
   leftBoards: Board[];
