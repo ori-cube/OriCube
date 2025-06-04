@@ -117,8 +117,6 @@ export const isIntersectionOnTheBoard: IsIntersectionOnTheBoard = ({
       v1[0] * v2[1] - v1[1] * v2[0],
     ];
 
-    console.log("crossProduct", crossProduct);
-
     // crossProductの値が0.001より小さい場合は0とみなす
     if (crossProduct[0] < 0.001) crossProduct[0] = 0;
     if (crossProduct[1] < 0.001) crossProduct[1] = 0;

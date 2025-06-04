@@ -38,7 +38,6 @@ export const separateBoard: SeparateBoard = ({ board, rotateAxis }) => {
       axis1: rotateAxis[0],
       axis2: rotateAxis[1],
     });
-    console.log("isLeft", isLeft);
     if (isLeft) {
       leftBoard.push(p);
     } else {

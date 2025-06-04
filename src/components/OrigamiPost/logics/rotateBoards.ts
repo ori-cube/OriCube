@@ -22,8 +22,6 @@ export const rotateBoards: rotateBoards = ({
   //  isMoveBoardsRightがtrueのとき、軸をx軸が負の方向を向くようにソート
   //  falseのとき、軸をx軸が正の方向を向くようにソート
   //  axisは[1] -> [0]の向きになる
-  console.log("isMoveBoardsRight", isMoveBoardsRight);
-  console.log("isFoldingDirectionFront", isFoldingDirectionFront);
   let sortedRotateAxis = rotateAxis;
   if (isMoveBoardsRight) {
     sortedRotateAxis =
@@ -36,7 +34,6 @@ export const rotateBoards: rotateBoards = ({
         ? rotateAxis
         : [rotateAxis[1], rotateAxis[0]];
   }
-  console.log("sortedRotateAxis", sortedRotateAxis);
 
   // 重なっている板を回転するとき、
   // 板のz座標がisFoldingDirectionFrontがtrueのときは一番大きい板のz座標を基準に回転する
