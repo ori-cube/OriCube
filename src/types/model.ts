@@ -4,12 +4,13 @@ export type RotateAxis = [Point, Point] | [];
 
 export type BaseStep = {
   type: "Base";
-  // 折り方確認の描画に必要なパラメータ
+  // 折り方解説の描画に必要なパラメータ
   description: string;
   fixBoards: Board[];
   moveBoards: Board[];
   rotateAxis: RotateAxis;
   // 折り方入力の際に必要なデータ
+  initialBoards: Board[];
   selectedPoints: Point[];
   rightBoards: Board[];
   leftBoards: Board[];

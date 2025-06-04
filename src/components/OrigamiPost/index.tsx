@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./index.module.scss";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
@@ -22,6 +22,7 @@ import { inputStepObjectAtom } from "./atoms/inputStepObjectAtom";
 import { useAtom } from "jotai";
 import { useCancelFoldTarget } from "./hooks/useCancelFoldTarget";
 import { PopupType } from "@/types/popup";
+import { Board } from "@/types/model";
 
 export const OrigamiPost = () => {
   // 常に保持しておきたい変数
@@ -122,19 +123,40 @@ export const OrigamiPost = () => {
   });
 
   // step3：板を折る方向と枚数を決定
+
+  const [foldBoards, setFoldBoards] = useState<Board[]>([]);
+  const [notFoldBoards, setNotFoldBoards] = useState<Board[]>([]);
+
+  const rightBoards = step.rightBoards;
+  const leftBoards = step.leftBoards;
+
+  useEffect(() => {
+    setFoldBoards([]);
+    setNotFoldBoards([...rightBoards, ...leftBoards]);
+  }, [rightBoards, leftBoards]);
+
   const { handleFoldFrontSide, handleFoldBackSide } =
-    useSelectSideAndNumberOfBoards();
+    useSelectSideAndNumberOfBoards({
+      setFoldBoards,
+      setNotFoldBoards,
+    });
 
   // 回転に応じて板を描画
   useRotateBoards({
     sceneRef,
     origamiColor,
+    foldBoards,
+    notFoldBoards,
   });
 
-  const { handleDecideFoldMethod }: { handleDecideFoldMethod: () => void } =
-    useDecideFoldMethod();
+  const { handleDecideFoldMethod } = useDecideFoldMethod({
+    fixBoards: notFoldBoards,
+    moveBoards: foldBoards,
+  });
 
   const { handleRegisterOrigami } = useRegisterOrigami({
+    fixBoards: notFoldBoards,
+    moveBoards: foldBoards,
     origamiName,
     origamiColor,
     sceneRef,

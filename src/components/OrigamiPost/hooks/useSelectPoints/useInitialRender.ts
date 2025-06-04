@@ -9,14 +9,14 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { renderSelectedPoint, renderSnapPoint } from "./renderPoint";
 import { renderBoard } from "../../logics/renderBoard";
-import { Point } from "@/types/model";
+import { Point, Board } from "@/types/model";
 
 type UseInitialRender = (props: {
   inputStep: string;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
-  fixBoards: Point[][];
+  initialBoards: Board[];
   selectedPoints: Point[];
   origamiColor: string;
 }) => void;
@@ -26,7 +26,7 @@ export const useInitialRender: UseInitialRender = ({
   sceneRef,
   rendererRef,
   cameraRef,
-  fixBoards,
+  initialBoards,
   selectedPoints,
   origamiColor,
 }) => {
@@ -45,7 +45,7 @@ export const useInitialRender: UseInitialRender = ({
     });
 
     // boardsを描画
-    fixBoards.forEach((board) => {
+    initialBoards.forEach((board) => {
       renderBoard({ scene, board, color: origamiColor });
 
       // 頂点のスナップポイントを描画
@@ -76,7 +76,7 @@ export const useInitialRender: UseInitialRender = ({
     sceneRef,
     rendererRef,
     cameraRef,
-    fixBoards,
+    initialBoards,
     origamiColor,
     selectedPoints,
   ]);
