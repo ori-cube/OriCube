@@ -1,0 +1,91 @@
+@use "@/styles/variables" as *;
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.container {
+  background-color: $background-color;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  max-width: 600px;
+  max-height: 80vh;
+  width: 90%;
+  height: 70vh;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  z-index: 10;
+
+  &:hover {
+    color: #000;
+  }
+}
+
+.instructions {
+  font-size: 0.9rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.canvasContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background-color: #f9f9f9;
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.shootButton {
+  width: 100%;
+  background-color: $primary-color;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background-color: darken($primary-color, 10%);
+  }
+}

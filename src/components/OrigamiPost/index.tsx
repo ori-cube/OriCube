@@ -49,6 +49,8 @@ export const OrigamiPost = () => {
   const isFoldingDirectionFront = step.isFoldingDirectionFront;
   const origamiDescription = step.description;
   const maxNumberOfMoveBoards = step.maxNumberOfMoveBoards;
+  const rotateAxis = step.rotateAxis;
+  const isMoveBoardsRight = step.isMoveBoardsRight;
 
   // TODO: 再レンダリングが増えそう？
   const handleOrigamiDescriptionChange = (description: string) => {
@@ -200,6 +202,13 @@ export const OrigamiPost = () => {
           inputStepLength={inputStepLength}
           procedureIndex={procedureIndex}
           handleChangeStep={handleChangeStep}
+          origamiColor={origamiColor}
+          foldBoards={foldBoards}
+          notFoldBoards={notFoldBoards}
+          rotateAxis={rotateAxis}
+          numberOfMoveBoards={numberOfMoveBoards}
+          isFoldingDirectionFront={isFoldingDirectionFront}
+          isMoveBoardsRight={isMoveBoardsRight}
         />
       </div>
       {popup?.message.length && (

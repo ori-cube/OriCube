@@ -6,6 +6,7 @@ import { FoldTargetSelectPanel } from "./FoldTargetSelectPanel";
 import { FoldMethodSelectPanel } from "./FoldMethodSelectPanel";
 import { FoldStepSegmentedControl } from "./ui/FoldStepSegmentedControl";
 import React from "react";
+import { Board, RotateAxis } from "@/types/model";
 
 export type Step = "axis" | "target" | "fold";
 
@@ -29,6 +30,14 @@ type Props = {
   inputStepLength: number;
   procedureIndex: number;
   handleChangeStep: (step: number) => void;
+  origamiColor: string;
+  foldBoards: Board[];
+  notFoldBoards: Board[];
+  // Folding state parameters
+  rotateAxis: RotateAxis;
+  numberOfMoveBoards: number;
+  isFoldingDirectionFront: boolean;
+  isMoveBoardsRight: boolean;
 };
 
 export const FoldMethodControlPanel: React.FC<Props> = ({
@@ -51,6 +60,13 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
   inputStepLength,
   procedureIndex,
   handleChangeStep,
+  origamiColor,
+  foldBoards,
+  notFoldBoards,
+  rotateAxis,
+  numberOfMoveBoards,
+  isFoldingDirectionFront,
+  isMoveBoardsRight,
 }) => {
   return (
     <section className={styles.container}>
@@ -77,6 +93,13 @@ export const FoldMethodControlPanel: React.FC<Props> = ({
           handleRegisterOrigami={handleRegisterOrigami}
           origamiDescription={origamiDescription}
           handleOrigamiDescriptionChange={handleOrigamiDescriptionChange}
+          origamiColor={origamiColor}
+          foldBoards={foldBoards}
+          notFoldBoards={notFoldBoards}
+          rotateAxis={rotateAxis}
+          numberOfMoveBoards={numberOfMoveBoards}
+          isFoldingDirectionFront={isFoldingDirectionFront}
+          isMoveBoardsRight={isMoveBoardsRight}
         />
       )}
       <div className={styles.segmentedControl}>

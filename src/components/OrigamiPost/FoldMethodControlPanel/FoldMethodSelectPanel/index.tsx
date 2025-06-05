@@ -3,7 +3,9 @@ import { NextStepButton } from "../ui/NextStepButton";
 import { PrevStepButton } from "../ui/PrevStepButton";
 import { FoldButton } from "../ui/FoldButton";
 import { Slider, TextArea, Button } from "@radix-ui/themes";
-import React from "react";
+import React, { useState } from "react";
+import { ShootingModal } from "../ShootingModal";
+import { Board, RotateAxis } from "@/types/model";
 
 type Props = {
   handlePrevStep: () => void;
@@ -18,6 +20,14 @@ type Props = {
   handleRegisterOrigami: () => void;
   origamiDescription: string;
   handleOrigamiDescriptionChange: (description: string) => void;
+  origamiColor: string;
+  foldBoards: Board[];
+  notFoldBoards: Board[];
+  // Current folding state parameters
+  rotateAxis: RotateAxis;
+  numberOfMoveBoards: number;
+  isFoldingDirectionFront: boolean;
+  isMoveBoardsRight: boolean;
 };
 
 export const FoldMethodSelectPanel: React.FC<Props> = ({
@@ -33,7 +43,23 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
   handleRegisterOrigami,
   origamiDescription,
   handleOrigamiDescriptionChange,
+  origamiColor,
+  foldBoards,
+  notFoldBoards,
+  rotateAxis,
+  numberOfMoveBoards,
+  isFoldingDirectionFront,
+  isMoveBoardsRight,
 }) => {
+  const [isShootingModalOpen, setIsShootingModalOpen] = useState(false);
+
+  const handleOpenShootingModal = () => {
+    setIsShootingModalOpen(true);
+  };
+
+  const handleCloseShootingModal = () => {
+    setIsShootingModalOpen(false);
+  };
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
@@ -85,12 +111,26 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
         </div>
       </div>
       <Button
-        onClick={handleRegisterOrigami}
+        onClick={handleOpenShootingModal}
         className={styles.registerButton}
         size="3"
       >
         折り紙を登録
       </Button>
+      {isShootingModalOpen && (
+        <ShootingModal
+          onClose={handleCloseShootingModal}
+          handleRegisterOrigami={handleRegisterOrigami}
+          origamiColor={origamiColor}
+          foldBoards={foldBoards}
+          notFoldBoards={notFoldBoards}
+          foldingAngle={foldAngle}
+          rotateAxis={rotateAxis}
+          numberOfMoveBoards={numberOfMoveBoards}
+          isFoldingDirectionFront={isFoldingDirectionFront}
+          isMoveBoardsRight={isMoveBoardsRight}
+        />
+      )}
     </div>
   );
 };
