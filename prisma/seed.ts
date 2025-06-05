@@ -39,6 +39,13 @@ async function main() {
         "https://pub-2a912ed59cc94e139be4a2d207f42e8f.r2.dev/origami/images/31f49135-dc44-4a5e-accd-7c948ecde5fa.png",
       searchKeyword: ["よっと", "bort", "ヨット"],
     },
+    {
+      name: "畳んで折る",
+      color: "green",
+      imageUrl:
+        "https://pub-2a912ed59cc94e139be4a2d207f42e8f.r2.dev/origami/images/365d4dd3-dddc-4e83-8aab-a5d0b8340b3a.png",
+      searchKeyword: ["畳んで折る", "たたんでおる"],
+    },
   ];
 
   const models = baseModels.map((m) => {
