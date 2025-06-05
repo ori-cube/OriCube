@@ -30,8 +30,6 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
 
   const step = inputStepObject[procedureIndex.toString()];
 
-  const leftBoards = step.leftBoards;
-  const rightBoards = step.rightBoards;
   const numberOfMoveBoards = step.numberOfMoveBoards;
   const rotateAxis = step.rotateAxis;
   const foldingAngle = step.foldingAngle;
@@ -50,6 +48,7 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
      */
     // xy平面上の板のうち、z座標が大きい順に、numberOfMoveBoards枚を折る
     // それ以外の板は無条件で折る
+
     const { foldBoards, notFoldBoards } = getFoldAndNotFoldBoards(
       moveBoards,
       numberOfMoveBoards
@@ -92,10 +91,7 @@ export const useDecideFoldMethod: UseDecideFoldMethod = ({
         ...newStepObject,
         [procedureIndex.toString()]: {
           ...prev[procedureIndex.toString()],
-          fixBoards: [
-            ...(isMoveBoardsRight ? leftBoards : rightBoards),
-            ...notFoldBoards,
-          ],
+          fixBoards: fixBoards,
           moveBoards: foldBoards,
         },
         [procedureIndex + 1]: {

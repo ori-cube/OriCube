@@ -90,9 +90,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const user = await getUserFromEmail(mail);
-    if (!user) return;
+    if (!user) {
+      return NextResponse.json(
+        { message: "ユーザーが見つかりません。" },
+        { status: 404, headers: corsHeaders }
+      );
+    }
     await createModel({
-      userId: user?.id,
+      userId: user.id,
       name: model.name,
       color: model.color,
       imageUrl: imageUrl,
