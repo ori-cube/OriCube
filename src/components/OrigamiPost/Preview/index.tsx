@@ -14,8 +14,6 @@ import {
   LineMaterial,
   Line2,
 } from "three/examples/jsm/Addons.js";
-import { useAtom } from "jotai";
-import { inputStepObjectAtom } from "../atoms/inputStepObjectAtom";
 
 interface OrigamiPostPreviewProps {
   description: string;
@@ -45,10 +43,8 @@ export const OrigamiPostPreview: React.FC<OrigamiPostPreviewProps> = ({
   const [previewProcedureIndex, setPreviewProcedureIndex] = useState(1); //折り紙の手順を保持
   const procedure = modelData.procedure;
   const procedureLength = Object.keys(procedure).length;
-  const [inputStepObject] = useAtom(inputStepObjectAtom);
-  const step = inputStepObject[previewProcedureIndex.toString()];
-  const foldAngle = step.foldingAngle;
   const stepObject = procedure[previewProcedureIndex];
+  const foldAngle = sliderValue;
 
   // TODO: DBが修正されたらここは削除
   // procedureのtypeが存在しない場合、typeにBaseを設定
