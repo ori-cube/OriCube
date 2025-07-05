@@ -16,7 +16,9 @@
     "db:generate:dev": "dotenv -e .env.development -- prisma generate",
     "db:generate:prod": "dotenv -e .env.production -- prisma generate",
     "vercel-build": "prisma generate && next build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
@@ -46,8 +48,12 @@
   },
   "devDependencies": {
     "@babel/preset-react": "^7.26.3",
+    "@chromatic-com/storybook": "^4.0.1",
     "@commitlint/cli": "^19.6.1",
     "@prisma/client": "^6.7.0",
+    "@storybook/addon-a11y": "^9.0.15",
+    "@storybook/addon-docs": "^9.0.15",
+    "@storybook/addon-vitest": "^9.0.15",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -63,14 +69,21 @@
     "dotenv-cli": "^8.0.0",
     "eslint": "^8",
     "eslint-config-next": "15.0.1",
+    "eslint-plugin-storybook": "^9.0.15",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "prisma": "^6.7.0",
     "sass": "^1.80.4",
+    "storybook": "^9.0.15",
     "tailwindcss": "^3.4.14",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@storybook/nextjs-vite": "^9.0.15",
+    "vitest": "^3.2.4",
+    "@vitest/browser": "^3.2.4",
+    "playwright": "^1.53.2",
+    "@vitest/coverage-v8": "^3.2.4"
   },
   "config": {
     "commitizen": {
