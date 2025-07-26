@@ -8,6 +8,7 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
+import { getOutlineColor } from "@/utils/modify-color";
 
 type Props = {
   procedure: Procedure;
@@ -248,16 +249,4 @@ export const Three: React.FC<Props> = ({
   }, [foldAngle, stepObject]);
 
   return <canvas ref={canvasRef} id="canvas" className={styles.model}></canvas>;
-};
-
-// 色のアウトラインを取得する関数
-const getOutlineColor = (hexColor: string): THREE.Color => {
-  const color = new THREE.Color(hexColor);
-  const hsl = { h: 0, s: 0, l: 0 };
-  color.getHSL(hsl);
-
-  // 色相(h)を180度回転させ、補色を取得 (0.5を加算)
-  hsl.h = (hsl.h + 0.5) % 1.0;
-
-  return new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l);
 };
