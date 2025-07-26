@@ -8,6 +8,7 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
+import { getOutlineColor } from "@/utils/modify-color";
 
 type Props = {
   procedure: Procedure;
@@ -35,6 +36,9 @@ export const Three: React.FC<Props> = ({
   }
 
   const stepObject = procedure[procedureIndex.toString()]; // 1ステップ分
+
+  // 枠線の取得
+  const outlineColor = getOutlineColor(color);
 
   // シーンの初期化
   useEffect(() => {
@@ -113,7 +117,10 @@ export const Three: React.FC<Props> = ({
     scene.clear();
 
     // そのままの板と、回転後の板を保持
-    const boards = [...stepObject.fixBoards];
+    const boards: { points: Board; isMove: boolean }[] = [];
+    stepObject.fixBoards.forEach((b) =>
+      boards.push({ points: b, isMove: false })
+    );
     const holds_line = [];
     const theta = THREE.MathUtils.degToRad(foldAngle);
 
@@ -141,7 +148,7 @@ export const Three: React.FC<Props> = ({
             rotateNode.add(subNode);
             return [rotateNode.x, rotateNode.y, rotateNode.z];
           });
-          boards.push(newBoard as Board);
+          boards.push({ points: newBoard as Board, isMove: true });
         }
 
         break;
@@ -177,7 +184,7 @@ export const Three: React.FC<Props> = ({
             const node = new THREE.Vector3(...nodes[board[j]]);
             newBoard.push([node.x, node.y, node.z]);
           }
-          boards.push(newBoard as Board);
+          boards.push({ points: newBoard as Board, isMove: true });
         }
 
         break;
@@ -187,7 +194,7 @@ export const Three: React.FC<Props> = ({
     }
 
     // 板を描画
-    boards.forEach((board) => {
+    boards.forEach(({ points: board, isMove }) => {
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute(
         "position",
@@ -204,16 +211,28 @@ export const Three: React.FC<Props> = ({
       const backMesh = new THREE.Mesh(geometry, backMaterial);
       scene.add(frontMesh);
       scene.add(backMesh);
-      const EdgesGeometry = new THREE.EdgesGeometry(geometry);
-      const wireframeMaterial = new THREE.LineBasicMaterial({
-        color: 0x000000, // ワイヤーフレームの色
-        linewidth: 1,
+      const edgesGeometry = new THREE.EdgesGeometry(geometry);
+      // 頂点座標の配列を作成
+      const positionAttr = edgesGeometry.getAttribute("position");
+      const positions = new Float32Array(positionAttr.array);
+
+      // LineGeometry にセット
+      const lineGeometry = new LineGeometry();
+      lineGeometry.setPositions(positions);
+
+      // 枠線の設定
+      const lineMaterial = new LineMaterial({
+        color: isMove ? outlineColor.getHex() : 0x000000,
+        linewidth: isMove ? 2 : 0.5,
+        worldUnits: false,
+        vertexColors: false,
       });
-      const wireframe = new THREE.LineSegments(
-        EdgesGeometry,
-        wireframeMaterial
-      );
-      scene.add(wireframe);
+      // LineMaterial の解像度を設定
+      lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+
+      // 枠線を描画
+      const outline = new Line2(lineGeometry, lineMaterial);
+      scene.add(outline);
     });
 
     // 折り目を描画
@@ -221,8 +240,8 @@ export const Three: React.FC<Props> = ({
       const geometry = new LineGeometry();
       geometry.setPositions(line);
       const lineMaterial = new LineMaterial({
-        color: 0xff00ff,
-        linewidth: 3,
+        linewidth: 2,
+        color: outlineColor.getHex(),
       });
       const lineMesh = new Line2(geometry, lineMaterial);
       scene.add(lineMesh);
