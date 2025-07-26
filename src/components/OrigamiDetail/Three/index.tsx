@@ -220,11 +220,25 @@ export const Three: React.FC<Props> = ({
     holds_line.forEach((line) => {
       const geometry = new LineGeometry();
       geometry.setPositions(line);
+      const colorStart = new THREE.Color(0xff0000);
+      const colorEnd = new THREE.Color(0x0000ff);
+
+      const colors = [
+        colorStart.r,
+        colorStart.g,
+        colorStart.b,
+        colorEnd.r,
+        colorEnd.g,
+        colorEnd.b,
+      ];
+      geometry.setColors(colors);
       const lineMaterial = new LineMaterial({
-        color: 0xff00ff,
-        linewidth: 3,
+        linewidth: 4,
+        vertexColors: true,
+        worldUnits: false,
       });
       const lineMesh = new Line2(geometry, lineMaterial);
+      //lineMesh.computeLineDistances();
       scene.add(lineMesh);
     });
   }, [foldAngle, stepObject]);
