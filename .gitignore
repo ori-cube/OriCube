@@ -46,3 +46,5 @@ generated
 
 # databaseの自動生成ファイル
 database
+*storybook.log
+storybook-static
