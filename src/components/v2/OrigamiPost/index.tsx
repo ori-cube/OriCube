@@ -1,0 +1,62 @@
+"use client";
+
+import React, { useRef } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { useInitScene, useOrigamiRenderer } from "./hooks";
+import styles from "./index.module.scss";
+
+export interface OrigamiPostV2Props {
+  /** 折り紙の色 */
+  origamiColor?: string;
+  /** 折り紙のサイズ */
+  size?: number;
+  /** カメラの初期位置 */
+  cameraPosition?: { x: number; y: number; z: number };
+  /** カンバスの幅 */
+  width?: number;
+  /** カンバスの高さ */
+  height?: number;
+}
+
+export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
+  origamiColor = "#4A90E2",
+  size = 100,
+  cameraPosition = { x: 0, y: 0, z: 120 },
+  width = window.innerWidth - 320,
+  height = window.innerHeight,
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+
+  // シーンの初期化
+  useInitScene({
+    canvasRef,
+    sceneRef,
+    cameraRef,
+    rendererRef,
+    controlsRef,
+    width,
+    height,
+    cameraPosition,
+  });
+
+  // 折り紙の描画
+  useOrigamiRenderer({
+    sceneRef,
+    origamiColor,
+    size,
+  });
+
+  return (
+    <canvas
+      ref={canvasRef}
+      id="origami-canvas"
+      className={styles.canvas}
+      style={{ width, height }}
+    />
+  );
+};
