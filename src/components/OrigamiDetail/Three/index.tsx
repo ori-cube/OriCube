@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import * as THREE from "three";
 import styles from "./index.module.scss";
 import { Board, Procedure } from "@/types/model";
@@ -8,7 +8,7 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
 import { Line2 } from "three/examples/jsm/Addons.js";
-import { getOutlineColor } from "@/utils/modify-color";
+import { calculateOutlineAndBackColors } from "@/utils/modify-color";
 
 type Props = {
   procedure: Procedure;
@@ -37,8 +37,12 @@ export const Three: React.FC<Props> = ({
 
   const stepObject = procedure[procedureIndex.toString()]; // 1ステップ分
 
-  // 枠線の取得
-  const outlineColor = getOutlineColor(color);
+  // 折り線の色と裏面の色を計算
+  // TODO: ユーザー入力で任意で設定できるようにしたい
+  const { outlineColor, backMaterialColor } = useMemo(
+    () => calculateOutlineAndBackColors(color),
+    []
+  );
 
   // シーンの初期化
   useEffect(() => {
@@ -108,7 +112,7 @@ export const Three: React.FC<Props> = ({
       transparent: true,
     });
     const backMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#DFDFDF"),
+      color: backMaterialColor,
       side: THREE.BackSide,
       transparent: true,
     });
@@ -222,8 +226,8 @@ export const Three: React.FC<Props> = ({
 
       // 枠線の設定
       const lineMaterial = new LineMaterial({
-        color: isMove ? outlineColor.getHex() : 0x000000,
-        linewidth: isMove ? 2 : 0.5,
+        color: 0x000000,
+        linewidth: isMove ? 3 : 0.5,
         worldUnits: false,
         vertexColors: false,
       });
@@ -240,7 +244,7 @@ export const Three: React.FC<Props> = ({
       const geometry = new LineGeometry();
       geometry.setPositions(line);
       const lineMaterial = new LineMaterial({
-        linewidth: 2,
+        linewidth: 3,
         color: outlineColor.getHex(),
       });
       const lineMesh = new Line2(geometry, lineMaterial);
