@@ -8,17 +8,38 @@ type UseInitScene = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   controlsRef: React.MutableRefObject<OrbitControls | null>;
+  raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   width: number;
   height: number;
   cameraPosition: { x: number; y: number; z: number };
 }) => void;
 
+/**
+ * Three.jsシーンの初期化を行うカスタムフック
+ *
+ * @description
+ * - Three.jsのシーン、カメラ、レンダラー、コントロール、レイキャスターを初期化
+ * - ライティング（環境光・指向性ライト）を設定
+ * - アニメーションループを開始
+ * - ウィンドウリサイズ時の対応を設定
+ *
+ * @param props.canvasRef - HTMLCanvasElementのref
+ * @param props.sceneRef - THREE.Sceneのref
+ * @param props.cameraRef - THREE.PerspectiveCameraのref
+ * @param props.rendererRef - THREE.WebGLRendererのref
+ * @param props.controlsRef - OrbitControlsのref
+ * @param props.raycasterRef - THREE.Raycasterのref
+ * @param props.width - カンバスの幅
+ * @param props.height - カンバスの高さ
+ * @param props.cameraPosition - カメラの初期位置
+ */
 export const useInitScene: UseInitScene = ({
   canvasRef,
   sceneRef,
   cameraRef,
   rendererRef,
   controlsRef,
+  raycasterRef,
   width,
   height,
   cameraPosition,
@@ -50,8 +71,13 @@ export const useInitScene: UseInitScene = ({
     // コントロールの作成
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.enableRotate = false;
     controls.dampingFactor = 0.05;
     controlsRef.current = controls;
+
+    // レイキャスターの作成
+    const raycaster = new THREE.Raycaster();
+    raycasterRef.current = raycaster;
 
     // ライティングの設定
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -91,6 +117,7 @@ export const useInitScene: UseInitScene = ({
     cameraRef,
     rendererRef,
     controlsRef,
+    raycasterRef,
     width,
     height,
     cameraPosition,
