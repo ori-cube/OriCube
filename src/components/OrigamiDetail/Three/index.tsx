@@ -28,6 +28,7 @@ export const Three: React.FC<Props> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const contentGroupRef = useRef<THREE.Group | null>(null);
 
   // TODO: DBが修正されたらここは削除
   // procedureのtypeが存在しない場合、typeにBaseを設定
@@ -52,6 +53,10 @@ export const Three: React.FC<Props> = ({
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
+    const contentGroup = new THREE.Group();
+    scene.add(contentGroup);
+    contentGroupRef.current = contentGroup;
+
     const sizes = {
       width: window.innerWidth,
       height: window.innerHeight,
@@ -64,6 +69,8 @@ export const Three: React.FC<Props> = ({
     });
     renderer.setSize(sizes.width, sizes.height);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
 
     const camera = new THREE.PerspectiveCamera(
@@ -75,6 +82,53 @@ export const Three: React.FC<Props> = ({
     camera.position.set(20, 70, 100); // 右斜め上からモデルを見るようにカメラ位置を設定
     camera.lookAt(new THREE.Vector3(0, 0, 0)); // モデルの中心を見るようにカメラの向きを設定
     scene.add(camera);
+
+    // 光源の設定
+    // 環境光
+    const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambient);
+    // 直射光
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    dirLight.position.set(-50, 100, 70);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(2048, 2048);
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 500;
+
+    // 影カメラの撮影範囲を設定
+    const shadowCam = dirLight.shadow.camera as THREE.OrthographicCamera;
+    shadowCam.left = 300;
+    shadowCam.right = -300;
+    shadowCam.top = 150;
+    shadowCam.bottom = -150;
+
+    scene.add(dirLight);
+    dirLight.target.position.set(0, 0, 0);
+    scene.add(dirLight.target);
+
+    // 床の設定
+    const floor = new THREE.PlaneGeometry(200, 100);
+
+    // 影用の床
+    const shadowFloor = new THREE.Mesh(
+      floor,
+      new THREE.ShadowMaterial({ opacity: 0.25 }) // 影の濃さはopacityで調整
+    );
+    shadowFloor.rotation.x = -Math.PI / 2;
+    shadowFloor.position.y = -21;
+    shadowFloor.receiveShadow = true;
+    scene.add(shadowFloor);
+
+    // 床が暗くならないように、影用の床の下に色付きの床を配置
+    const baseFloor = new THREE.Mesh(
+      floor,
+      new THREE.MeshBasicMaterial({ color: 0xf5f5f5 })
+    );
+    baseFloor.rotation.x = -Math.PI / 2;
+    baseFloor.position.y = -21.5;
+    baseFloor.receiveShadow = false;
+    scene.add(baseFloor);
+
     cameraRef.current = camera;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -117,8 +171,13 @@ export const Three: React.FC<Props> = ({
       transparent: true,
     });
 
-    // シーンをクリア
-    scene.clear();
+    // 板や線のみクリアし、床や光源は残す
+    const contentGroup = contentGroupRef.current;
+    if (contentGroup) {
+      while (contentGroup.children.length) {
+        contentGroup.remove(contentGroup.children[0]);
+      }
+    }
 
     // そのままの板と、回転後の板を保持
     const boards: { points: Board; isMove: boolean }[] = [];
@@ -213,8 +272,10 @@ export const Three: React.FC<Props> = ({
       }
       const frontMesh = new THREE.Mesh(geometry, frontMaterial);
       const backMesh = new THREE.Mesh(geometry, backMaterial);
-      scene.add(frontMesh);
-      scene.add(backMesh);
+      frontMesh.castShadow = true;
+      backMesh.castShadow = true;
+      contentGroup?.add(frontMesh);
+      contentGroup?.add(backMesh);
       const edgesGeometry = new THREE.EdgesGeometry(geometry);
       // 頂点座標の配列を作成
       const positionAttr = edgesGeometry.getAttribute("position");
@@ -236,7 +297,7 @@ export const Three: React.FC<Props> = ({
 
       // 枠線を描画
       const outline = new Line2(lineGeometry, lineMaterial);
-      scene.add(outline);
+      contentGroup?.add(outline);
     });
 
     // 折り目を描画
@@ -248,7 +309,7 @@ export const Three: React.FC<Props> = ({
         color: outlineColor.getHex(),
       });
       const lineMesh = new Line2(geometry, lineMaterial);
-      scene.add(lineMesh);
+      contentGroup?.add(lineMesh);
     });
   }, [foldAngle, stepObject]);
 
