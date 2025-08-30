@@ -8,20 +8,63 @@
   gap: 1rem;
   font-size: x-large;
   font-weight: bold;
+  padding: 1rem;
   padding-bottom: 1rem;
   transition: background-color 0.2s;
   box-shadow: 0px 10px 10px -5px rgba(0, 0, 0, 0.2);
-  border-radius: 0.5rem;
+  border-radius: 5px;
   background-color: white;
+  border: 1px solid #000000;
+  position: relative;
 
   &:hover {
     background-color: #edf6ff;
+  }
+
+  .difficultyStars {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 2px;
+    z-index: 1;
+  }
+
+  .star {
+    width: 16px;
+    height: 16px;
+
+    &.filled {
+      color: #fe4d4d;
+    }
+
+    &.empty {
+      color: white;
+      stroke: #000000;
+      stroke-width: 6px;
+    }
   }
 
   .image {
     width: calc(100%);
     height: auto;
     aspect-ratio: 5 / 4;
-    border-radius: 0.5rem;
+    border-radius: 5px;
+    margin-top: 1rem;
+  }
+
+  .title {
+    margin: 0;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  .tagsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 0.5rem;
   }
 }

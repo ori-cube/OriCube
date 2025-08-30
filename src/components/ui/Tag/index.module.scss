@@ -1,0 +1,35 @@
+.tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+  margin-right: 8px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.purple-blue {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.red-pink {
+  background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+}
+
+.green {
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.blue {
+  background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.orange {
+  background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
+}
+
+.yellow {
+  background: linear-gradient(90deg, #ffecd2 0%, #fcb69f 100%);
+}

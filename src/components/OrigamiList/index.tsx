@@ -19,6 +19,8 @@ export const OrigamiList = () => {
                 id={item.id}
                 name={item.name}
                 imageUrl={item.imageUrl}
+                difficulty={item.difficulty}
+                tags={item.tags}
               />
             </ul>
           ))}

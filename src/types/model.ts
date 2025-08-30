@@ -2,6 +2,21 @@ export type Point = [number, number, number];
 export type Board = Point[];
 export type RotateAxis = [Point, Point] | [];
 
+// タグの色スタイル定義
+export type ColorStyle =
+  | "purple-blue"
+  | "red-pink"
+  | "green"
+  | "blue"
+  | "orange"
+  | "yellow";
+
+// タグの型定義
+export type Tag = {
+  title: string;
+  colorStyle: ColorStyle;
+};
+
 export type BaseStep = {
   type: "Base";
   // 折り方解説の描画に必要なパラメータ
@@ -42,7 +57,7 @@ export type Procedure = {
   [key: string]: Step;
 };
 
-// 最終的に保存するもの
+// 最終的に保存するモデルの型
 export type Model = {
   id: string;
   name: string;
@@ -50,4 +65,6 @@ export type Model = {
   imageUrl: string;
   searchKeyword?: string[];
   procedure: Procedure;
+  difficulty?: number;
+  tags?: Tag[];
 };
