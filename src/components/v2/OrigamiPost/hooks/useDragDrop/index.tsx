@@ -41,7 +41,7 @@ export const useDragDrop: UseDragDrop = ({
   size,
 }) => {
   const [draggedPoint, setDraggedPoint] = useState<Point | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [, setIsDragging] = useState(false);
 
   // 初期描画（ドラッグ中の点は除外）
   useInitialRender({
