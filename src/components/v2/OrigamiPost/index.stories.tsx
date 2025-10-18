@@ -44,7 +44,7 @@ export const Default: Story = {
   args: {
     origamiColor: "#4A90E2",
     size: 100,
-    cameraPosition: { x: 0, y: 0, z: 120 },
+    cameraPosition: { x: 0, y: 150, z: 0 },
     width: 800,
     height: 600,
   },
@@ -54,7 +54,7 @@ export const LargeOrigami: Story = {
   args: {
     origamiColor: "#E74C3C",
     size: 150,
-    cameraPosition: { x: 0, y: 0, z: 150 },
+    cameraPosition: { x: 0, y: 150, z: 0 },
     width: 800,
     height: 600,
   },
@@ -64,7 +64,7 @@ export const SmallOrigami: Story = {
   args: {
     origamiColor: "#27AE60",
     size: 50,
-    cameraPosition: { x: 0, y: 0, z: 100 },
+    cameraPosition: { x: 0, y: 150, z: 0 },
     width: 800,
     height: 600,
   },
@@ -84,7 +84,7 @@ export const FullScreen: Story = {
   args: {
     origamiColor: "#F39C12",
     size: 100,
-    cameraPosition: { x: 0, y: 0, z: 120 },
+    cameraPosition: { x: 0, y: 150, z: 0 },
     width: window.innerWidth,
     height: window.innerHeight,
   },
