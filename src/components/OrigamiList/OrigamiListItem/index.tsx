@@ -14,7 +14,7 @@ export const OrigamiListItem: OrigamiListItem = ({
   id,
   name,
   imageUrl,
-  difficulty = 1, // デフォルト値1を設定
+  difficulty = 0, // デフォルト値0を設定（未設定の場合は0）
   tags = [], // デフォルト値として空配列を設定
 }) => {
   // 難易度に応じて星の色を決定
@@ -36,7 +36,10 @@ export const OrigamiListItem: OrigamiListItem = ({
 
   return (
     <Link href={{ pathname: `/${id}` }} className={styles.listItem}>
-      <div className={styles.difficultyStars}>{renderStars()}</div>
+      <div className={styles.difficultyContainer}>
+        <span className={styles.difficultyLabel}>むずかしさ</span>
+        <div className={styles.difficultyStars}>{renderStars()}</div>
+      </div>
       <Image
         src={imageUrl ? imageUrl : ""}
         alt={`サムネイル: ${name}の折り紙画像`}

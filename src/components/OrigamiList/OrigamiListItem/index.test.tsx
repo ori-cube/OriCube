@@ -148,16 +148,28 @@ describe("OrigamiListItem", () => {
     };
     render(<OrigamiListItem {...modelWithoutOptionalFields} />);
 
-    // デフォルト難易度1で星が表示される
+    // デフォルト難易度0で空の星5つが表示される
     const stars = screen.getAllByTestId("star");
     expect(stars).toHaveLength(5);
-    expect(stars[0].className).toMatch(/filled/);
-    expect(stars[1].className).toMatch(/empty/);
+    stars.forEach((star) => {
+      expect(star.className).toMatch(/empty/);
+    });
 
     // タグは表示されない
     expect(screen.getByText("テスト折り紙")).toBeInTheDocument();
     expect(
       screen.getByAltText("サムネイル: テスト折り紙の折り紙画像")
     ).toBeInTheDocument();
+  });
+
+  it("難易度が0の場合、空の星5つが表示される", () => {
+    const modelWithDifficulty0 = { ...mockModel, difficulty: 0 };
+    render(<OrigamiListItem {...modelWithDifficulty0} />);
+
+    const stars = screen.getAllByTestId("star");
+    expect(stars).toHaveLength(5);
+    stars.forEach((star) => {
+      expect(star.className).toMatch(/empty/);
+    });
   });
 });

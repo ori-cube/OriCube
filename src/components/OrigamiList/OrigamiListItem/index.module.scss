@@ -21,13 +21,25 @@
     background-color: #edf6ff;
   }
 
-  .difficultyStars {
+  .difficultyContainer {
     position: absolute;
     top: 1rem;
     right: 1rem;
     display: flex;
-    gap: 2px;
+    align-items: center;
+    gap: 0.5rem;
     z-index: 1;
+  }
+
+  .difficultyLabel {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #666;
+  }
+
+  .difficultyStars {
+    display: flex;
+    gap: 2px;
   }
 
   .star {

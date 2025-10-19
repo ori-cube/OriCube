@@ -11,8 +11,8 @@ const meta: Meta<typeof OrigamiListItem> = {
   tags: ["autodocs"],
   argTypes: {
     difficulty: {
-      control: { type: "range", min: 1, max: 5, step: 1 },
-      description: "難易度（1-5）",
+      control: { type: "range", min: 0, max: 5, step: 1 },
+      description: "難易度（0-5、0は未設定）",
     },
     tags: {
       control: "object",
@@ -46,6 +46,17 @@ export const WithoutOptionalFields: Story = {
     id: "sample-0",
     name: "基本的な折り紙",
     imageUrl: "/origami/open.png",
+  },
+};
+
+// 難易度0（未設定）
+export const DifficultyNotSet: Story = {
+  args: {
+    ...baseModel,
+    id: "sample-0-difficulty",
+    name: "難易度未設定の折り紙",
+    difficulty: 0,
+    tags: [{ title: "未設定", colorStyle: "yellow" }],
   },
 };
 
