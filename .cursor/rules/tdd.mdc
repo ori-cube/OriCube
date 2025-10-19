@@ -1,5 +1,5 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Cursor ルール: t-wada 流 TDD 実践ガイド
