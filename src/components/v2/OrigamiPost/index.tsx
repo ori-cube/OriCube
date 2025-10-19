@@ -30,14 +30,14 @@ export interface OrigamiPostV2Props {
  *
  * @param props.origamiColor - 折り紙の色（デフォルト: "#4A90E2"）
  * @param props.size - 折り紙のサイズ（デフォルト: 100）
- * @param props.cameraPosition - カメラの初期位置（デフォルト: {x: 0, y: 0, z: 120}）
+ * @param props.cameraPosition - カメラの初期位置（デフォルト: {x: 0, y: 150, z: 0}）
  * @param props.width - カンバスの幅（デフォルト: window.innerWidth - 320）
  * @param props.height - カンバスの高さ（デフォルト: window.innerHeight）
  */
 export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   origamiColor = "#4A90E2",
   size = 100,
-  cameraPosition = { x: 0, y: 0, z: 120 },
+  cameraPosition = { x: 0, y: 150, z: 0 },
   width = window.innerWidth - 320,
   height = window.innerHeight,
 }) => {
