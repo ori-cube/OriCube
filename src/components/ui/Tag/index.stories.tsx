@@ -1,5 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Tag } from "./index";
+import { ColorStyle } from "@/types/model";
+
+const colorStyleOptions: ColorStyle[] = [
+  "purple-blue",
+  "red-pink",
+  "green",
+  "blue",
+  "orange",
+  "yellow",
+];
 
 const meta: Meta<typeof Tag> = {
   title: "Components/UI/Tag",
@@ -15,7 +25,7 @@ const meta: Meta<typeof Tag> = {
     },
     colorStyle: {
       control: "select",
-      options: ["purple-blue", "red-pink", "green", "blue", "orange", "yellow"],
+      options: colorStyleOptions,
       description: "タグの色スタイル",
     },
   },
