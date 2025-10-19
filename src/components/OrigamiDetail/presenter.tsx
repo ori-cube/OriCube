@@ -27,6 +27,10 @@ export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
   color,
   modelData,
 }) => {
+  const currentStep = modelData.procedure[procedureIndex];
+  const currentStepType = (currentStep?.type ?? "Base") as string;
+  const foldingAngle = currentStep?.foldingAngle ?? 180;
+
   return (
     <div>
       <Three
@@ -41,10 +45,11 @@ export const OrigamiDetailPresenter: React.FC<OrigamiDetailPresenterProps> = ({
           stepNum={5}
           value={sliderValue}
           setSliderValue={setSliderValue}
-          maxArg={modelData.procedure[procedureIndex].foldingAngle - 0.01} // ピッタリ折ると表示がバグるので、少しだけ引いておく
+          maxArg={foldingAngle - 0.01} // ピッタリ折ると表示がバグるので、少しだけ引いておく
           procedureIndex={procedureIndex}
           setProcedureIndex={setProcedureIndex}
           procedureLength={procedureLength}
+          currentStepType={currentStepType}
         />
       </div>
     </div>
