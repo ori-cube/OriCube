@@ -6,7 +6,7 @@ import { Model } from "@/types/model";
 
 type OrigamiListItemProps = Omit<
   Model,
-  "searchKeyWord" | "procedure" | "color"
+  "searchKeyword" | "procedure" | "color"
 >;
 
 export const OrigamiListItem: React.FC<OrigamiListItemProps> = ({
