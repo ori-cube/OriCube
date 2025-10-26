@@ -13,7 +13,7 @@ export const BoardSchema = z.array(PointSchema);
 // RotateAxis型定義
 export const RotateAxisSchema = z.union([
   z.tuple([PointSchema, PointSchema]),
-  z.array(z.any()).length(0),
+  z.tuple([]),
 ]);
 
 // BaseStep型定義
