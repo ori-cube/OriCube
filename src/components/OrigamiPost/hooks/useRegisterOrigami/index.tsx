@@ -84,6 +84,7 @@ export const useRegisterOrigami: UseRegisterOrigami = ({
       name: origamiName,
       color: origamiColor,
       imageUrl: "",
+      searchKeyword: [],
       procedure: procedures,
     };
 
