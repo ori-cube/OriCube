@@ -17,23 +17,28 @@ export const OrigamiListItem: OrigamiListItem = ({
   difficulty = 0, // デフォルト値0を設定（未設定の場合は0）
   tags = [], // デフォルト値として空配列を設定
 }) => {
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const starNumber = index + 1;
+    const isFilled = starNumber <= difficulty;
+    return {
+      number: starNumber,
+      isFilled,
+    };
+  });
+
   return (
     <Link href={{ pathname: `/${id}` }} className={styles.listItem}>
       <div className={styles.difficultyContainer}>
         <span className={styles.difficultyLabel}>むずかしさ</span>
         <div className={styles.difficultyStars}>
-          {Array.from({ length: 5 }, (_, index) => {
-            const starNumber = index + 1;
-            const isFilled = starNumber <= difficulty;
-            return (
-              <FaStar
-                key={starNumber}
-                className={`${styles.star} ${
-                  isFilled ? styles.filled : styles.empty
-                }`}
-              />
-            );
-          })}
+          {stars.map((star) => (
+            <FaStar
+              key={star.number}
+              className={`${styles.star} ${
+                star.isFilled ? styles.filled : styles.empty
+              }`}
+            />
+          ))}
         </div>
       </div>
       <Image
