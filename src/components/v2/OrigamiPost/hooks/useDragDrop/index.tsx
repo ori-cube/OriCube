@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
+import { FoldLineState } from "../../index";
 import { useInitialRender } from "./useInitialRender";
 import { useDragHandler } from "./useDragHandler";
 import { useDropHandler } from "./useDropHandler";
@@ -13,6 +14,9 @@ type UseDragDrop = (props: {
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   origamiColor: string;
   size: number;
+  originalPoint: THREE.Vector3 | null;
+  setOriginalPoint: (point: THREE.Vector3 | null) => void;
+  setFoldLineState: (state: FoldLineState | null) => void;
 }) => void;
 
 /**
@@ -39,6 +43,9 @@ export const useDragDrop: UseDragDrop = ({
   raycasterRef,
   origamiColor,
   size,
+  originalPoint,
+  setOriginalPoint,
+  setFoldLineState,
 }) => {
   const [draggedPoint, setDraggedPoint] = useState<Point | null>(null);
   const [, setIsDragging] = useState(false);
@@ -62,6 +69,8 @@ export const useDragDrop: UseDragDrop = ({
     raycasterRef,
     setDraggedPoint,
     setIsDragging,
+    size,
+    setOriginalPoint,
   });
 
   // ドロップ処理
@@ -73,5 +82,9 @@ export const useDragDrop: UseDragDrop = ({
     draggedPoint,
     setDraggedPoint,
     setIsDragging,
+    originalPoint,
+    setOriginalPoint,
+    size,
+    setFoldLineState,
   });
 };

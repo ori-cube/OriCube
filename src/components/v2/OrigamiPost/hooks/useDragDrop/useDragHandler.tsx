@@ -11,6 +11,8 @@ type UseDragHandler = (props: {
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   setDraggedPoint: (point: Point | null) => void;
   setIsDragging: (isDragging: boolean) => void;
+  size: number;
+  setOriginalPoint: (point: THREE.Vector3 | null) => void;
 }) => void;
 
 /**
@@ -37,6 +39,8 @@ export const useDragHandler: UseDragHandler = ({
   raycasterRef,
   setDraggedPoint,
   setIsDragging,
+  size,
+  setOriginalPoint,
 }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,13 +73,21 @@ export const useDragHandler: UseDragHandler = ({
       if (intersects.length > 0) {
         const intersectedPoint = intersects[0].object;
         const pointIndex = parseInt(intersectedPoint.name.split("_")[1]);
-        const vertices = generateVertices(100); // サイズは後で動的に取得
+        const vertices = generateVertices(size);
 
         if (vertices[pointIndex]) {
           draggedPoint = vertices[pointIndex];
           setDraggedPoint(draggedPoint);
           setIsDragging(true);
           isDragging = true;
+
+          // ドラッグ開始時の元の位置を保存
+          const original = new THREE.Vector3(
+            vertices[pointIndex][0],
+            vertices[pointIndex][1],
+            vertices[pointIndex][2]
+          );
+          setOriginalPoint(original);
 
           // ドラッグ中の点を描画
           renderDraggedPoint({
@@ -143,6 +155,8 @@ export const useDragHandler: UseDragHandler = ({
     raycasterRef,
     setDraggedPoint,
     setIsDragging,
+    size,
+    setOriginalPoint,
   ]);
 };
 
