@@ -39,8 +39,8 @@ export const calculateFoldLine = (
   // ドラッグ方向ベクトルの計算: V = P2 - P1
   const dragDirection = new THREE.Vector3().subVectors(p2, p1);
 
-  // 折り紙の法線ベクトル（Z軸方向）
-  const normal = new THREE.Vector3(0, 0, 1);
+  // 折り紙の法線ベクトル（Y軸方向、XZ平面の法線）
+  const normal = new THREE.Vector3(0, 1, 0);
 
   // 折り線の方向ベクトルの計算: L = V × N
   const direction = new THREE.Vector3().crossVectors(dragDirection, normal);
