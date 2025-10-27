@@ -31,8 +31,8 @@ const baseModel: Omit<Model, "searchKeyWord" | "procedure" | "color"> = {
   imageUrl: "/origami/open.png",
   difficulty: 3,
   tags: [
-    { title: "初心者向け", colorStyle: "green" },
-    { title: "伝統的", colorStyle: "blue" },
+    { title: "初心者向け", colorStyle: "blue-cyan" },
+    { title: "伝統的", colorStyle: "green-cyan" },
   ],
 };
 
@@ -56,7 +56,7 @@ export const DifficultyNotSet: Story = {
     id: "sample-0-difficulty",
     name: "難易度未設定の折り紙",
     difficulty: 0,
-    tags: [{ title: "未設定", colorStyle: "yellow" }],
+    tags: [{ title: "未設定", colorStyle: "beige-peach" }],
   },
 };
 
@@ -69,7 +69,7 @@ export const Beginner: Story = {
     difficulty: 1,
     tags: [
       { title: "初心者でも出来る", colorStyle: "purple-blue" },
-      { title: "小学生にもおすすめ", colorStyle: "red-pink" },
+      { title: "小学生にもおすすめ", colorStyle: "pink-red" },
     ],
   },
 };
@@ -82,9 +82,9 @@ export const Advanced: Story = {
     name: "複雑な花",
     difficulty: 5,
     tags: [
-      { title: "上級者向け", colorStyle: "orange" },
-      { title: "時間がかかる", colorStyle: "yellow" },
-      { title: "達成感あり", colorStyle: "green" },
+      { title: "上級者向け", colorStyle: "pink-yellow" },
+      { title: "時間がかかる", colorStyle: "beige-peach" },
+      { title: "達成感あり", colorStyle: "blue-cyan" },
     ],
   },
 };
@@ -108,10 +108,10 @@ export const ManyTags: Story = {
     name: "動物の顔",
     difficulty: 4,
     tags: [
-      { title: "可愛い", colorStyle: "red-pink" },
-      { title: "子供に人気", colorStyle: "blue" },
-      { title: "プレゼントに", colorStyle: "green" },
-      { title: "季節感", colorStyle: "orange" },
+      { title: "可愛い", colorStyle: "pink-red" },
+      { title: "子供に人気", colorStyle: "green-cyan" },
+      { title: "プレゼントに", colorStyle: "blue-cyan" },
+      { title: "季節感", colorStyle: "pink-yellow" },
       { title: "インテリア", colorStyle: "purple-blue" },
     ],
   },
@@ -124,7 +124,7 @@ export const LongName: Story = {
     id: "sample-6",
     name: "とても長い折り紙作品の名前を表示するテストケース",
     difficulty: 3,
-    tags: [{ title: "テスト用", colorStyle: "green" }],
+    tags: [{ title: "テスト用", colorStyle: "blue-cyan" }],
   },
 };
 
@@ -136,6 +136,6 @@ export const NoImage: Story = {
     name: "画像なしの作品",
     imageUrl: "",
     difficulty: 2,
-    tags: [{ title: "画像なし", colorStyle: "blue" }],
+    tags: [{ title: "画像なし", colorStyle: "green-cyan" }],
   },
 };

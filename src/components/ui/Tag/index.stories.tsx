@@ -4,11 +4,11 @@ import { ColorStyle } from "@/types/model";
 
 const colorStyleOptions: ColorStyle[] = [
   "purple-blue",
-  "red-pink",
-  "green",
-  "blue",
-  "orange",
-  "yellow",
+  "pink-red",
+  "blue-cyan",
+  "green-cyan",
+  "pink-yellow",
+  "beige-peach",
 ];
 
 const meta: Meta<typeof Tag> = {
@@ -37,49 +37,49 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     title: "サンプルタグ",
-    colorStyle: "green",
+    colorStyle: "blue-cyan",
   },
 };
 
 export const PurpleBlue: Story = {
   args: {
-    title: "紫から青のグラデーション",
+    title: "紫色のグラデーション",
     colorStyle: "purple-blue",
   },
 };
 
-export const RedPink: Story = {
+export const PinkRed: Story = {
   args: {
-    title: "赤からピンクのグラデーション",
-    colorStyle: "red-pink",
+    title: "ピンクから赤のグラデーション",
+    colorStyle: "pink-red",
   },
 };
 
-export const Green: Story = {
+export const BlueCyan: Story = {
   args: {
-    title: "緑のグラデーション",
-    colorStyle: "green",
+    title: "青から水色のグラデーション",
+    colorStyle: "blue-cyan",
   },
 };
 
-export const Blue: Story = {
+export const GreenCyan: Story = {
   args: {
-    title: "青のグラデーション",
-    colorStyle: "blue",
+    title: "緑から水色のグラデーション",
+    colorStyle: "green-cyan",
   },
 };
 
-export const Orange: Story = {
+export const PinkYellow: Story = {
   args: {
-    title: "オレンジのグラデーション",
-    colorStyle: "orange",
+    title: "ピンクから黄色のグラデーション",
+    colorStyle: "pink-yellow",
   },
 };
 
-export const Yellow: Story = {
+export const BeigePeach: Story = {
   args: {
-    title: "黄色のグラデーション",
-    colorStyle: "yellow",
+    title: "ベージュからピーチのグラデーション",
+    colorStyle: "beige-peach",
   },
 };
 
@@ -93,7 +93,7 @@ export const LongText: Story = {
 export const ShortText: Story = {
   args: {
     title: "短",
-    colorStyle: "red-pink",
+    colorStyle: "pink-red",
   },
 };
 
@@ -101,12 +101,12 @@ export const ShortText: Story = {
 export const AllColorStyles: Story = {
   render: () => (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-      <Tag title="初心者向け" colorStyle="green" />
-      <Tag title="楽しい" colorStyle="blue" />
-      <Tag title="上級者向け" colorStyle="orange" />
-      <Tag title="可愛い" colorStyle="red-pink" />
+      <Tag title="初心者向け" colorStyle="blue-cyan" />
+      <Tag title="楽しい" colorStyle="green-cyan" />
+      <Tag title="上級者向け" colorStyle="pink-yellow" />
+      <Tag title="可愛い" colorStyle="pink-red" />
       <Tag title="伝統的" colorStyle="purple-blue" />
-      <Tag title="季節感" colorStyle="yellow" />
+      <Tag title="季節感" colorStyle="beige-peach" />
     </div>
   ),
 };

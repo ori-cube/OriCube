@@ -4,12 +4,12 @@ export type RotateAxis = [Point, Point] | [];
 
 // タグの色スタイル定義
 export type ColorStyle =
-  | "purple-blue"
-  | "red-pink"
-  | "green"
-  | "blue"
-  | "orange"
-  | "yellow";
+  | "purple-blue" // 紫色のグラデーション
+  | "pink-red" // ピンクから赤のグラデーション
+  | "blue-cyan" // 青から水色のグラデーション
+  | "green-cyan" // 緑から水色のグラデーション
+  | "pink-yellow" // ピンクから黄色のグラデーション
+  | "beige-peach"; // ベージュからピーチのグラデーション
 
 // タグの型定義
 export type Tag = {
@@ -65,6 +65,6 @@ export type Model = {
   imageUrl: string;
   searchKeyword?: string[];
   procedure: Procedure;
-  difficulty?: number;
+  difficulty?: 0 | 1 | 2 | 3 | 4 | 5;
   tags?: Tag[];
 };
