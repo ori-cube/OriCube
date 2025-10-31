@@ -77,14 +77,14 @@ export const useInitialRender: UseInitialRender = ({
   }, [sceneRef, rendererRef, cameraRef, origamiColor, size, draggedPoint]);
 };
 
-// 正方形の頂点を生成
+// 正方形の頂点を生成（XY平面、Z=0）
 const generateVertices = (size: number): Point[] => {
   const halfSize = size / 2;
   return [
-    [-halfSize, 0, -halfSize], // 左上
-    [halfSize, 0, -halfSize], // 右上
-    [halfSize, 0, halfSize], // 右下
-    [-halfSize, 0, halfSize], // 左下
+    [-halfSize, -halfSize, 0], // 左下
+    [halfSize, -halfSize, 0], // 右下
+    [halfSize, halfSize, 0], // 右上
+    [-halfSize, halfSize, 0], // 左上
   ];
 };
 

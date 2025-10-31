@@ -13,11 +13,11 @@ describe("calculateFoldLine", () => {
     expect(foldLine!.midpoint.y).toBe(10);
     expect(foldLine!.midpoint.z).toBe(0);
 
-    // 折り線の方向ベクトル
-    // dragDirection (10, 20, 0) × normal (0, 1, 0) = (0, 0, 10)
-    expect(foldLine!.direction.x).toBe(0);
-    expect(foldLine!.direction.y).toBe(0);
-    expect(foldLine!.direction.z).toBe(10);
+    // 折り線の方向ベクトル（XY平面）
+    // dragDirection (10, 20, 0) × normal (0, 0, 1) = (20, -10, 0)
+    expect(foldLine!.direction.x).toBe(20);
+    expect(foldLine!.direction.y).toBe(-10);
+    expect(foldLine!.direction.z).toBe(0);
   });
 
   it("同じ点の場合はnullを返す", () => {

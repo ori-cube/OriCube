@@ -51,7 +51,7 @@ export interface OrigamiPostV2Props {
 export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   origamiColor = "#4A90E2",
   size = 100,
-  cameraPosition = { x: 0, y: 150, z: 0 },
+  cameraPosition = { x: 0, y: 0, z: 150 },
   width = window.innerWidth - 320,
   height = window.innerHeight,
 }) => {
