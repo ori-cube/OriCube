@@ -20,20 +20,20 @@ describe("dividePlane", () => {
       // originalPointは下側（Y < 0）
       const originalPoint = new THREE.Vector3(0, -25, 0);
 
-      const result = dividePlane(
+      const { movingPart, fixedPart } = dividePlane({
         plane,
         foldLineStart,
         foldLineEnd,
-        originalPoint
-      );
+        originalPoint,
+      });
 
       // movingPartは下側（2つの頂点 + 2つの交点 = 4つ）
-      expect(result.movingPart.length).toBe(4);
+      expect(movingPart.length).toBe(4);
       // fixedPartは上側（2つの頂点 + 2つの交点 = 4つ）
-      expect(result.fixedPart.length).toBe(4);
+      expect(fixedPart.length).toBe(4);
 
       // movingPartに originalPoint が含まれることを確認（Y < 0）
-      const hasOriginalPoint = result.movingPart.some((v) => v.y < 0);
+      const hasOriginalPoint = movingPart.some((v) => v.y < 0);
       expect(hasOriginalPoint).toBe(true);
     });
 
@@ -53,16 +53,16 @@ describe("dividePlane", () => {
       // originalPointは右下側
       const originalPoint = new THREE.Vector3(25, -25, 0);
 
-      const result = dividePlane(
+      const { movingPart, fixedPart } = dividePlane({
         plane,
         foldLineStart,
         foldLineEnd,
-        originalPoint
-      );
+        originalPoint,
+      });
 
       // 各部分は3頂点（三角形）
-      expect(result.movingPart.length).toBe(3);
-      expect(result.fixedPart.length).toBe(3);
+      expect(movingPart.length).toBe(3);
+      expect(fixedPart.length).toBe(3);
     });
   });
 });

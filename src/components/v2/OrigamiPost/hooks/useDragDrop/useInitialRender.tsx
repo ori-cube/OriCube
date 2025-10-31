@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { Board, Point } from "../../types";
 import { renderOrigamiBoard } from "./renderOrigamiBoard";
 import { renderSnapPoint } from "./renderPoint";
 
@@ -10,6 +10,7 @@ type UseInitialRender = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   origamiColor: string;
   size: number;
+  initialBoard: Board;
   draggedPoint: Point | null;
 }) => void;
 
@@ -28,6 +29,7 @@ type UseInitialRender = (props: {
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.origamiColor - 折り紙の色
  * @param props.size - 折り紙のサイズ
+ * @param props.initialBoard - 初期折り紙の板
  * @param props.draggedPoint - 現在ドラッグ中の点（描画から除外）
  */
 export const useInitialRender: UseInitialRender = ({
@@ -36,6 +38,7 @@ export const useInitialRender: UseInitialRender = ({
   cameraRef,
   origamiColor,
   size,
+  initialBoard,
   draggedPoint,
 }) => {
   useEffect(() => {
@@ -59,8 +62,7 @@ export const useInitialRender: UseInitialRender = ({
     });
 
     // スナップポイント（頂点）を描画（ドラッグ中の点は除外）
-    const vertices = generateVertices(size);
-    vertices.forEach((vertex, index) => {
+    initialBoard.forEach((vertex, index) => {
       // ドラッグ中の点は描画しない
       if (draggedPoint && isSamePoint(vertex, draggedPoint)) {
         return;
@@ -74,26 +76,23 @@ export const useInitialRender: UseInitialRender = ({
     });
 
     renderer.render(scene, camera);
-  }, [sceneRef, rendererRef, cameraRef, origamiColor, size, draggedPoint]);
-};
-
-// 正方形の頂点を生成（XY平面、Z=0）
-const generateVertices = (size: number): Point[] => {
-  const halfSize = size / 2;
-  return [
-    [-halfSize, -halfSize, 0], // 左下
-    [halfSize, -halfSize, 0], // 右下
-    [halfSize, halfSize, 0], // 右上
-    [-halfSize, halfSize, 0], // 左上
-  ];
+  }, [
+    sceneRef,
+    rendererRef,
+    cameraRef,
+    origamiColor,
+    size,
+    draggedPoint,
+    initialBoard,
+  ]);
 };
 
 // 2つの点が同じかどうかを判定
 const isSamePoint = (point1: Point, point2: Point): boolean => {
   const tolerance = 0.1;
   return (
-    Math.abs(point1[0] - point2[0]) < tolerance &&
-    Math.abs(point1[1] - point2[1]) < tolerance &&
-    Math.abs(point1[2] - point2[2]) < tolerance
+    Math.abs(point1.x - point2.x) < tolerance &&
+    Math.abs(point1.y - point2.y) < tolerance &&
+    Math.abs(point1.z - point2.z) < tolerance
   );
 };

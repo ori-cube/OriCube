@@ -1,5 +1,5 @@
 import * as THREE from "three";
-
+import { Board } from "../../types";
 /**
  * 板の分割結果
  */
@@ -26,12 +26,17 @@ export interface DividedPlane {
  * - この関数は各頂点を左右に分類し、交点（start, end）を両方に追加して板を分割する
  * - XY平面（Z=0）上での処理を前提とする
  */
-export const dividePlane = (
-  plane: THREE.Vector3[],
-  foldLineStart: THREE.Vector3,
-  foldLineEnd: THREE.Vector3,
-  originalPoint: THREE.Vector3
-): DividedPlane => {
+export const dividePlane = ({
+  plane,
+  foldLineStart,
+  foldLineEnd,
+  originalPoint,
+}: {
+  plane: Board;
+  foldLineStart: THREE.Vector3;
+  foldLineEnd: THREE.Vector3;
+  originalPoint: THREE.Vector3;
+}): DividedPlane => {
   // 折り線の方向ベクトル
   const foldDirection = new THREE.Vector3()
     .subVectors(foldLineEnd, foldLineStart)
