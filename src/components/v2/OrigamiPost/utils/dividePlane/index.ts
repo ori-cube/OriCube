@@ -11,7 +11,7 @@ export interface DividedPlane {
 }
 
 /**
- * 折り線で折り紙を2つの板に分割する
+ * 折り線で折り紙を2つの板に分割する（XY平面）
  *
  * @param plane - 現在の折り紙の頂点配列
  * @param foldLineStart - 折り線の始点（calculateFoldLineIntersectionsで計算済み）
@@ -22,8 +22,9 @@ export interface DividedPlane {
  * @throws originalPointが折り線上にある場合
  *
  * @remarks
- * foldLineStart と foldLineEnd は既に折り紙の境界との交点として計算されていることを前提とする。
- * この関数は各頂点を左右に分類し、交点（start, end）を両方に追加して板を分割する。
+ * - foldLineStart と foldLineEnd は既に折り紙の境界との交点として計算されていることを前提とする
+ * - この関数は各頂点を左右に分類し、交点（start, end）を両方に追加して板を分割する
+ * - XY平面（Z=0）上での処理を前提とする
  */
 export const dividePlane = (
   plane: THREE.Vector3[],
@@ -94,7 +95,7 @@ export const dividePlane = (
 };
 
 /**
- * 点が折り線の左側にあるか右側にあるかを判定
+ * 点が折り線の左側にあるか右側にあるかを判定（XY平面）
  *
  * @param point - 判定する点
  * @param linePoint - 折り線上の点
@@ -106,12 +107,12 @@ const getSide = (
   linePoint: THREE.Vector3,
   lineDirection: THREE.Vector3
 ): number => {
-  // XZ平面での外積のY成分を計算
-  // (point - linePoint) × lineDirection のY成分
+  // XY平面での外積のZ成分を計算
+  // (point - linePoint) × lineDirection のZ成分
   const v = new THREE.Vector3().subVectors(point, linePoint);
 
-  // 外積のY成分: vx * dirZ - vz * dirX
-  const crossY = v.x * lineDirection.z - v.z * lineDirection.x;
+  // 外積のZ成分: vx * dirY - vy * dirX
+  const crossZ = v.x * lineDirection.y - v.y * lineDirection.x;
 
-  return crossY;
+  return crossZ;
 };
