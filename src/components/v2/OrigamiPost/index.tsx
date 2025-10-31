@@ -1,10 +1,24 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { useInitScene, useDragDrop } from "./hooks";
 import styles from "./index.module.scss";
+
+/**
+ * 折り線の状態
+ */
+export interface FoldLineState {
+  /** 折り線が通る中点 */
+  midpoint: THREE.Vector3;
+  /** 折り線の方向ベクトル */
+  direction: THREE.Vector3;
+  /** 折り線の始点（折り紙境界との交点） */
+  start: THREE.Vector3;
+  /** 折り線の終点（折り紙境界との交点） */
+  end: THREE.Vector3;
+}
 
 export interface OrigamiPostV2Props {
   /** 折り紙の色 */
@@ -48,6 +62,14 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   const controlsRef = useRef<OrbitControls | null>(null);
   const raycasterRef = useRef<THREE.Raycaster | null>(null);
 
+  // 折り線の状態
+  const [, setFoldLineState] = useState<FoldLineState | null>(null);
+
+  // ドラッグ開始時の元の位置
+  const [originalPoint, setOriginalPoint] = useState<THREE.Vector3 | null>(
+    null
+  );
+
   // シーンの初期化
   useInitScene({
     canvasRef,
@@ -70,6 +92,9 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     raycasterRef,
     origamiColor,
     size,
+    originalPoint,
+    setOriginalPoint,
+    setFoldLineState,
   });
 
   return (
