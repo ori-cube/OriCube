@@ -36,11 +36,10 @@ export const renderOrigamiBoard: RenderOrigamiBoard = ({
     opacity: 0.9,
   });
 
-  // メッシュを作成
+  // メッシュを作成（XY平面にそのまま配置: Z法線）
   const origamiMesh = new THREE.Mesh(geometry, material);
   origamiMesh.name = "origami";
-  origamiMesh.rotation.x = -Math.PI / 2; // 水平に配置
-  origamiMesh.position.y = 0;
+  origamiMesh.position.z = 0;
 
   // 折り紙の枠線を追加
   const edges = new THREE.EdgesGeometry(geometry);
@@ -50,8 +49,7 @@ export const renderOrigamiBoard: RenderOrigamiBoard = ({
     opacity: 0.3,
   });
   const wireframe = new THREE.LineSegments(edges, lineMaterial);
-  wireframe.rotation.x = -Math.PI / 2;
-  wireframe.position.y = 0.1; // 少し上に配置して重なりを避ける
+  wireframe.position.z = 0.1; // 少し手前に配置して重なりを避ける
 
   // グループを作成して折り紙と枠線をまとめる
   const origamiGroup = new THREE.Group();

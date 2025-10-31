@@ -44,7 +44,7 @@ export const Default: Story = {
   args: {
     origamiColor: "#4A90E2",
     size: 100,
-    cameraPosition: { x: 0, y: 150, z: 0 },
+    cameraPosition: { x: 0, y: 0, z: 150 },
     width: 800,
     height: 600,
   },
