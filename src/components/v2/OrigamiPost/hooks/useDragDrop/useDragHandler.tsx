@@ -112,8 +112,8 @@ export const useDragHandler: UseDragHandler = ({
 
       raycaster.setFromCamera(mouse, camera);
 
-      // 地面との交差を計算してドラッグ中の点の位置を更新
-      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      // 地面との交差を計算してドラッグ中の点の位置を更新（XY平面: Z=0）
+      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
       const intersection = new THREE.Vector3();
 
       if (raycaster.ray.intersectPlane(groundPlane, intersection)) {
@@ -164,9 +164,9 @@ export const useDragHandler: UseDragHandler = ({
 const generateVertices = (size: number): Point[] => {
   const halfSize = size / 2;
   return [
-    [-halfSize, 0, -halfSize], // 左上
-    [halfSize, 0, -halfSize], // 右上
-    [halfSize, 0, halfSize], // 右下
-    [-halfSize, 0, halfSize], // 左下
+    [-halfSize, -halfSize, 0], // 左下
+    [halfSize, -halfSize, 0], // 右下
+    [halfSize, halfSize, 0], // 右上
+    [-halfSize, halfSize, 0], // 左上
   ];
 };

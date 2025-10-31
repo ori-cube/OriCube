@@ -6,10 +6,10 @@ describe("calculateFoldLineIntersections", () => {
   const size = 100;
 
   it("折り線から交点を正しく計算できる", () => {
-    // 折り線が中心を通り、Z軸方向に伸びる場合（XZ平面上）
-    // 折り紙を左右に分ける折り線
+    // 折り線が中心を通り、Y軸方向に伸びる場合（XY平面上）
+    // 折り紙を左右に分ける折り線（x=0の縦線）
     const midpoint = new THREE.Vector3(0, 0, 0);
-    const direction = new THREE.Vector3(0, 0, 1); // Z軸方向
+    const direction = new THREE.Vector3(0, 1, 0); // Y軸方向
 
     const intersections = calculateFoldLineIntersections(
       midpoint,
@@ -17,25 +17,25 @@ describe("calculateFoldLineIntersections", () => {
       size
     );
 
-    // 奥辺と手前辺で交差するはず
-    // 始点: (0, 0, -50) または (0, 0, 50)
-    // 終点: (0, 0, 50) または (0, 0, -50)
+    // 上辺と下辺で交差するはず
+    // 始点: (0, -50, 0) または (0, 50, 0)
+    // 終点: (0, 50, 0) または (0, -50, 0)
     expect(intersections.start.x).toBe(0);
     expect(intersections.end.x).toBe(0);
-    expect(intersections.start.y).toBe(0);
-    expect(intersections.end.y).toBe(0);
+    expect(intersections.start.z).toBe(0);
+    expect(intersections.end.z).toBe(0);
 
-    // Z座標は-50と50のどちらか
-    const zValues = [intersections.start.z, intersections.end.z].sort();
-    expect(zValues[0]).toBe(-50);
-    expect(zValues[1]).toBe(50);
+    // Y座標は-50と50のどちらか
+    const yValues = [intersections.start.y, intersections.end.y].sort();
+    expect(yValues[0]).toBe(-50);
+    expect(yValues[1]).toBe(50);
   });
 
   it("折り線が頂点を通る場合でも正しく2点を返す", () => {
-    // 折り線が右奥の頂点 (50, 0, -50) を通る場合（XZ平面上）
-    // この場合、奥辺と右辺が同じ点で交差するため、3つの交点が見つかる
+    // 折り線が右上の頂点 (50, 50, 0) を通る場合（XY平面上）
+    // この場合、上辺と右辺が同じ点で交差するため、3つの交点が見つかる
     // 重複除去により、ユニークな2点のみが返される
-    const midpoint = new THREE.Vector3(0, 0, -25);
+    const midpoint = new THREE.Vector3(0, -25, 0);
     const direction = new THREE.Vector3(1, 0, 0); // X軸方向
 
     const intersections = calculateFoldLineIntersections(
@@ -48,13 +48,13 @@ describe("calculateFoldLineIntersections", () => {
     expect(intersections.start).toBeDefined();
     expect(intersections.end).toBeDefined();
 
-    // Y座標は両方とも0のはず（XZ平面上）
-    expect(intersections.start.y).toBe(0);
-    expect(intersections.end.y).toBe(0);
+    // Z座標は両方とも0のはず（XY平面上）
+    expect(intersections.start.z).toBe(0);
+    expect(intersections.end.z).toBe(0);
 
-    // Z座標は両方とも-25のはず
-    expect(intersections.start.z).toBe(-25);
-    expect(intersections.end.z).toBe(-25);
+    // Y座標は両方とも-25のはず
+    expect(intersections.start.y).toBe(-25);
+    expect(intersections.end.y).toBe(-25);
 
     // X座標は-50と50
     const xValues = [intersections.start.x, intersections.end.x].sort();

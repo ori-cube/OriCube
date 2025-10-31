@@ -22,7 +22,7 @@ export interface FoldLineIntersections {
  *
  * @example
  * const midpoint = new THREE.Vector3(0, 0, 0);
- * const direction = new THREE.Vector3(0, 1, 0); // Y軸方向
+ * const direction = new THREE.Vector3(0, 1, 0); // Y軸方向（XY平面内）
  * const size = 100;
  * const intersections = calculateFoldLineIntersections(midpoint, direction, size);
  * // intersections.start: (-50, 0, 0)
@@ -36,12 +36,12 @@ export const calculateFoldLineIntersections = (
   // 折り紙の半分のサイズ
   const halfSize = size / 2;
 
-  // 折り紙の4つの頂点を定義（XZ平面上、Y=0）
+  // 折り紙の4つの頂点を定義（XY平面上、Z=0）
   const vertices = [
-    new THREE.Vector3(-halfSize, 0, -halfSize), // 左奥
-    new THREE.Vector3(halfSize, 0, -halfSize), // 右奥
-    new THREE.Vector3(halfSize, 0, halfSize), // 右手前
-    new THREE.Vector3(-halfSize, 0, halfSize), // 左手前
+    new THREE.Vector3(-halfSize, -halfSize, 0), // 左下
+    new THREE.Vector3(halfSize, -halfSize, 0), // 右下
+    new THREE.Vector3(halfSize, halfSize, 0), // 右上
+    new THREE.Vector3(-halfSize, halfSize, 0), // 左上
   ];
 
   // 折り紙の4辺を定義（各辺は2つの頂点で構成）
@@ -128,14 +128,14 @@ const calculateLineSegmentIntersection = (
   // 線分の方向ベクトル
   const segDir = new THREE.Vector3().subVectors(segEnd, segStart);
 
-  // XZ平面上での計算（Y=0として扱う）
+  // XY平面上での計算（Z=0として扱う）
   const dx = lineDir.x;
-  const dz = lineDir.z;
+  const dy = lineDir.y;
   const sx = segDir.x;
-  const sz = segDir.z;
+  const sy = segDir.y;
 
   // 直線と線分が平行な場合
-  const denominator = dx * sz - dz * sx;
+  const denominator = dx * sy - dy * sx;
   if (Math.abs(denominator) < 1e-10) {
     return null;
   }
@@ -146,18 +146,18 @@ const calculateLineSegmentIntersection = (
   // これらが等しい: linePoint + t * lineDir = segStart + s * segDir
   // 移項: t * lineDir - s * segDir = segStart - linePoint
   const vx = segStart.x - linePoint.x;
-  const vz = segStart.z - linePoint.z;
+  const vy = segStart.y - linePoint.y;
 
   // クラメルの公式で s を求める
   // [dx  -sx] [t]   [vx]
-  // [dz  -sz] [s] = [vz]
-  const s = (dz * vx - dx * vz) / denominator;
+  // [dy  -sy] [s] = [vy]
+  const s = (dy * vx - dx * vy) / denominator;
 
   // 線分上にない場合
   if (s < 0 || s > 1) {
     return null;
   }
 
-  // 交点を計算（XZ平面上、Y=0）
-  return new THREE.Vector3(segStart.x + s * sx, 0, segStart.z + s * sz);
+  // 交点を計算（XY平面上、Z=0）
+  return new THREE.Vector3(segStart.x + s * sx, segStart.y + s * sy, 0);
 };
