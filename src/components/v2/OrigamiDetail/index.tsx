@@ -271,8 +271,29 @@ export const OrigamiDetailV2: React.FC<Props> = ({
 
     const contentGroup = contentGroupRef.current;
     if (contentGroup) {
+      //使用済みのフレームのオブジェクトを破棄してGPUメモリを解放
+      const disposeObject = (object: THREE.Object3D) => {
+        const mesh = object as THREE.Mesh;
+        if (mesh.geometry) {
+          mesh.geometry.dispose();
+        }
+        const material = (mesh as THREE.Mesh).material as
+          | THREE.Material
+          | THREE.Material[]
+          | undefined;
+        if (material) {
+          if (Array.isArray(material)) {
+            material.forEach((mat) => mat.dispose?.());
+          } else {
+            material.dispose?.();
+          }
+        }
+      };
+
       while (contentGroup.children.length) {
-        contentGroup.remove(contentGroup.children[0]);
+        const child = contentGroup.children[0];
+        contentGroup.remove(child);
+        child.traverse(disposeObject);
       }
     }
 
