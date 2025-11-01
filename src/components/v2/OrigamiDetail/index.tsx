@@ -20,6 +20,7 @@ type Props = {
   showShadow?: boolean;
   floorOrientation?: FloorOrientation;
   floorColor?: string;
+  foldProgress?: number;
 };
 
 /**
@@ -39,6 +40,7 @@ export const OrigamiDetailV2: React.FC<Props> = ({
   showShadow = true,
   floorOrientation = "vertical",
   floorColor = "#f5f5f5",
+  foldProgress = 1,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -53,6 +55,14 @@ export const OrigamiDetailV2: React.FC<Props> = ({
 
   const stepKey = procedureIndex.toString();
   const stepObject = procedure[stepKey];
+  const clampedFoldProgress = useMemo(
+    () => THREE.MathUtils.clamp(foldProgress, 0, 1),
+    [foldProgress]
+  );
+  const foldAngle = useMemo(
+    () => THREE.MathUtils.degToRad(180 * clampedFoldProgress),
+    [clampedFoldProgress]
+  );
 
   // procedureのtypeが存在しない場合、typeにBaseを設定
   if (!procedure[procedureIndex.toString()].type) {
@@ -271,7 +281,7 @@ export const OrigamiDetailV2: React.FC<Props> = ({
       boards.push({ points: b, isMove: false })
     );
     const holds_line = [];
-    const theta = THREE.MathUtils.degToRad(180); // 完全に折られた状態で固定
+    const theta = foldAngle;
 
     switch (stepObject.type) {
       case "Base":
@@ -392,7 +402,14 @@ export const OrigamiDetailV2: React.FC<Props> = ({
       const lineMesh = new Line2(geometry, lineMaterial);
       contentGroup?.add(lineMesh);
     });
-  }, [stepObject, color, outlineColor, backMaterialColor, showShadow]);
+  }, [
+    stepObject,
+    color,
+    outlineColor,
+    backMaterialColor,
+    showShadow,
+    foldAngle,
+  ]);
 
   return (
     <canvas

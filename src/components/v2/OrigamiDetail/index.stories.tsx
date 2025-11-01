@@ -1,17 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { useEffect, useRef, useState } from "react";
 import { OrigamiDetailV2 } from "./index";
 import { Procedure } from "@/types/model";
 
-// トラックの手順6のデータ
-const trackStep6: Procedure = {
-  "6": {
-    description: "上部分を山折りする。",
+// トラックの手順5のデータ
+const trackStep5: Procedure = {
+  "5": {
+    description: "端っこをちょっと折る。",
     fixBoards: [
       [
-        [20, 6.666666666666667, 0],
+        [20, 20, 0],
         [20, -13.333333333333334, 0],
         [-20, -13.333333333333334, 0],
-        [-20, 6.666666666666667, 0],
+        [-20, 20, 0],
       ],
       [
         [4, -6.666666666666667, 0.001],
@@ -24,23 +25,17 @@ const trackStep6: Procedure = {
         [15.266272189349113, -18.0276134122288, 0.002],
         [4, -6.666666666666667, 0.002],
       ],
-      [
-        [-20, -13.333333333333334, 0.002],
-        [-4, -6.666666666666667, 0.002],
-        [-15.266272189349113, -18.0276134122288, 0.002],
-      ],
     ],
     moveBoards: [
       [
-        [20, 20, 0],
-        [20, 6.666666666666667, 0],
-        [-20, 6.666666666666667, 0],
-        [-20, 20, 0],
+        [-4, -6.666666666666667, 0.001],
+        [-20, -6.666666666666667, 0.001],
+        [-20, -13.333333333333334, 0.001],
       ],
     ],
     rotateAxis: [
-      [-20, 6.666666666666667, 0],
-      [20, 6.666666666666667, 0],
+      [-4, -6.666666666666667, 0.001],
+      [-20, -13.333333333333334, 0.001],
     ],
     type: "Base",
     initialBoards: [],
@@ -96,11 +91,48 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const baseArgs = {
-  procedure: trackStep6,
+  procedure: trackStep5,
   color: "#FF6B6B",
-  procedureIndex: 6,
+  procedureIndex: 5,
   floorColor: "#f5f5f5",
+  autoFoldSpeed: 0.01,
 } as const;
+
+type AutoFoldStoryProps = React.ComponentProps<typeof OrigamiDetailV2> & {
+  autoFoldSpeed?: number;
+};
+
+const AutoFoldStory: React.FC<AutoFoldStoryProps> = ({
+  autoFoldSpeed = 0.01,
+  ...rest
+}) => {
+  const [progress, setProgress] = useState(0);
+  const directionRef = useRef(1);
+
+  useEffect(() => {
+    let frameId = 0;
+
+    const loop = () => {
+      setProgress((prev) => {
+        let next = prev + directionRef.current * autoFoldSpeed;
+        if (next >= 1) {
+          next = 1;
+          directionRef.current = -1;
+        } else if (next <= 0) {
+          next = 0;
+          directionRef.current = 1;
+        }
+        return next;
+      });
+      frameId = requestAnimationFrame(loop);
+    };
+
+    frameId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frameId);
+  }, [autoFoldSpeed]);
+
+  return <OrigamiDetailV2 {...rest} foldProgress={progress} />;
+};
 
 export const FrontShadowVertical: Story = {
   args: {
@@ -109,6 +141,7 @@ export const FrontShadowVertical: Story = {
     showShadow: true,
     floorOrientation: "vertical",
   },
+  render: (args) => <AutoFoldStory {...args} />,
 };
 
 export const FrontShadowParallel: Story = {
@@ -118,6 +151,7 @@ export const FrontShadowParallel: Story = {
     showShadow: true,
     floorOrientation: "parallel",
   },
+  render: (args) => <AutoFoldStory {...args} />,
 };
 
 export const FrontNoShadow: Story = {
@@ -126,6 +160,7 @@ export const FrontNoShadow: Story = {
     cameraPreset: "front",
     showShadow: false,
   },
+  render: (args) => <AutoFoldStory {...args} />,
 };
 
 export const AngledShadowVertical: Story = {
@@ -135,4 +170,5 @@ export const AngledShadowVertical: Story = {
     showShadow: true,
     floorOrientation: "vertical",
   },
+  render: (args) => <AutoFoldStory {...args} />,
 };
