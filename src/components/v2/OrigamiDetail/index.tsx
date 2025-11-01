@@ -99,7 +99,7 @@ export const OrigamiDetailV2: React.FC<Props> = ({
       10,
       1000
     );
-    camera.position.set(20, 70, 100);
+    camera.position.set(0, 0, 100);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
     scene.add(camera);
 
