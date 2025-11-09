@@ -3,3 +3,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-size: 16px;
+    line-height: 1.75;
+    letter-spacing: 0.03em;
+    color: theme("colors.text.default");
+  }
+}
