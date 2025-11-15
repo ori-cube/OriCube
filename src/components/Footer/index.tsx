@@ -1,11 +1,10 @@
 import React from "react";
-import styles from "./index.module.scss";
 
 const Footer: React.FC = () => {
   return (
-    <footer className={styles.footer}>
-      <div className={styles.container}>
-        <p className={styles.copy}>
+    <footer className="bg-background-subtle py-[20px] text-text-subtle border-t border-background-subtler">
+      <div className="max-w-[1200px] mx-auto flex flex-col items-center sm:flex-row sm:justify-between">
+        <p className="mb-[10px] text-body-sm sm:mb-0">
           &copy; {new Date().getFullYear()} OriCube. All rights reserved.
         </p>
       </div>
