@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "@/styles/globals.scss";
+import "@/styles/globals.css";
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
 import NextAuthProvider from "./_auth";
