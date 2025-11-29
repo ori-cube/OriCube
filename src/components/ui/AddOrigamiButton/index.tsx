@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FaPlus } from "react-icons/fa6";
 import { useSession } from "next-auth/react";
 
-const AddOrigamiButton: React.FC = () => {
+export const AddOrigamiButton: React.FC = () => {
   const { status } = useSession();
   return (
     <>
@@ -19,5 +19,3 @@ const AddOrigamiButton: React.FC = () => {
     </>
   );
 };
-
-export default AddOrigamiButton;

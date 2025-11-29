@@ -4,7 +4,7 @@ import { OrigamiList } from "@/components/OrigamiList";
 import { Header } from "@/components/Header";
 import { OrigamiListPageProvider } from "./_provider";
 import { Model } from "@/types/model";
-import AddOrigamiButton from "@/components/ui/AddOrigamiButton";
+import { AddOrigamiButton } from "@/components/ui";
 import Footer from "@/components/Footer";
 import axios from "axios";
 import { useEffect, useState } from "react";
