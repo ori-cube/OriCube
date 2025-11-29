@@ -23,7 +23,7 @@
     "vercel-build": "prisma generate && next build",
     "prepare": "husky",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build -o storybook-static"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
