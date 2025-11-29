@@ -2,7 +2,8 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { getAllModels, getModelFromId, createModel } from "@/actions/model";
 import { getUserFromEmail } from "@/actions/user";
-import { Model, Procedure } from "@/types/model";
+import { Model, ModelSchema } from "@/contract/model.schema";
+import { toViewModel, formatAnyError } from "@/server/db/guards";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,19 +24,21 @@ export async function GET(req: NextRequest) {
           headers: corsHeaders,
         });
       }
-      // データベースに保存されている形式を，フロントに合わせた．
-      const viewModel: Model = {
-        id: model.id,
-        name: model.name,
-        color: model.color,
-        imageUrl: model.imageUrl,
-        searchKeyword: model.searchKeyword,
-        procedure: model.procedure as Procedure,
-      };
-      return new Response(JSON.stringify(viewModel ?? null), {
-        headers: corsHeaders,
-        status: 200,
-      });
+
+      try {
+        // Zod検証を使用して型安全に変換
+        const viewModel = toViewModel(model);
+        return new Response(JSON.stringify(viewModel), {
+          headers: corsHeaders,
+          status: 200,
+        });
+      } catch (error) {
+        console.error("Model validation error:", error);
+        return new Response(JSON.stringify(formatAnyError(error)), {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
     } else {
       const models = await getAllModels();
       if (!models.length) {
@@ -44,23 +47,24 @@ export async function GET(req: NextRequest) {
           headers: corsHeaders,
         });
       }
-      const procedures = models.map((model) => {
-        // データベースに保存されている形式を，フロントに合わせた．
-        const viewModel: Model = {
-          id: model.id,
-          name: model.name,
-          color: model.color,
-          imageUrl: model.imageUrl,
-          searchKeyword: model.searchKeyword,
-          procedure: model.procedure as Procedure,
-        };
-        return viewModel;
-      });
-      return new Response(JSON.stringify(procedures), { headers: corsHeaders });
+
+      try {
+        // Zod検証を使用して型安全に変換
+        const viewModels = models.map((model) => toViewModel(model));
+        return new Response(JSON.stringify(viewModels), {
+          headers: corsHeaders,
+        });
+      } catch (error) {
+        console.error("Models validation error:", error);
+        return new Response(JSON.stringify(formatAnyError(error)), {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
     }
   } catch (error) {
-    console.error("GET /api/models error:", error);
-    return new Response(JSON.stringify({ message: "Internal Server Error" }), {
+    console.error("GET /api/data error:", error);
+    return new Response(JSON.stringify(formatAnyError(error)), {
       status: 500,
       headers: corsHeaders,
     });
@@ -79,8 +83,21 @@ export async function POST(req: NextRequest) {
 
   // フィールドの取得
   const mail = formData.get("mail") as string;
-  const model = JSON.parse(formData.get("model") as string) as Required<Model>;
+  const modelJson = formData.get("model") as string;
   const image = formData.get("image") as File;
+
+  let model: Model;
+  try {
+    // JSON文字列をパースしてZod検証
+    const parsedModel = JSON.parse(modelJson);
+    model = ModelSchema.parse(parsedModel);
+  } catch (error) {
+    console.error("Model parsing/validation error:", error);
+    return NextResponse.json(formatAnyError(error), {
+      status: 400,
+      headers: corsHeaders,
+    });
+  }
 
   const arrayBuffer = await image.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);

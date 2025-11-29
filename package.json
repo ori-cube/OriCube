@@ -26,6 +26,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.1.0",
     "@aws-sdk/client-s3": "^3.687.0",
     "@aws-sdk/s3-request-presigner": "^3.821.0",
     "@nextui-org/pagination": "^2.0.36",
@@ -49,7 +50,9 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.169.0",
-    "uuid": "^11.0.3"
+    "tsx": "^4.20.6",
+    "uuid": "^11.0.3",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.26.3",
