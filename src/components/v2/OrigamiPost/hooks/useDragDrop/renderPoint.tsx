@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { Point } from "../../types";
 
 type RenderSnapPoint = (props: {
   scene: THREE.Scene;
@@ -37,7 +37,7 @@ export const renderSnapPoint: RenderSnapPoint = ({
   );
   const material = new THREE.MeshBasicMaterial({ color });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(point[0], point[1], point[2]);
+  mesh.position.set(point.x, point.y, point.z);
   mesh.name = name;
   scene.add(mesh);
 };

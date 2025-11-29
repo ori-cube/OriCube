@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { Board, Point } from "../../types";
 import { renderDraggedPoint } from "./renderPoint";
 
 type UseDragHandler = (props: {
@@ -11,7 +11,7 @@ type UseDragHandler = (props: {
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   setDraggedPoint: (point: Point | null) => void;
   setIsDragging: (isDragging: boolean) => void;
-  size: number;
+  initialBoard: Board;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
 }) => void;
 
@@ -30,6 +30,7 @@ type UseDragHandler = (props: {
  * @param props.rendererRef - THREE.WebGLRendererのref
  * @param props.raycasterRef - THREE.Raycasterのref
  * @param props.setDraggedPoint - ドラッグ中の点を設定する関数
+ * @param props.initialBoard - 初期折り紙の板
  */
 export const useDragHandler: UseDragHandler = ({
   canvasRef,
@@ -39,7 +40,7 @@ export const useDragHandler: UseDragHandler = ({
   raycasterRef,
   setDraggedPoint,
   setIsDragging,
-  size,
+  initialBoard,
   setOriginalPoint,
 }) => {
   useEffect(() => {
@@ -61,6 +62,8 @@ export const useDragHandler: UseDragHandler = ({
         -((event.clientY - rect.top) / rect.height) * 2 + 1
       );
 
+      console.log("mouse", mouse);
+
       raycaster.setFromCamera(mouse, camera);
 
       // スナップポイントとの交差をチェック
@@ -73,21 +76,15 @@ export const useDragHandler: UseDragHandler = ({
       if (intersects.length > 0) {
         const intersectedPoint = intersects[0].object;
         const pointIndex = parseInt(intersectedPoint.name.split("_")[1]);
-        const vertices = generateVertices(size);
 
-        if (vertices[pointIndex]) {
-          draggedPoint = vertices[pointIndex];
+        if (initialBoard[pointIndex]) {
+          draggedPoint = initialBoard[pointIndex];
           setDraggedPoint(draggedPoint);
           setIsDragging(true);
           isDragging = true;
 
           // ドラッグ開始時の元の位置を保存
-          const original = new THREE.Vector3(
-            vertices[pointIndex][0],
-            vertices[pointIndex][1],
-            vertices[pointIndex][2]
-          );
-          setOriginalPoint(original);
+          setOriginalPoint(initialBoard[pointIndex]);
 
           // ドラッグ中の点を描画
           renderDraggedPoint({
@@ -155,18 +152,7 @@ export const useDragHandler: UseDragHandler = ({
     raycasterRef,
     setDraggedPoint,
     setIsDragging,
-    size,
+    initialBoard,
     setOriginalPoint,
   ]);
-};
-
-// 正方形の頂点を生成（useInitialRenderと同じ関数）
-const generateVertices = (size: number): Point[] => {
-  const halfSize = size / 2;
-  return [
-    [-halfSize, -halfSize, 0], // 左下
-    [halfSize, -halfSize, 0], // 右下
-    [halfSize, halfSize, 0], // 右上
-    [-halfSize, halfSize, 0], // 左上
-  ];
 };

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
 import { FoldLineState } from "../../index";
 import { useInitialRender } from "./useInitialRender";
 import { useDragHandler } from "./useDragHandler";
 import { useDropHandler } from "./useDropHandler";
+import { Board, Point } from "../../types";
 
 type UseDragDrop = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -14,6 +14,7 @@ type UseDragDrop = (props: {
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   origamiColor: string;
   size: number;
+  initialBoard: Board;
   originalPoint: THREE.Vector3 | null;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   setFoldLineState: (state: FoldLineState | null) => void;
@@ -34,6 +35,7 @@ type UseDragDrop = (props: {
  * @param props.raycasterRef - THREE.Raycasterのref
  * @param props.origamiColor - 折り紙の色
  * @param props.size - 折り紙のサイズ
+ * @param props.initialBoard - 初期折り紙の板
  */
 export const useDragDrop: UseDragDrop = ({
   canvasRef,
@@ -43,6 +45,7 @@ export const useDragDrop: UseDragDrop = ({
   raycasterRef,
   origamiColor,
   size,
+  initialBoard,
   originalPoint,
   setOriginalPoint,
   setFoldLineState,
@@ -57,6 +60,7 @@ export const useDragDrop: UseDragDrop = ({
     cameraRef,
     origamiColor,
     size,
+    initialBoard,
     draggedPoint,
   });
 
@@ -69,7 +73,7 @@ export const useDragDrop: UseDragDrop = ({
     raycasterRef,
     setDraggedPoint,
     setIsDragging,
-    size,
+    initialBoard,
     setOriginalPoint,
   });
 
@@ -84,7 +88,7 @@ export const useDragDrop: UseDragDrop = ({
     setIsDragging,
     originalPoint,
     setOriginalPoint,
-    size,
+    initialBoard,
     setFoldLineState,
   });
 };
