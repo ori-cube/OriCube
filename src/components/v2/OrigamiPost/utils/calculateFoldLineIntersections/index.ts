@@ -1,3 +1,4 @@
+import { Board, Point } from "../../types";
 import * as THREE from "three";
 
 /**
@@ -16,6 +17,7 @@ export interface FoldLineIntersections {
  * @param midpoint - 折り線が通る中点
  * @param direction - 折り線の方向ベクトル
  * @param size - 折り紙のサイズ（一辺の長さ）
+ * @param initialBoard - 初期折り紙の板
  * @returns 折り線の始点・終点
  *
  * @throws 交点が2点未満の場合はエラー
@@ -23,33 +25,31 @@ export interface FoldLineIntersections {
  * @example
  * const midpoint = new THREE.Vector3(0, 0, 0);
  * const direction = new THREE.Vector3(0, 1, 0); // Y軸方向（XY平面内）
- * const size = 100;
+ * const initialBoard = [
+ *   new THREE.Vector3(-50, -50, 0),
+ *   new THREE.Vector3(50, -50, 0),
+ *   new THREE.Vector3(50, 50, 0),
+ *   new THREE.Vector3(-50, 50, 0),
+ * ];
  * const intersections = calculateFoldLineIntersections(midpoint, direction, size);
  * // intersections.start: (-50, 0, 0)
  * // intersections.end: (50, 0, 0)
  */
-export const calculateFoldLineIntersections = (
-  midpoint: THREE.Vector3,
-  direction: THREE.Vector3,
-  size: number
-): FoldLineIntersections => {
-  // 折り紙の半分のサイズ
-  const halfSize = size / 2;
-
-  // 折り紙の4つの頂点を定義（XY平面上、Z=0）
-  const vertices = [
-    new THREE.Vector3(-halfSize, -halfSize, 0), // 左下
-    new THREE.Vector3(halfSize, -halfSize, 0), // 右下
-    new THREE.Vector3(halfSize, halfSize, 0), // 右上
-    new THREE.Vector3(-halfSize, halfSize, 0), // 左上
-  ];
-
+export const calculateFoldLineIntersections = ({
+  midpoint,
+  direction,
+  initialBoard,
+}: {
+  midpoint: THREE.Vector3;
+  direction: THREE.Vector3;
+  initialBoard: Board;
+}): FoldLineIntersections => {
   // 折り紙の4辺を定義（各辺は2つの頂点で構成）
   const edges = [
-    [vertices[0], vertices[1]], // 下辺
-    [vertices[1], vertices[2]], // 右辺
-    [vertices[2], vertices[3]], // 上辺
-    [vertices[3], vertices[0]], // 左辺
+    [initialBoard[0], initialBoard[1]], // 下辺
+    [initialBoard[1], initialBoard[2]], // 右辺
+    [initialBoard[2], initialBoard[3]], // 上辺
+    [initialBoard[3], initialBoard[0]], // 左辺
   ];
 
   // 各辺と折り線の交点を計算
@@ -122,11 +122,14 @@ const removeDuplicatePoints = (
 const calculateLineSegmentIntersection = (
   linePoint: THREE.Vector3,
   lineDir: THREE.Vector3,
-  segStart: THREE.Vector3,
-  segEnd: THREE.Vector3
+  segStart: Point,
+  segEnd: Point
 ): THREE.Vector3 | null => {
   // 線分の方向ベクトル
-  const segDir = new THREE.Vector3().subVectors(segEnd, segStart);
+  const segDir = new THREE.Vector3().subVectors(
+    new THREE.Vector3(segEnd.x, segEnd.y, segEnd.z),
+    new THREE.Vector3(segStart.x, segStart.y, segStart.z)
+  );
 
   // XY平面上での計算（Z=0として扱う）
   const dx = lineDir.x;

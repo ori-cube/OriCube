@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { useInitScene, useDragDrop } from "./hooks";
 import styles from "./index.module.scss";
+import { Board } from "./types";
 
 /**
  * 折り線の状態
@@ -70,6 +71,15 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     null
   );
 
+  // 初期の折り紙の板
+  // TODO： 最終的には折り紙が重なった状態も考慮する。
+  const [initialBoard] = useState<Board>(() => [
+    new THREE.Vector3(-size / 2, -size / 2, 0),
+    new THREE.Vector3(size / 2, -size / 2, 0),
+    new THREE.Vector3(size / 2, size / 2, 0),
+    new THREE.Vector3(-size / 2, size / 2, 0),
+  ]);
+
   // シーンの初期化
   useInitScene({
     canvasRef,
@@ -92,6 +102,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     raycasterRef,
     origamiColor,
     size,
+    initialBoard,
     originalPoint,
     setOriginalPoint,
     setFoldLineState,
