@@ -1,6 +1,8 @@
 {
   "1": {
     "description": "横に半分に折り目をつける。",
+    "type": "crease",
+    "foldingAngle": 360,
     "fixBoards": [
       [
         [20, 20, 0],
@@ -24,6 +26,8 @@
   },
   "2": {
     "description": "縦に半分に折り目をつける。",
+    "type": "crease",
+    "foldingAngle": 360,
     "fixBoards": [
       [
         [20, 20, 0],
