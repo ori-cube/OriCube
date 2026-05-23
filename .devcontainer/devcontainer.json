@@ -1,0 +1,16 @@
+{
+  "name": "oricube",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:latest": {}
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "forwardPorts": [3000, 6006],
+  "postCreateCommand": "npm install -g pnpm@10.8.0 && pnpm install"
+}
