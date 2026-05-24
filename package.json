@@ -31,7 +31,7 @@
     "@nextui-org/pagination": "^2.0.36",
     "@nextui-org/react": "^2.4.8",
     "@radix-ui/themes": "^3.1.4",
-    "axios": "^1.7.7",
+    "axios": "^1.15.2",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
