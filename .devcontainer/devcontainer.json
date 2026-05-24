@@ -12,5 +12,5 @@
     "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
   ],
   "forwardPorts": [3000, 6006],
-  "postCreateCommand": "npm install -g pnpm@10.8.0 && pnpm install"
+  "postCreateCommand": "corepack enable && corepack prepare --activate && pnpm install"
 }
