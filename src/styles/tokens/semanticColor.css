@@ -1,0 +1,25 @@
+:root {
+  --background-default: var(--neutral-100);
+  --background-subtle: var(--neutral-80);
+  --background-subtler: var(--neutral-70);
+  --background-danger: var(--danger-90);
+  --background-success: var(--success-100);
+  --background-primary-action-enabled: var(--primary-40);
+  --background-primary-action-hover: var(--primary-30);
+  --background-primary-action-pressed: var(--primary-20);
+  --background-secondary-action-enabled: var(--neutral-100);
+  --background-secondary-action-hover: var(--neutral-80);
+  --background-secondary-action-pressed: var(--neutral-70);
+
+  --border-default: var(--neutral-40);
+  --border-bold: var(--neutral-20);
+  --border-danger: var(--danger-40);
+  --border-success: var(--success-40);
+
+  --text-default: var(--neutral-5);
+  --text-subtle: var(--neutral-20);
+  --text-primary: var(--primary-30);
+  --text-primary-action: var(--neutral-100);
+  --text-danger: var(--danger-40);
+  --text-success: var(--success-40);
+}

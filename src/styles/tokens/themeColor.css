@@ -1,0 +1,50 @@
+:root {
+  --primary-5: var(--blue-5);
+  --primary-10: var(--blue-10);
+  --primary-20: var(--blue-20);
+  --primary-30: var(--blue-30);
+  --primary-40: var(--blue-40);
+  --primary-50: var(--blue-50);
+  --primary-60: var(--blue-60);
+  --primary-70: var(--blue-70);
+  --primary-80: var(--blue-80);
+  --primary-90: var(--blue-90);
+  --primary-100: var(--blue-100);
+
+  --neutral-0: var(--gray-0);
+  --neutral-5: var(--gray-5);
+  --neutral-10: var(--gray-10);
+  --neutral-20: var(--gray-20);
+  --neutral-30: var(--gray-30);
+  --neutral-40: var(--gray-40);
+  --neutral-50: var(--gray-50);
+  --neutral-60: var(--gray-60);
+  --neutral-70: var(--gray-70);
+  --neutral-80: var(--gray-80);
+  --neutral-90: var(--gray-90);
+  --neutral-100: var(--gray-100);
+
+  --success-5: var(--green-5);
+  --success-10: var(--green-10);
+  --success-20: var(--green-20);
+  --success-30: var(--green-30);
+  --success-40: var(--green-40);
+  --success-50: var(--green-50);
+  --success-60: var(--green-60);
+  --success-70: var(--green-70);
+  --success-80: var(--green-80);
+  --success-90: var(--green-90);
+  --success-100: var(--green-100);
+
+  --danger-5: var(--red-5);
+  --danger-10: var(--red-10);
+  --danger-20: var(--red-20);
+  --danger-30: var(--red-30);
+  --danger-40: var(--red-40);
+  --danger-50: var(--red-50);
+  --danger-60: var(--red-60);
+  --danger-70: var(--red-70);
+  --danger-80: var(--red-80);
+  --danger-90: var(--red-90);
+  --danger-100: var(--red-100);
+}
