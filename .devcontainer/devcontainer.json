@@ -2,7 +2,7 @@
   "name": "oricube",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "lts" },
+    "ghcr.io/devcontainers-extra/features/mise:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/anthropics/devcontainer-features/claude-code:latest": {}
   },
@@ -12,5 +12,5 @@
     "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
   ],
   "forwardPorts": [3000, 6006],
-  "postCreateCommand": "corepack enable && corepack prepare --activate && pnpm install"
+  "postCreateCommand": "mise trust && mise install && mise exec -- pnpm install"
 }
