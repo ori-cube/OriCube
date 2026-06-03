@@ -2,7 +2,9 @@
   "name": "origami",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "dotenv -e .env.development -- next dev",
     "prod": "dotenv -e .env.production -- next dev",
     "build": "next build",
@@ -13,7 +15,7 @@
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
     "test:storybook": "vitest --config vitest.storybook.config.ts",
-    "test:all": "npm run test && npm run test:storybook",
+    "test:all": "pnpm test && pnpm test:storybook",
     "db:seed:dev": "dotenv -e .env.development -- ts-node prisma/seed.ts",
     "db:seed:prod": "dotenv -e .env.production -- ts-node prisma/seed.ts",
     "db:migrate:dev": "dotenv -e .env.development -- prisma migrate dev --name init",
