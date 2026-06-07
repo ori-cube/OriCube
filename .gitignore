@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.*
+.pnpm-store/
 
 # use pnpm only — never commit npm/yarn lockfiles
 package-lock.json
