@@ -1,5 +1,6 @@
 import type { Preview } from '@storybook/nextjs-vite'
-import '@/styles/globals.scss'
+import 'destyle.css'
+import '@oricube/design-system/tokens.css'
 
 const preview: Preview = {
   parameters: {
