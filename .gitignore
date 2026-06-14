@@ -47,9 +47,9 @@ next-env.d.ts
 firestore-admin-key.json
 
 # prismaの自動生成ファイル
-generated
+/generated
 
 # databaseの自動生成ファイル
-database
+/database
 *storybook.log
 storybook-static
