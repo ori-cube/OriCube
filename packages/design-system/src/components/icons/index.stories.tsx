@@ -5,14 +5,34 @@ import type { IconProps } from "./Icon.types";
 
 type IconEntry = [name: string, Component: ComponentType<IconProps>];
 
-const entries = Object.entries(Icons as Record<string, ComponentType<IconProps>>).filter(
+const iconEntries = Object.entries(Icons as Record<string, ComponentType<IconProps>>).filter(
   ([name]) => name.endsWith("Icon"),
 ) as IconEntry[];
 
+const iconMap = Object.fromEntries(iconEntries) as Record<string, ComponentType<IconProps>>;
+const iconNames = iconEntries.map(([name]) => name);
+
 const sizes = [16, 24, 32] as const;
 
+type SingleIconArgs = IconProps & {
+  name: string;
+  color: string;
+};
+
+function SingleIcon({ name, color, size, ...props }: SingleIconArgs) {
+  const Icon = iconMap[name];
+  if (!Icon) {
+    return <p style={{ fontFamily: "sans-serif" }}>アイコン {name} が見つかりません。</p>;
+  }
+  return (
+    <div style={{ color, display: "inline-flex" }}>
+      <Icon size={size} {...props} />
+    </div>
+  );
+}
+
 function Gallery() {
-  if (entries.length === 0) {
+  if (iconEntries.length === 0) {
     return (
       <p style={{ fontFamily: "sans-serif" }}>
         アイコンがまだ生成されていません。
@@ -30,7 +50,7 @@ function Gallery() {
         fontFamily: "sans-serif",
       }}
     >
-      {entries.map(([name, Icon]) => (
+      {iconEntries.map(([name, Icon]) => (
         <div
           key={name}
           style={{
@@ -55,16 +75,41 @@ function Gallery() {
   );
 }
 
-const meta: Meta<typeof Gallery> = {
+const meta: Meta<typeof SingleIcon> = {
   title: "Design System/Icons",
-  component: Gallery,
+  component: SingleIcon,
   parameters: {
     layout: "padded",
+  },
+  argTypes: {
+    name: {
+      control: { type: "select" },
+      options: iconNames,
+      description: "表示するアイコン",
+    },
+    size: {
+      control: { type: "number", min: 8, max: 128, step: 1 },
+      description: "アイコンのサイズ(px)。number または string を指定可能",
+    },
+    color: {
+      control: { type: "color" },
+      description: "アイコンの色 (currentColor を参照)",
+    },
   },
 };
 
 export default meta;
 
-type Story = StoryObj<typeof Gallery>;
+type Story = StoryObj<typeof SingleIcon>;
 
-export const AllIcons: Story = {};
+export const Default: Story = {
+  args: {
+    name: iconNames[0] ?? "",
+    size: 24,
+    color: "#111111",
+  },
+};
+
+export const AllIcons: StoryObj<typeof Gallery> = {
+  render: () => <Gallery />,
+};
