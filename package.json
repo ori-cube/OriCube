@@ -24,7 +24,7 @@
     "db:generate:prod": "dotenv -e .env.production -- prisma generate",
     "vercel-build": "prisma generate && next build",
     "prepare": "husky",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "storybook dev -p 6006 --no-open --host 0.0.0.0",
     "build-storybook": "storybook build"
   },
   "dependencies": {
