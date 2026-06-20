@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { Board, Point } from "../../types";
 import { FoldLineState } from "../../index";
 import { calculateFoldLine } from "../../utils/calculateFoldLine";
 import { calculateFoldLineIntersections } from "../../utils/calculateFoldLineIntersections";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
+import { dividePlane } from "../../utils/dividePlane";
 
 type UseDropHandler = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -16,7 +17,7 @@ type UseDropHandler = (props: {
   setIsDragging: (isDragging: boolean) => void;
   originalPoint: THREE.Vector3 | null;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
-  size: number;
+  initialBoard: Board;
   setFoldLineState: (state: FoldLineState | null) => void;
 }) => void;
 
@@ -34,6 +35,7 @@ type UseDropHandler = (props: {
  * @param props.rendererRef - THREE.WebGLRendererのref
  * @param props.draggedPoint - 現在ドラッグ中の点
  * @param props.setDraggedPoint - ドラッグ中の点を設定する関数
+ * @param props.initialBoard - 初期折り紙の板
  */
 export const useDropHandler: UseDropHandler = ({
   canvasRef,
@@ -45,7 +47,7 @@ export const useDropHandler: UseDropHandler = ({
   setIsDragging,
   originalPoint,
   setOriginalPoint,
-  size,
+  initialBoard,
   setFoldLineState,
 }) => {
   useEffect(() => {
@@ -75,22 +77,33 @@ export const useDropHandler: UseDropHandler = ({
 
         try {
           // 折り紙境界との交点を計算
-          const intersections = calculateFoldLineIntersections(
-            foldLine.midpoint,
-            foldLine.direction,
-            size
-          );
+          const { start, end } = calculateFoldLineIntersections({
+            midpoint: foldLine.midpoint,
+            direction: foldLine.direction,
+            initialBoard,
+          });
 
           // 折り線情報を状態に保存
           setFoldLineState({
             midpoint: foldLine.midpoint,
             direction: foldLine.direction,
-            start: intersections.start,
-            end: intersections.end,
+            start,
+            end,
           });
 
           // 折り線を可視化
-          visualizeFoldLine(scene, intersections.start, intersections.end);
+          visualizeFoldLine(scene, start, end);
+
+          // 板を分割
+          const { movingPart, fixedPart } = dividePlane({
+            plane: initialBoard,
+            foldLineStart: start,
+            foldLineEnd: end,
+            originalPoint: originalPoint,
+          });
+
+          console.log("movingPart", movingPart);
+          console.log("fixedPart", fixedPart);
         } catch (error) {
           console.error("Invalid fold line:", error);
         }
@@ -123,7 +136,7 @@ export const useDropHandler: UseDropHandler = ({
     setIsDragging,
     originalPoint,
     setOriginalPoint,
-    size,
+    initialBoard,
     setFoldLineState,
   ]);
 };

@@ -3,7 +3,12 @@ import * as THREE from "three";
 import { calculateFoldLineIntersections } from "./index";
 
 describe("calculateFoldLineIntersections", () => {
-  const size = 100;
+  const initialBoard = [
+    new THREE.Vector3(-50, -50, 0),
+    new THREE.Vector3(50, -50, 0),
+    new THREE.Vector3(50, 50, 0),
+    new THREE.Vector3(-50, 50, 0),
+  ];
 
   it("折り線から交点を正しく計算できる", () => {
     // 折り線が中心を通り、Y軸方向に伸びる場合（XY平面上）
@@ -11,11 +16,11 @@ describe("calculateFoldLineIntersections", () => {
     const midpoint = new THREE.Vector3(0, 0, 0);
     const direction = new THREE.Vector3(0, 1, 0); // Y軸方向
 
-    const intersections = calculateFoldLineIntersections(
+    const intersections = calculateFoldLineIntersections({
       midpoint,
       direction,
-      size
-    );
+      initialBoard,
+    });
 
     // 上辺と下辺で交差するはず
     // 始点: (0, -50, 0) または (0, 50, 0)
@@ -38,11 +43,11 @@ describe("calculateFoldLineIntersections", () => {
     const midpoint = new THREE.Vector3(0, -25, 0);
     const direction = new THREE.Vector3(1, 0, 0); // X軸方向
 
-    const intersections = calculateFoldLineIntersections(
+    const intersections = calculateFoldLineIntersections({
       midpoint,
       direction,
-      size
-    );
+      initialBoard,
+    });
 
     // 2点が返されることを確認
     expect(intersections.start).toBeDefined();
