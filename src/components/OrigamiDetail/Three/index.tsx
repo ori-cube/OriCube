@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import * as THREE from "three";
 import styles from "./index.module.scss";
-import { Board, Procedure } from "@/types/model";
+import { Board, Procedure, CameraView } from "@/types/model";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { LineGeometry } from "three/examples/jsm/Addons.js";
 import { LineMaterial } from "three/examples/jsm/Addons.js";
@@ -15,6 +15,7 @@ type Props = {
   color: string;
   foldAngle: number;
   procedureIndex: number;
+  cameraView: CameraView;
 };
 
 export const Three: React.FC<Props> = ({
@@ -22,6 +23,7 @@ export const Three: React.FC<Props> = ({
   color,
   foldAngle,
   procedureIndex,
+  cameraView,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -154,6 +156,40 @@ export const Three: React.FC<Props> = ({
       window.removeEventListener("resize", () => {});
     };
   }, []);
+
+  // カメラビュー切り替え
+  useEffect(() => {
+    const cam = cameraRef.current;
+    if (!cam) return;
+    const controls = controlsRef.current;
+
+    // 目安距離（モデル中心から）
+    switch (cameraView) {
+      case "up":
+        cam.position.set(0, 100, 0.001);
+        break;
+      case "down":
+        cam.position.set(0, -100, 0.001);
+        break;
+      case "left":
+        cam.position.set(-100, 70, 20);
+        break;
+      case "right":
+        cam.position.set(100, 70, -20);
+        break;
+      case "back":
+        cam.position.set(-20, 70, -100);
+        break;
+      default:
+        cam.position.set(20, 70, 100);
+        break;
+    }
+    cam.lookAt(new THREE.Vector3(0, 0, 0));
+    if (controls) {
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+  }, [cameraView]);
 
   // 回転に応じて板を描画
   useEffect(() => {

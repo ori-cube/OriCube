@@ -1,6 +1,7 @@
 "use client";
 
 import { OrigamiDetailPresenter } from "./presenter";
+import { CameraView } from "@/types/model";
 import { useEffect, useState } from "react";
 import { Model } from "@/types/model";
 
@@ -13,6 +14,7 @@ export const OrigamiDetail: React.FC<OrigamiDetailProps> = (
 ) => {
   const [sliderValue, setSliderValue] = useState(0); //折り紙の折る進行状況を保持
   const [procedureIndex, setProcedureIndex] = useState(1); //折り紙の手順を保持
+  const [cameraView, setCameraView] = useState<CameraView>("default"); //カメラの視点を保持
 
   useEffect(() => {
     setSliderValue(0);
@@ -33,6 +35,8 @@ export const OrigamiDetail: React.FC<OrigamiDetailProps> = (
       description={description}
       color={color}
       modelData={props.modelData}
+      cameraView={cameraView}
+      setCameraView={(view) => setCameraView(view)}
     />
   );
 };
