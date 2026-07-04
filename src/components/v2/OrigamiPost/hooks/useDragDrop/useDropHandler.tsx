@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
-import { FoldLineState } from "../../index";
+import { FoldLineState, FoldPhase } from "../../index";
 import { calculateFoldLine } from "../../utils/calculateFoldLine";
 import { calculateFoldLineIntersections } from "../../utils/calculateFoldLineIntersections";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
+import { disposeObject3D } from "../../utils/disposeObject3D";
 
 type UseDropHandler = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -18,6 +19,7 @@ type UseDropHandler = (props: {
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   size: number;
   setFoldLineState: (state: FoldLineState | null) => void;
+  foldPhase: FoldPhase;
 }) => void;
 
 /**
@@ -47,6 +49,7 @@ export const useDropHandler: UseDropHandler = ({
   setOriginalPoint,
   size,
   setFoldLineState,
+  foldPhase,
 }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -55,6 +58,9 @@ export const useDropHandler: UseDropHandler = ({
     const renderer = rendererRef.current;
 
     if (!canvas || !scene || !camera || !renderer) return;
+
+    // idle以外のフェーズではドロップ操作を受け付けない
+    if (foldPhase !== "idle") return;
 
     const handleMouseUp = () => {
       if (draggedPoint && originalPoint) {
@@ -97,6 +103,7 @@ export const useDropHandler: UseDropHandler = ({
 
         // ドラッグ中の点をクリア
         scene.remove(draggedPointMesh);
+        disposeObject3D(draggedPointMesh);
 
         // 状態をリセット
         setDraggedPoint(null);
@@ -125,5 +132,6 @@ export const useDropHandler: UseDropHandler = ({
     setOriginalPoint,
     size,
     setFoldLineState,
+    foldPhase,
   ]);
 };

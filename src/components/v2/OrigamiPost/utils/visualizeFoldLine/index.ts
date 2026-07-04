@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { disposeObject3D } from "../disposeObject3D";
 
 /**
  * 折り線を可視化する
@@ -25,6 +26,7 @@ export const visualizeFoldLine = (
   const existingFoldLine = scene.getObjectByName("foldLine");
   if (existingFoldLine) {
     scene.remove(existingFoldLine);
+    disposeObject3D(existingFoldLine);
   }
 
   // 2点間の距離を計算

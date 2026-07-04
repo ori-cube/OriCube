@@ -14,14 +14,14 @@ type RenderSnapPoint = (props: {
  *
  * @description
  * - 指定された位置に球体のメッシュを作成
- * - デフォルトは青色（0x007b94）、スケール0.3
+ * - デフォルトは青色（0x007b94）、スケール1
  * - 指定された名前でシーンに追加
  *
  * @param props.scene - 描画対象のThree.jsシーン
  * @param props.point - 描画位置の座標 [x, y, z]
  * @param props.name - メッシュの名前（識別用）
  * @param props.color - 球体の色（16進数、デフォルト: 0x007b94）
- * @param props.scale - 球体のスケール（デフォルト: 0.3）
+ * @param props.scale - 球体のスケール（デフォルト: 1）
  */
 export const renderSnapPoint: RenderSnapPoint = ({
   scene,
@@ -47,7 +47,7 @@ export const renderSnapPoint: RenderSnapPoint = ({
  *
  * @description
  * - ドラッグ中の点を赤色（0xff0000）で表示
- * - 通常のスナップポイントより大きいスケール（0.5）
+ * - スケールはスナップポイントと同じ（1）
  * - ドラッグ状態を視覚的に区別
  *
  * @param props.scene - 描画対象のThree.jsシーン

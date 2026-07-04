@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
-import { FoldLineState } from "../../index";
+import { FoldLineState, FoldPhase } from "../../index";
 import { useInitialRender } from "./useInitialRender";
 import { useDragHandler } from "./useDragHandler";
 import { useDropHandler } from "./useDropHandler";
@@ -17,6 +17,7 @@ type UseDragDrop = (props: {
   originalPoint: THREE.Vector3 | null;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   setFoldLineState: (state: FoldLineState | null) => void;
+  foldPhase: FoldPhase;
 }) => void;
 
 /**
@@ -34,6 +35,7 @@ type UseDragDrop = (props: {
  * @param props.raycasterRef - THREE.Raycasterのref
  * @param props.origamiColor - 折り紙の色
  * @param props.size - 折り紙のサイズ
+ * @param props.foldPhase - 折り操作のフェーズ（idle以外ではドラッグ&ドロップ無効）
  */
 export const useDragDrop: UseDragDrop = ({
   canvasRef,
@@ -46,6 +48,7 @@ export const useDragDrop: UseDragDrop = ({
   originalPoint,
   setOriginalPoint,
   setFoldLineState,
+  foldPhase,
 }) => {
   const [draggedPoint, setDraggedPoint] = useState<Point | null>(null);
   const [, setIsDragging] = useState(false);
@@ -71,6 +74,7 @@ export const useDragDrop: UseDragDrop = ({
     setIsDragging,
     size,
     setOriginalPoint,
+    foldPhase,
   });
 
   // ドロップ処理
@@ -86,5 +90,6 @@ export const useDragDrop: UseDragDrop = ({
     setOriginalPoint,
     size,
     setFoldLineState,
+    foldPhase,
   });
 };

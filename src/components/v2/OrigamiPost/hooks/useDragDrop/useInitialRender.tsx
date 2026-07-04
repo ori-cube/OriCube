@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Point } from "@/types/model";
 import { renderOrigamiBoard } from "./renderOrigamiBoard";
 import { renderSnapPoint } from "./renderPoint";
+import { disposeObject3D } from "../../utils/disposeObject3D";
 
 type UseInitialRender = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -47,9 +48,13 @@ export const useInitialRender: UseInitialRender = ({
 
     // シーンの初期化（既存のオブジェクトをクリア）
     const existingObjects = scene.children.filter(
-      (child) => child.name === "origami" || child.name === "snapPoint"
+      (child) =>
+        child.name === "origami" || child.name.startsWith("snapPoint_")
     );
-    existingObjects.forEach((obj) => scene.remove(obj));
+    existingObjects.forEach((obj) => {
+      scene.remove(obj);
+      disposeObject3D(obj);
+    });
 
     // 折り紙の板を描画
     renderOrigamiBoard({
