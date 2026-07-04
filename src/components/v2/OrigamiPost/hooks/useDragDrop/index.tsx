@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldLineState, FoldPhase } from "../../index";
+import { MovingAndStaticBoards } from "../../utils/selectMovingBoard";
 import { useInitialRender } from "./useInitialRender";
 import { useDragHandler } from "./useDragHandler";
 import { useDropHandler } from "./useDropHandler";
@@ -18,6 +19,8 @@ type UseDragDrop = (props: {
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   setFoldLineState: (state: FoldLineState | null) => void;
   foldPhase: FoldPhase;
+  setFoldPhase: (phase: FoldPhase) => void;
+  setFoldBoards: (boards: MovingAndStaticBoards | null) => void;
 }) => void;
 
 /**
@@ -49,6 +52,8 @@ export const useDragDrop: UseDragDrop = ({
   setOriginalPoint,
   setFoldLineState,
   foldPhase,
+  setFoldPhase,
+  setFoldBoards,
 }) => {
   const [draggedPoint, setDraggedPoint] = useState<Point | null>(null);
   const [, setIsDragging] = useState(false);
@@ -61,6 +66,7 @@ export const useDragDrop: UseDragDrop = ({
     origamiColor,
     size,
     draggedPoint,
+    foldPhase,
   });
 
   // ドラッグ処理
@@ -89,7 +95,10 @@ export const useDragDrop: UseDragDrop = ({
     originalPoint,
     setOriginalPoint,
     size,
+    origamiColor,
     setFoldLineState,
     foldPhase,
+    setFoldPhase,
+    setFoldBoards,
   });
 };

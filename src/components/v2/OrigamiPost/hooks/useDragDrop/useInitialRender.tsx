@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
+import { FoldPhase } from "../../index";
 import { renderOrigamiBoard } from "./renderOrigamiBoard";
 import { renderSnapPoint } from "./renderPoint";
 import { disposeObject3D } from "../../utils/disposeObject3D";
+import { createSquareBoard } from "../../utils/createSquareBoard";
 
 type UseInitialRender = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -12,6 +14,7 @@ type UseInitialRender = (props: {
   origamiColor: string;
   size: number;
   draggedPoint: Point | null;
+  foldPhase: FoldPhase;
 }) => void;
 
 /**
@@ -30,6 +33,7 @@ type UseInitialRender = (props: {
  * @param props.origamiColor - 折り紙の色
  * @param props.size - 折り紙のサイズ
  * @param props.draggedPoint - 現在ドラッグ中の点（描画から除外）
+ * @param props.foldPhase - 折り操作のフェーズ（idle以外では描画しない）
  */
 export const useInitialRender: UseInitialRender = ({
   sceneRef,
@@ -38,6 +42,7 @@ export const useInitialRender: UseInitialRender = ({
   origamiColor,
   size,
   draggedPoint,
+  foldPhase,
 }) => {
   useEffect(() => {
     const scene = sceneRef.current;
@@ -45,6 +50,9 @@ export const useInitialRender: UseInitialRender = ({
     const camera = cameraRef.current;
 
     if (!scene || !renderer || !camera) return;
+
+    // idle以外のフェーズでは分割後の板が表示されているため、初期描画を行わない
+    if (foldPhase !== "idle") return;
 
     // シーンの初期化（既存のオブジェクトをクリア）
     const existingObjects = scene.children.filter(
@@ -79,19 +87,24 @@ export const useInitialRender: UseInitialRender = ({
     });
 
     renderer.render(scene, camera);
-  }, [sceneRef, rendererRef, cameraRef, origamiColor, size, draggedPoint]);
+  }, [
+    sceneRef,
+    rendererRef,
+    cameraRef,
+    origamiColor,
+    size,
+    draggedPoint,
+    foldPhase,
+  ]);
 };
 
 // 正方形の頂点を生成（XY平面、Z=0）
-const generateVertices = (size: number): Point[] => {
-  const halfSize = size / 2;
-  return [
-    [-halfSize, -halfSize, 0], // 左下
-    [halfSize, -halfSize, 0], // 右下
-    [halfSize, halfSize, 0], // 右上
-    [-halfSize, halfSize, 0], // 左上
-  ];
-};
+const generateVertices = (size: number): Point[] =>
+  createSquareBoard(size).map((vertex): Point => [
+    vertex.x,
+    vertex.y,
+    vertex.z,
+  ]);
 
 // 2つの点が同じかどうかを判定
 const isSamePoint = (point1: Point, point2: Point): boolean => {

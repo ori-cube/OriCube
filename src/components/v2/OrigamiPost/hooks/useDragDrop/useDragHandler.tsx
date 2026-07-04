@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase } from "../../index";
 import { renderDraggedPoint } from "./renderPoint";
+import { createSquareBoard } from "../../utils/createSquareBoard";
 
 type UseDragHandler = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -168,12 +169,9 @@ export const useDragHandler: UseDragHandler = ({
 };
 
 // 正方形の頂点を生成（useInitialRenderと同じ関数）
-const generateVertices = (size: number): Point[] => {
-  const halfSize = size / 2;
-  return [
-    [-halfSize, -halfSize, 0], // 左下
-    [halfSize, -halfSize, 0], // 右下
-    [halfSize, halfSize, 0], // 右上
-    [-halfSize, halfSize, 0], // 左上
-  ];
-};
+const generateVertices = (size: number): Point[] =>
+  createSquareBoard(size).map((vertex): Point => [
+    vertex.x,
+    vertex.y,
+    vertex.z,
+  ]);
