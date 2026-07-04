@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { useInitScene, useDragDrop } from "./hooks";
+import { useInitScene, useDragDrop, useFoldAnimation } from "./hooks";
 import { MovingAndStaticBoards } from "./utils/selectMovingBoard";
 import styles from "./index.module.scss";
 
@@ -76,10 +76,14 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   const [foldPhase, setFoldPhase] = useState<FoldPhase>("idle");
 
   // 折り線の状態
-  const [, setFoldLineState] = useState<FoldLineState | null>(null);
+  const [foldLineState, setFoldLineState] = useState<FoldLineState | null>(
+    null
+  );
 
   // 分割された板（動く板と固定される板）
-  const [, setFoldBoards] = useState<MovingAndStaticBoards | null>(null);
+  const [foldBoards, setFoldBoards] = useState<MovingAndStaticBoards | null>(
+    null
+  );
 
   // ドラッグ開始時の元の位置
   const [originalPoint, setOriginalPoint] = useState<THREE.Vector3 | null>(
@@ -113,6 +117,17 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     setFoldLineState,
     foldPhase,
     setFoldPhase,
+    setFoldBoards,
+  });
+
+  // 折り線を軸とした180度折りアニメーション
+  useFoldAnimation({
+    sceneRef,
+    controlsRef,
+    foldPhase,
+    setFoldPhase,
+    foldLineState,
+    foldBoards,
     setFoldBoards,
   });
 
