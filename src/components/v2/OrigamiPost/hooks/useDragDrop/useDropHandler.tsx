@@ -32,12 +32,13 @@ type UseDropHandler = (props: {
  * マウスドロップ処理を管理するカスタムフック
  *
  * @description
- * - マウスアップ時に折り線を計算し、ドラッグした頂点を持つ板の数で分岐する:
- *   - 候補が1枚: その板を折る対象としてシーンを差し替え、foldingフェーズへ
- *   - 候補が複数枚（折りで頂点が重なっている場合）: 折り線をプレビュー表示し、
- *     折る枚数を選択するselectingフェーズへ（確定はuseDragDropのconfirmFold）
- * - 折りが成立しない場合（折り線が板を横切らない等）: 何もせずidleのまま
- *   再ドラッグを待つ
+ * - マウスアップ時に折り線を計算し、折りが成立する枚数の数で分岐する:
+ *   - 折れる枚数が1通り（候補が1枚、または破れ判定などで1通りに定まる場合）:
+ *     選択させずにその枚数でシーンを差し替え、foldingフェーズへ
+ *   - 折れる枚数が複数通り: 折り線をプレビュー表示し、折る枚数を選択する
+ *     selectingフェーズへ（確定はuseDragDropのconfirmFold）
+ * - 折りが成立しない場合（折り線が板を横切らない、紙が破れる等）:
+ *   何もせずidleのまま再ドラッグを待つ
  * - 折りの成否に関わらずドラッグ中の点はクリアする
  *
  * @param props.canvasRef - HTMLCanvasElementのref
@@ -115,7 +116,8 @@ export const useDropHandler: UseDropHandler = ({
     };
 
     /**
-     * 折り線を計算し、成立する場合はfolding（候補が複数ならselecting）へ遷移する
+     * 折り線を計算し、成立する場合はfolding（選べる枚数が複数ならselecting）へ
+     * 遷移する
      */
     const tryFold = (droppedPoint: THREE.Vector3) => {
       if (!originalPoint) return;
@@ -140,53 +142,53 @@ export const useDropHandler: UseDropHandler = ({
       );
       if (candidates.length === 0) return;
 
-      // 複数の板が頂点を共有している場合は、折る枚数の選択へ
-      if (candidates.length > 1) {
-        const validCounts = collectValidCounts(
-          foldLineInfo.midpoint,
-          foldLineInfo.direction,
-          dragVertex,
-          candidates,
-          viewFront
-        );
-        if (validCounts.length === 0) return;
+      const validCounts = collectValidCounts(
+        foldLineInfo.midpoint,
+        foldLineInfo.direction,
+        dragVertex,
+        candidates,
+        viewFront
+      );
+      if (validCounts.length === 0) return;
 
-        // 全候補を覆うスパンで折り線をプレビュー表示
-        const previewSpan = calculateFoldLineSpan(
-          foldLineInfo.midpoint,
-          foldLineInfo.direction,
-          candidates.map((candidate) => candidate.polygon)
-        );
-        if (!previewSpan) return;
-        visualizeFoldLine(scene, previewSpan.start, previewSpan.end);
-
-        setFoldProposal({
+      // 折れる枚数が1通りに定まる場合は選択させず、その枚数でそのまま折る
+      if (validCounts.length === 1) {
+        const pending = commenceFold({
+          scene,
+          currentBoards,
           midpoint: foldLineInfo.midpoint,
           direction: foldLineInfo.direction,
           dragVertex,
-          validCounts,
-          maxFoldCount: candidates.length,
+          foldCount: validCounts[0],
           viewFront,
+          origamiColor,
         });
-        setFoldPhase("selecting");
+        if (!pending) return;
+
+        setPendingFold(pending);
+        setFoldPhase("folding");
         return;
       }
 
-      // 候補が1枚の場合はそのまま折りを確定する
-      const pending = commenceFold({
-        scene,
-        currentBoards,
+      // 複数の枚数から選べる場合のみ、折る枚数の選択へ。
+      // 全候補を覆うスパンで折り線をプレビュー表示する
+      const previewSpan = calculateFoldLineSpan(
+        foldLineInfo.midpoint,
+        foldLineInfo.direction,
+        candidates.map((candidate) => candidate.polygon)
+      );
+      if (!previewSpan) return;
+      visualizeFoldLine(scene, previewSpan.start, previewSpan.end);
+
+      setFoldProposal({
         midpoint: foldLineInfo.midpoint,
         direction: foldLineInfo.direction,
         dragVertex,
-        foldCount: 1,
+        validCounts,
+        maxFoldCount: candidates.length,
         viewFront,
-        origamiColor,
       });
-      if (!pending) return;
-
-      setPendingFold(pending);
-      setFoldPhase("folding");
+      setFoldPhase("selecting");
     };
 
     const handleMouseUp = () => {
