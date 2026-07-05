@@ -137,6 +137,7 @@ export const useDragDrop: UseDragDrop = ({
         direction: foldProposal.direction,
         dragVertex: foldProposal.dragVertex,
         foldCount,
+        viewFront: foldProposal.viewFront,
         origamiColor,
       });
 

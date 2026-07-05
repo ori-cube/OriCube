@@ -88,7 +88,8 @@ export const useDropHandler: UseDropHandler = ({
       midpoint: THREE.Vector3,
       direction: THREE.Vector3,
       dragVertex: THREE.Vector3,
-      candidates: LayeredBoard[]
+      candidates: LayeredBoard[],
+      viewFront: boolean
     ): number[] => {
       const validCounts: number[] = [];
 
@@ -105,7 +106,7 @@ export const useDropHandler: UseDropHandler = ({
             foldLine: span,
             dragVertex,
             foldCount: count,
-            viewFront: true,
+            viewFront,
           }) !== null;
         if (isValid) validCounts.push(count);
       }
@@ -128,7 +129,15 @@ export const useDropHandler: UseDropHandler = ({
         originalPoint.y,
         0
       );
-      const candidates = findFoldCandidates(currentBoards, dragVertex, true);
+
+      // どちら側から見て折っているかは、ドロップ時のカメラ位置で判定する
+      const viewFront = camera.position.z > 0;
+
+      const candidates = findFoldCandidates(
+        currentBoards,
+        dragVertex,
+        viewFront
+      );
       if (candidates.length === 0) return;
 
       // 複数の板が頂点を共有している場合は、折る枚数の選択へ
@@ -137,7 +146,8 @@ export const useDropHandler: UseDropHandler = ({
           foldLineInfo.midpoint,
           foldLineInfo.direction,
           dragVertex,
-          candidates
+          candidates,
+          viewFront
         );
         if (validCounts.length === 0) return;
 
@@ -156,6 +166,7 @@ export const useDropHandler: UseDropHandler = ({
           dragVertex,
           validCounts,
           maxFoldCount: candidates.length,
+          viewFront,
         });
         setFoldPhase("selecting");
         return;
@@ -169,6 +180,7 @@ export const useDropHandler: UseDropHandler = ({
         direction: foldLineInfo.direction,
         dragVertex,
         foldCount: 1,
+        viewFront,
         origamiColor,
       });
       if (!pending) return;

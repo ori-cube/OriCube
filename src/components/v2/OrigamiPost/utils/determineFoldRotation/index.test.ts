@@ -99,6 +99,32 @@ describe("determineFoldRotation", () => {
     expect(Math.max(...rotated.map((vertex) => vertex.z))).toBeGreaterThan(0);
   });
 
+  it("持ち上げ方向に-Zを指定すると軸が反転し、動く板が-Z側へ持ち上がる", () => {
+    const frontAxis = determineFoldRotation(verticalFoldLine, rightBoard);
+    const backAxis = determineFoldRotation(
+      verticalFoldLine,
+      rightBoard,
+      new THREE.Vector3(0, 0, -1)
+    );
+
+    expect(frontAxis).not.toBeNull();
+    expect(backAxis).not.toBeNull();
+    if (!frontAxis || !backAxis) return;
+
+    // 持ち上げ方向を反転すると軸の向きも反対になる
+    expect(backAxis.dot(frontAxis)).toBeCloseTo(-1);
+
+    // 90度回転すると折り線上以外の頂点はすべて-Z側にある
+    const rotated = rotateBoard(
+      rightBoard,
+      verticalFoldLine.start,
+      backAxis,
+      Math.PI / 2
+    );
+    rotated.forEach((vertex) => expect(vertex.z).toBeLessThanOrEqual(1e-6));
+    expect(Math.min(...rotated.map((vertex) => vertex.z))).toBeCloseTo(-50);
+  });
+
   it("動く板の全頂点が折り線上にある場合はnullを返す", () => {
     const degenerateBoard: Board = [
       new THREE.Vector3(0, -50, 0),

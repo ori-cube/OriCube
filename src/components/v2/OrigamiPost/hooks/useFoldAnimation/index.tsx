@@ -4,21 +4,10 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { FoldPhase, PendingFold } from "../../index";
 import { determineFoldRotation } from "../../utils/determineFoldRotation";
 import { disposeObject3D } from "../../utils/disposeObject3D";
+import { easeInOutCubic } from "../../utils/easeInOutCubic";
 
 /** 折りアニメーションの所要時間（ミリ秒） */
 const FOLD_DURATION_MS = 800;
-
-/**
- * アニメーションの進行度（0〜1）を「ゆっくり始まり、中盤で加速し、
- * ゆっくり終わる」曲線に変換するイージング関数
- *
- * @description
- * 経過時間をそのまま回転角に使うと等速で機械的な動きになるため、
- * 紙を折る手の動きに近い緩急をつける。3次曲線を前半・後半で
- * つないだ標準的なease-in-out（https://easings.net/#easeInOutCubic）
- */
-const easeInOutCubic = (t: number): number =>
-  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 type UseFoldAnimation = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -71,7 +60,17 @@ export const useFoldAnimation: UseFoldAnimation = ({
     const movingVertices = pendingFold.movingBoards.flatMap(
       (board) => board.polygon
     );
-    const axis = determineFoldRotation(pendingFold.step.foldLine, movingVertices);
+    // 動く片は折ったときの視点側（表なら+Z、裏なら-Z）へ持ち上げる
+    const liftDirection = new THREE.Vector3(
+      0,
+      0,
+      pendingFold.step.viewFront ? 1 : -1
+    );
+    const axis = determineFoldRotation(
+      pendingFold.step.foldLine,
+      movingVertices,
+      liftDirection
+    );
 
     // 軸を決定できない場合は回転せずに折りを確定する（通常は起こり得ない）
     if (!axis) {

@@ -3,7 +3,12 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { useInitScene, useDragDrop, useFoldAnimation } from "./hooks";
+import {
+  useInitScene,
+  useDragDrop,
+  useFoldAnimation,
+  useFlipView,
+} from "./hooks";
 import { FoldStep, LayeredBoard } from "./types";
 import { createSquareBoard } from "./utils/createSquareBoard";
 import { replayFoldSteps } from "./utils/replayFoldSteps";
@@ -44,6 +49,8 @@ export interface FoldProposal {
   validCounts: number[];
   /** 折る枚数の上限（頂点を共有する板の数） */
   maxFoldCount: number;
+  /** ドロップ時に表側（+Z側）から見ていたか */
+  viewFront: boolean;
 }
 
 /**
@@ -183,6 +190,9 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     completeFold,
   });
 
+  // 折り紙を裏返す視点回転
+  const { flipView, isFlipping } = useFlipView({ cameraRef, controlsRef });
+
   return (
     <div className={styles.container}>
       <canvas
@@ -192,10 +202,12 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
         style={{ width, height }}
       />
       <Toolbar
-        canUndo={foldPhase === "idle" && canUndo(foldHistory)}
-        canRedo={foldPhase === "idle" && canRedo(foldHistory)}
+        canUndo={foldPhase === "idle" && !isFlipping && canUndo(foldHistory)}
+        canRedo={foldPhase === "idle" && !isFlipping && canRedo(foldHistory)}
+        canFlip={foldPhase === "idle" && !isFlipping}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        onFlip={flipView}
       />
       {foldPhase === "selecting" && foldProposal && (
         <FoldCountSelector

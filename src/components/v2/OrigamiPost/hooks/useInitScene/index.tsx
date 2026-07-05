@@ -87,6 +87,11 @@ export const useInitScene: UseInitScene = ({
     directionalLight.position.set(10, 10, 5);
     scene.add(directionalLight);
 
+    // 裏返して見たときに極端に暗くならないよう、背面側からも弱く照らす
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    backLight.position.set(-10, -10, -5);
+    scene.add(backLight);
+
     // アニメーションループ
     const animate = () => {
       controls.update();
