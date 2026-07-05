@@ -21,6 +21,7 @@ import { removeBoardObjects } from "./removeBoardObjects";
  * @param props.direction - 折り線の方向ベクトル
  * @param props.dragVertex - ドラッグした頂点の元位置
  * @param props.foldCount - 折る枚数
+ * @param props.viewFront - 表側（+Z側）から見ているか
  * @param props.origamiColor - 板の色
  * @returns アニメーション待ちの折り操作。折りが成立しない場合はnull
  *          （シーンは変更しない）
@@ -37,6 +38,7 @@ export const commenceFold = (props: {
   direction: THREE.Vector3;
   dragVertex: THREE.Vector3;
   foldCount: number;
+  viewFront: boolean;
   origamiColor: string;
 }): PendingFold | null => {
   const {
@@ -46,10 +48,11 @@ export const commenceFold = (props: {
     direction,
     dragVertex,
     foldCount,
+    viewFront,
     origamiColor,
   } = props;
 
-  const candidates = findFoldCandidates(currentBoards, dragVertex, true);
+  const candidates = findFoldCandidates(currentBoards, dragVertex, viewFront);
   if (foldCount < 1 || foldCount > candidates.length) return null;
   const targets = candidates.slice(0, foldCount);
 
@@ -65,7 +68,7 @@ export const commenceFold = (props: {
     foldLine: foldLineSpan,
     dragVertex: new THREE.Vector3(dragVertex.x, dragVertex.y, 0),
     foldCount,
-    viewFront: true,
+    viewFront,
   };
 
   // 折りを適用（分割できない折り線の場合はnull）

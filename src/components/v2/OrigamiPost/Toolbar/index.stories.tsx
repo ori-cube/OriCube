@@ -8,7 +8,7 @@ const meta: Meta<typeof Toolbar> = {
     docs: {
       description: {
         component:
-          "キャンバス左上にオーバーレイする操作ツールバーです。Undo / Redo を提供します。",
+          "キャンバス左上にオーバーレイする操作ツールバーです。Undo / Redo / 裏返すを提供します。",
       },
     },
   },
@@ -22,6 +22,7 @@ const meta: Meta<typeof Toolbar> = {
   argTypes: {
     onUndo: { action: "undo" },
     onRedo: { action: "redo" },
+    onFlip: { action: "flip" },
   },
 };
 
@@ -32,6 +33,7 @@ export const Default: Story = {
   args: {
     canUndo: true,
     canRedo: true,
+    canFlip: true,
   },
 };
 
@@ -39,5 +41,6 @@ export const AllDisabled: Story = {
   args: {
     canUndo: false,
     canRedo: false,
+    canFlip: false,
   },
 };
