@@ -7,7 +7,18 @@ import { useInitScene, useDragDrop, useFoldAnimation } from "./hooks";
 import { FoldStep, LayeredBoard } from "./types";
 import { createSquareBoard } from "./utils/createSquareBoard";
 import { replayFoldSteps } from "./utils/replayFoldSteps";
+import {
+  FoldHistory,
+  EMPTY_FOLD_HISTORY,
+  appliedFoldSteps,
+  pushFoldStep,
+  undoFoldStep,
+  redoFoldStep,
+  canUndo,
+  canRedo,
+} from "./utils/foldHistory";
 import { FoldCountSelector } from "./FoldCountSelector";
+import { Toolbar } from "./Toolbar";
 import styles from "./index.module.scss";
 
 /**
@@ -91,8 +102,9 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   // 折り操作のフェーズ（idle以外ではドラッグ&ドロップを無効化）
   const [foldPhase, setFoldPhase] = useState<FoldPhase>("idle");
 
-  // 折り手順の履歴（唯一の状態源）
-  const [history, setHistory] = useState<FoldStep[]>([]);
+  // 折り手順の履歴（唯一の状態源。Undo/Redoは適用済みステップ数の操作）
+  const [foldHistory, setFoldHistory] =
+    useState<FoldHistory>(EMPTY_FOLD_HISTORY);
 
   // 折る枚数の選択を待っている折り操作
   const [foldProposal, setFoldProposal] = useState<FoldProposal | null>(null);
@@ -105,20 +117,31 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     null
   );
 
-  // 現在の板群（履歴のリプレイで導出する）
+  // 現在の板群（適用済みの折り手順のリプレイで導出する）
   const initialBoard = useMemo(() => createSquareBoard(size), [size]);
   const currentBoards = useMemo(
-    () => replayFoldSteps(initialBoard, history),
-    [initialBoard, history]
+    () => replayFoldSteps(initialBoard, appliedFoldSteps(foldHistory)),
+    [initialBoard, foldHistory]
   );
 
   // 折りアニメーション完了時: 折り操作を履歴へ確定し、次の折りの入力待ちへ戻る
   const completeFold = useCallback(() => {
     if (!pendingFold) return;
-    setHistory((prev) => [...prev, pendingFold.step]);
+    setFoldHistory((prev) => pushFoldStep(prev, pendingFold.step));
     setPendingFold(null);
     setFoldPhase("idle");
   }, [pendingFold]);
+
+  // Undo / Redo（折りの入力待ち中のみ受け付ける）
+  const handleUndo = useCallback(() => {
+    if (foldPhase !== "idle") return;
+    setFoldHistory(undoFoldStep);
+  }, [foldPhase]);
+
+  const handleRedo = useCallback(() => {
+    if (foldPhase !== "idle") return;
+    setFoldHistory(redoFoldStep);
+  }, [foldPhase]);
 
   // シーンの初期化
   useInitScene({
@@ -167,6 +190,12 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
         id="origami-canvas"
         className={styles.canvas}
         style={{ width, height }}
+      />
+      <Toolbar
+        canUndo={foldPhase === "idle" && canUndo(foldHistory)}
+        canRedo={foldPhase === "idle" && canRedo(foldHistory)}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
       />
       {foldPhase === "selecting" && foldProposal && (
         <FoldCountSelector
