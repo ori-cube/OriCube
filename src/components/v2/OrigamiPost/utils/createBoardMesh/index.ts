@@ -14,7 +14,7 @@ import { Board } from "../../types";
  * @description
  * - THREE.Shape → ShapeGeometryで任意多角形を三角形分割して描画
  *   （earcut内蔵のため凹多角形にも対応）
- * - マテリアルは折り紙の板（renderOrigamiBoard）と同じ半透明Lambert
+ * - マテリアルは半透明Lambert・両面描画
  * - EdgesGeometryで黒い枠線を追加
  */
 export const createBoardMesh = (

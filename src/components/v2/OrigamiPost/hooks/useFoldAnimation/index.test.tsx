@@ -2,8 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import * as THREE from "three";
 import { useFoldAnimation } from "./index";
-import { FoldLineState } from "../../index";
-import { MovingAndStaticBoards } from "../../utils/selectMovingBoard";
+import { PendingFold } from "../../index";
 
 // requestAnimationFrameを手動で進められるようにフェイク化する
 let rafCallbacks: FrameRequestCallback[] = [];
@@ -18,25 +17,26 @@ const flushAnimationFrame = (time: number) => {
 const getRotationAngle = (group: THREE.Object3D): number =>
   2 * Math.acos(Math.min(1, Math.abs(group.quaternion.w)));
 
-const createFoldLineState = (): FoldLineState => ({
-  midpoint: new THREE.Vector3(0, 0, 0),
-  direction: new THREE.Vector3(0, 1, 0),
-  start: new THREE.Vector3(0, -50, 0),
-  end: new THREE.Vector3(0, 50, 0),
-});
-
-const createFoldBoards = (): MovingAndStaticBoards => ({
-  movingBoard: [
-    new THREE.Vector3(0, -50, 0),
-    new THREE.Vector3(50, -50, 0),
-    new THREE.Vector3(50, 50, 0),
-    new THREE.Vector3(0, 50, 0),
-  ],
-  staticBoard: [
-    new THREE.Vector3(-50, -50, 0),
-    new THREE.Vector3(0, -50, 0),
-    new THREE.Vector3(0, 50, 0),
-    new THREE.Vector3(-50, 50, 0),
+const createPendingFold = (): PendingFold => ({
+  step: {
+    foldLine: {
+      start: new THREE.Vector3(0, -50, 0),
+      end: new THREE.Vector3(0, 50, 0),
+    },
+    dragVertex: new THREE.Vector3(50, 50, 0),
+    foldCount: 1,
+    viewFront: true,
+  },
+  movingBoards: [
+    {
+      polygon: [
+        new THREE.Vector3(0, -50, 0),
+        new THREE.Vector3(50, -50, 0),
+        new THREE.Vector3(50, 50, 0),
+        new THREE.Vector3(0, 50, 0),
+      ],
+      layer: 0,
+    },
   ],
 });
 
@@ -74,18 +74,15 @@ describe("useFoldAnimation", () => {
 
   it("foldingフェーズでアニメーションが開始され、時間経過で回転が進む", () => {
     const { scene, pivotGroup } = createScene();
-    const setFoldPhase = vi.fn();
-    const setFoldBoards = vi.fn();
+    const completeFold = vi.fn();
 
     renderHook(() =>
       useFoldAnimation({
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
-        setFoldPhase,
-        foldLineState: createFoldLineState(),
-        foldBoards: createFoldBoards(),
-        setFoldBoards,
+        pendingFold: createPendingFold(),
+        completeFold,
       })
     );
 
@@ -96,23 +93,20 @@ describe("useFoldAnimation", () => {
     // 中間フレーム（duration 800msの半分 → easeInOutCubic(0.5) = 0.5 → 90度）
     flushAnimationFrame(400);
     expect(getRotationAngle(pivotGroup)).toBeCloseTo(Math.PI / 2);
-    expect(setFoldPhase).not.toHaveBeenCalled();
+    expect(completeFold).not.toHaveBeenCalled();
   });
 
-  it("アニメーション完了時に180度回転し、foldedフェーズへ遷移する", () => {
+  it("アニメーション完了時に180度回転し、折り操作が確定される", () => {
     const { scene, pivotGroup } = createScene();
-    const setFoldPhase = vi.fn();
-    const setFoldBoards = vi.fn();
+    const completeFold = vi.fn();
 
     renderHook(() =>
       useFoldAnimation({
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
-        setFoldPhase,
-        foldLineState: createFoldLineState(),
-        foldBoards: createFoldBoards(),
-        setFoldBoards,
+        pendingFold: createPendingFold(),
+        completeFold,
       })
     );
 
@@ -120,23 +114,20 @@ describe("useFoldAnimation", () => {
     flushAnimationFrame(800);
 
     expect(getRotationAngle(pivotGroup)).toBeCloseTo(Math.PI);
-    expect(setFoldPhase).toHaveBeenCalledWith("folded");
+    expect(completeFold).toHaveBeenCalledOnce();
   });
 
-  it("完了時に折り線が削除され、板が+Zへオフセットされる", () => {
-    const { scene, pivotGroup } = createScene();
-    const setFoldPhase = vi.fn();
-    const setFoldBoards = vi.fn();
+  it("完了時に折り線が削除される", () => {
+    const { scene } = createScene();
+    const completeFold = vi.fn();
 
     renderHook(() =>
       useFoldAnimation({
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
-        setFoldPhase,
-        foldLineState: createFoldLineState(),
-        foldBoards: createFoldBoards(),
-        setFoldBoards,
+        pendingFold: createPendingFold(),
+        completeFold,
       })
     );
 
@@ -144,60 +135,24 @@ describe("useFoldAnimation", () => {
     flushAnimationFrame(800);
 
     expect(scene.getObjectByName("foldLine")).toBeUndefined();
-    expect(pivotGroup.position.z).toBeGreaterThan(0);
-  });
-
-  it("完了時に動く板の頂点座標が折り返し後の位置へ更新される", () => {
-    const { scene } = createScene();
-    const setFoldPhase = vi.fn();
-    const setFoldBoards = vi.fn();
-
-    renderHook(() =>
-      useFoldAnimation({
-        sceneRef: { current: scene },
-        controlsRef: { current: null },
-        foldPhase: "folding",
-        setFoldPhase,
-        foldLineState: createFoldLineState(),
-        foldBoards: createFoldBoards(),
-        setFoldBoards,
-      })
-    );
-
-    flushAnimationFrame(0);
-    flushAnimationFrame(800);
-
-    expect(setFoldBoards).toHaveBeenCalledOnce();
-    const baked: MovingAndStaticBoards = setFoldBoards.mock.calls[0][0];
-
-    // 右半分（x >= 0）が折り返されて左半分（x <= 0）になる
-    baked.movingBoard.forEach((vertex) => {
-      expect(vertex.x).toBeLessThanOrEqual(1e-6);
-      // z-fighting回避のオフセット分だけ浮いている
-      expect(vertex.z).toBeGreaterThan(0);
-    });
-    // 固定される板は変わらない
-    expect(baked.staticBoard).toEqual(createFoldBoards().staticBoard);
   });
 
   it("idleフェーズではアニメーションを開始しない", () => {
     const { scene } = createScene();
-    const setFoldPhase = vi.fn();
+    const completeFold = vi.fn();
 
     renderHook(() =>
       useFoldAnimation({
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "idle",
-        setFoldPhase,
-        foldLineState: null,
-        foldBoards: null,
-        setFoldBoards: vi.fn(),
+        pendingFold: null,
+        completeFold,
       })
     );
 
     expect(rafCallbacks).toHaveLength(0);
-    expect(setFoldPhase).not.toHaveBeenCalled();
+    expect(completeFold).not.toHaveBeenCalled();
   });
 
   it("アンマウント時にアニメーションがキャンセルされる", () => {
@@ -208,10 +163,8 @@ describe("useFoldAnimation", () => {
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
-        setFoldPhase: vi.fn(),
-        foldLineState: createFoldLineState(),
-        foldBoards: createFoldBoards(),
-        setFoldBoards: vi.fn(),
+        pendingFold: createPendingFold(),
+        completeFold: vi.fn(),
       })
     );
 
