@@ -3,14 +3,18 @@ import * as THREE from "three";
 import { collectSnapPoints, SnapPoint } from "./index";
 import { LayeredBoard } from "../../types";
 
+/** 順序付き頂点列（正方形） */
+const createSquarePolygon = () => [
+  new THREE.Vector3(-50, -50, 0),
+  new THREE.Vector3(50, -50, 0),
+  new THREE.Vector3(50, 50, 0),
+  new THREE.Vector3(-50, 50, 0),
+];
+
 /** 一辺100の正方形（原点中心、XY平面上） */
 const createSquare = (layer: number): LayeredBoard => ({
-  polygon: [
-    new THREE.Vector3(-50, -50, 0),
-    new THREE.Vector3(50, -50, 0),
-    new THREE.Vector3(50, 50, 0),
-    new THREE.Vector3(-50, 50, 0),
-  ],
+  polygon: createSquarePolygon(),
+  sourcePolygon: createSquarePolygon(),
   layer,
 });
 
@@ -44,13 +48,15 @@ describe("collectSnapPoints", () => {
 
   it("一部の頂点だけ共有する2枚の板では、共有する頂点のみ板の数が増える", () => {
     // 正方形の右上4分の1に重なる板（(50, 50)のみ正方形と頂点を共有する）
+    const quarterPolygon = [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(50, 0, 0),
+      new THREE.Vector3(50, 50, 0),
+      new THREE.Vector3(0, 50, 0),
+    ];
     const quarter: LayeredBoard = {
-      polygon: [
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(50, 0, 0),
-        new THREE.Vector3(50, 50, 0),
-        new THREE.Vector3(0, 50, 0),
-      ],
+      polygon: quarterPolygon,
+      sourcePolygon: quarterPolygon.map((vertex) => vertex.clone()),
       layer: 1,
     };
 
@@ -63,13 +69,15 @@ describe("collectSnapPoints", () => {
   });
 
   it("閾値未満のずれがある頂点は同じスナップポイントに集約される", () => {
+    const shiftedPolygon = [
+      new THREE.Vector3(-50.05, -50.05, 0),
+      new THREE.Vector3(50.05, -50.05, 0),
+      new THREE.Vector3(50.05, 50.05, 0),
+      new THREE.Vector3(-50.05, 50.05, 0),
+    ];
     const slightlyShifted: LayeredBoard = {
-      polygon: [
-        new THREE.Vector3(-50.05, -50.05, 0),
-        new THREE.Vector3(50.05, -50.05, 0),
-        new THREE.Vector3(50.05, 50.05, 0),
-        new THREE.Vector3(-50.05, 50.05, 0),
-      ],
+      polygon: shiftedPolygon,
+      sourcePolygon: shiftedPolygon.map((vertex) => vertex.clone()),
       layer: 1,
     };
 

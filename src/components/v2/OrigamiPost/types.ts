@@ -20,6 +20,25 @@ export interface FoldLine {
 }
 
 /**
+ * 折り畳み空間と展開図空間のポリゴンの組
+ *
+ * @description
+ * - polygonとsourcePolygonは同じ長さで、インデックスiの頂点同士が
+ *   紙上の同一点に対応する
+ * - sourcePolygonは折る前の正方形の座標系（展開図空間、z=0）で保持する。
+ *   折りで回転・鏡映されず、分割時に細分されるだけなので誤差が蓄積しない
+ * - 紙は展開図上では連続体なので、2つの板が物理的につながっているか
+ *   （＝折り目を共有しているか）はsourcePolygon同士が正の長さの
+ *   境界線分を共有するかで正確に判定できる
+ */
+export interface BoardPiece {
+  /** 板の多角形（折り畳み空間、XY平面上） */
+  polygon: Board;
+  /** 板の多角形（展開図空間、初期正方形の座標系） */
+  sourcePolygon: Board;
+}
+
+/**
  * レイヤー番号付きの板
  *
  * @description
@@ -28,9 +47,7 @@ export interface FoldLine {
  * - layerは大きいほど表側（+Z側）。折るたびに再割り当てされるため
  *   連番とは限らず、負の値も取り得る
  */
-export interface LayeredBoard {
-  /** 板の多角形（XY平面上） */
-  polygon: Board;
+export interface LayeredBoard extends BoardPiece {
   /** 重なり順（大きいほど表側） */
   layer: number;
 }

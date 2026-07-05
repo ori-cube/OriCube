@@ -3,14 +3,23 @@ import * as THREE from "three";
 import { applyFoldStep } from "./index";
 import { Board, FoldStep, LayeredBoard } from "../../types";
 
-/** 一辺100の正方形（原点中心、XY平面上） */
-const createSquare = (layer: number): LayeredBoard => ({
-  polygon: [
-    new THREE.Vector3(-50, -50, 0),
-    new THREE.Vector3(50, -50, 0),
-    new THREE.Vector3(50, 50, 0),
-    new THREE.Vector3(-50, 50, 0),
-  ],
+/** 一辺100の正方形の頂点列（原点中心、XY平面上） */
+const createSquarePolygon = (offsetX = 0): Board => [
+  new THREE.Vector3(-50 + offsetX, -50, 0),
+  new THREE.Vector3(50 + offsetX, -50, 0),
+  new THREE.Vector3(50 + offsetX, 50, 0),
+  new THREE.Vector3(-50 + offsetX, 50, 0),
+];
+
+/**
+ * 一辺100の正方形（原点中心、XY平面上）
+ *
+ * sourceOffsetXを指定すると展開図上で離れた位置になり、他の板と
+ * つながっていない（折り目を共有しない）独立した板を表せる
+ */
+const createSquare = (layer: number, sourceOffsetX = 0): LayeredBoard => ({
+  polygon: createSquarePolygon(),
+  sourcePolygon: createSquarePolygon(sourceOffsetX),
   layer,
 });
 
@@ -27,6 +36,31 @@ const createVerticalFoldStep = (
   viewFront: true,
   ...overrides,
 });
+
+/** y=0の横の折り線の折り操作（半分折り後の破れ判定シナリオ用） */
+const createHorizontalFoldStep = (
+  overrides: Partial<FoldStep> = {}
+): FoldStep => ({
+  foldLine: {
+    start: new THREE.Vector3(-50, 0, 0),
+    end: new THREE.Vector3(50, 0, 0),
+  },
+  dragVertex: new THREE.Vector3(0, 50, 0),
+  foldCount: 1,
+  viewFront: true,
+  ...overrides,
+});
+
+/**
+ * x=0で半分に折った後の板群を作る
+ * （左半分の固定片レイヤー0の上に、右半分の片レイヤー1が重なり、
+ *   x=0の折り目でつながった状態）
+ */
+const createHalfFoldedBoards = (): LayeredBoard[] => {
+  const result = applyFoldStep([createSquare(0)], createVerticalFoldStep());
+  if (!result) throw new Error("半分折りが成立しませんでした");
+  return result.boards;
+};
 
 /** 頂点列に期待する座標が含まれるか判定する */
 const containsPoint = (board: Board, x: number, y: number): boolean =>
@@ -72,6 +106,28 @@ describe("applyFoldStep", () => {
     ).toBe(true);
   });
 
+  it("sourcePolygonは鏡映されず、分割された展開図の座標を保持する", () => {
+    const result = applyFoldStep([createSquare(0)], createVerticalFoldStep());
+
+    expect(result).not.toBeNull();
+    if (!result) return;
+
+    // 固定片の展開図は左半分のまま
+    const staticBoard = findBoardAtLayer(result.boards, 0);
+    expect(staticBoard).toBeDefined();
+    if (!staticBoard) return;
+    expect(containsPoint(staticBoard.sourcePolygon, -50, -50)).toBe(true);
+    expect(containsPoint(staticBoard.sourcePolygon, 0, 50)).toBe(true);
+
+    // 動く片の展開図は折る前の右半分のまま（鏡映されない）
+    const movingBoard = findBoardAtLayer(result.boards, 1);
+    expect(movingBoard).toBeDefined();
+    if (!movingBoard) return;
+    expect(containsPoint(movingBoard.sourcePolygon, 50, 50)).toBe(true);
+    expect(containsPoint(movingBoard.sourcePolygon, 0, 50)).toBe(true);
+    expect(containsPoint(movingBoard.sourcePolygon, -50, 50)).toBe(false);
+  });
+
   it("アニメーション用に回転前の動く片と動かない板を返す", () => {
     const result = applyFoldStep([createSquare(0)], createVerticalFoldStep());
 
@@ -91,13 +147,15 @@ describe("applyFoldStep", () => {
   it("重なった2枚をまとめて折ると、動く片の重なり順が逆転して上に積まれる", () => {
     // 下: 一辺100の正方形（レイヤー0）、上: 右上4分の1の板（レイヤー1）
     // どちらも(50, 50)に頂点を持ち、x=25の折り線で両方折る
+    const quarterPolygon: Board = [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(50, 0, 0),
+      new THREE.Vector3(50, 50, 0),
+      new THREE.Vector3(0, 50, 0),
+    ];
     const quarter: LayeredBoard = {
-      polygon: [
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(50, 0, 0),
-        new THREE.Vector3(50, 50, 0),
-        new THREE.Vector3(0, 50, 0),
-      ],
+      polygon: quarterPolygon,
+      sourcePolygon: quarterPolygon.map((vertex) => vertex.clone()),
       layer: 1,
     };
     const step = createVerticalFoldStep({
@@ -130,7 +188,8 @@ describe("applyFoldStep", () => {
   });
 
   it("重なった2枚のうち1枚だけ折ると、表側の板だけが折られる", () => {
-    const boards = [createSquare(0), createSquare(1)];
+    // 展開図上でつながっていない2枚（独立した板）を重ねた状態
+    const boards = [createSquare(0), createSquare(1, 200)];
     const result = applyFoldStep(boards, createVerticalFoldStep());
 
     expect(result).not.toBeNull();
@@ -151,7 +210,7 @@ describe("applyFoldStep", () => {
   });
 
   it("裏側から見て折ると、裏側の板が折られて動く片は下に積まれる", () => {
-    const boards = [createSquare(0), createSquare(1)];
+    const boards = [createSquare(0), createSquare(1, 200)];
     const result = applyFoldStep(
       boards,
       createVerticalFoldStep({ viewFront: false })
@@ -168,6 +227,107 @@ describe("applyFoldStep", () => {
     expect(untouched).toBeDefined();
     if (!untouched) return;
     expect(untouched.polygon).toHaveLength(4);
+  });
+
+  describe("破れ判定（展開図の折り目でつながった板）", () => {
+    it("折り目上の頂点から1枚だけ折ろうとするとnullを返す（紙が破れる折り）", () => {
+      const boards = createHalfFoldedBoards();
+
+      // 折り目(x=0)上の頂点(0, 50)をドラッグしてy=0で1枚折り
+      // → 動く片が折り目の一部を置き去りにするので破れる
+      expect(
+        applyFoldStep(boards, createHorizontalFoldStep({ foldCount: 1 }))
+      ).toBeNull();
+
+      // つながっている2枚をまとめて折れば成立する
+      const result = applyFoldStep(
+        boards,
+        createHorizontalFoldStep({ foldCount: 2 })
+      );
+      expect(result).not.toBeNull();
+      expect(result?.boards).toHaveLength(4);
+    });
+
+    it("折り目上でない頂点からでも、折り線が折り目を横切る1枚折りはnullを返す", () => {
+      const boards = createHalfFoldedBoards();
+
+      // 開いた側の角(-50, 50)をドラッグ。y=0の折り線は折り目(x=0)を横切るため
+      // 1枚だけ折ると折り目の上半分が破れる
+      const step = createHorizontalFoldStep({
+        dragVertex: new THREE.Vector3(-50, 50, 0),
+        foldCount: 1,
+      });
+      expect(applyFoldStep(boards, step)).toBeNull();
+
+      // 2枚まとめて折れば成立する
+      const result = applyFoldStep(
+        boards,
+        createHorizontalFoldStep({
+          dragVertex: new THREE.Vector3(-50, 50, 0),
+          foldCount: 2,
+        })
+      );
+      expect(result).not.toBeNull();
+      expect(result?.boards).toHaveLength(4);
+    });
+
+    it("折り目に届かない折りなら1枚だけでも折れる（フラップの角折り）", () => {
+      const boards = createHalfFoldedBoards();
+
+      // 開いた側の角(-50, 50)を、折り目(x=0)に届かない折り線で折る
+      const step = createHorizontalFoldStep({
+        foldLine: {
+          start: new THREE.Vector3(-50, 10, 0),
+          end: new THREE.Vector3(-10, 50, 0),
+        },
+        dragVertex: new THREE.Vector3(-50, 50, 0),
+        foldCount: 1,
+      });
+
+      const result = applyFoldStep(boards, step);
+
+      expect(result).not.toBeNull();
+      expect(result?.boards).toHaveLength(3);
+    });
+
+    it("観音折りは折り畳み空間で接していても展開図でつながっていないので成立する", () => {
+      // 左端を中心へ折る（フラップは x: -25〜0 に着地）
+      const firstStep = createVerticalFoldStep({
+        foldLine: {
+          start: new THREE.Vector3(-25, -50, 0),
+          end: new THREE.Vector3(-25, 50, 0),
+        },
+        dragVertex: new THREE.Vector3(-50, 50, 0),
+      });
+      const first = applyFoldStep([createSquare(0)], firstStep);
+      expect(first).not.toBeNull();
+      if (!first) return;
+
+      // 右端を中心へ折る（フラップは x: 0〜25 に着地し、左のフラップと
+      // x=0で接するがつながってはいない）
+      const secondStep = createVerticalFoldStep({
+        foldLine: {
+          start: new THREE.Vector3(25, -50, 0),
+          end: new THREE.Vector3(25, 50, 0),
+        },
+        dragVertex: new THREE.Vector3(50, 50, 0),
+      });
+      const second = applyFoldStep(first.boards, secondStep);
+
+      expect(second).not.toBeNull();
+      if (!second) return;
+
+      expect(second.boards).toHaveLength(3);
+
+      // 左右のフラップの縁がどちらもx=0にあり、同じ位置で接している
+      const leftFlap = findBoardAtLayer(second.boards, 1);
+      const rightFlap = findBoardAtLayer(second.boards, 2);
+      expect(leftFlap).toBeDefined();
+      expect(rightFlap).toBeDefined();
+      if (!leftFlap || !rightFlap) return;
+      expect(containsPoint(leftFlap.polygon, 0, 50)).toBe(true);
+      expect(containsPoint(rightFlap.polygon, 0, 50)).toBe(true);
+    });
   });
 
   it("折り線が対象の板を横切らない場合はnullを返す", () => {

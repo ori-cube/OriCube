@@ -10,14 +10,15 @@ const createFoldStep = (
   endX: number,
   endY: number,
   dragX: number,
-  dragY: number
+  dragY: number,
+  foldCount = 1
 ): FoldStep => ({
   foldLine: {
     start: new THREE.Vector3(startX, startY, 0),
     end: new THREE.Vector3(endX, endY, 0),
   },
   dragVertex: new THREE.Vector3(dragX, dragY, 0),
-  foldCount: 1,
+  foldCount,
   viewFront: true,
 });
 
@@ -46,20 +47,21 @@ describe("replayFoldSteps", () => {
     expect(result.map((board) => board.layer).sort()).toEqual([0, 1]);
   });
 
-  it("2回折ると履歴の順に適用されて3枚の板になる", () => {
-    // 1回目: x=0で半分に折る → 2回目: 上の板（レイヤー1）をy=0で折る
+  it("2回折ると履歴の順に適用されて4枚の板になる", () => {
+    // 1回目: x=0で半分に折る → 2回目: つながった2枚をy=0でまとめて折る
+    // （2枚はx=0の折り目でつながっているため、1枚だけでは折れない）
     const steps = [
       createFoldStep(0, -50, 0, 50, 50, 50),
-      createFoldStep(-50, 0, 50, 0, -50, 50),
+      createFoldStep(-50, 0, 50, 0, -50, 50, 2),
     ];
 
     const result = replayFoldSteps(createSquareBoard(100), steps);
 
-    expect(result).toHaveLength(3);
+    expect(result).toHaveLength(4);
 
-    // 2回目の折りで動いた片は一番上（レイヤー2）に積まれ、
+    // 2回目の折りで動いた片のうち下の紙の片が一番上（レイヤー3）に積まれ、
     // (-50, 50)の頂点はy=0で鏡映されて(-50, -50)へ移る
-    const topBoard = result.find((board) => board.layer === 2);
+    const topBoard = result.find((board) => board.layer === 3);
     expect(topBoard).toBeDefined();
     if (!topBoard) return;
     expect(containsPoint(topBoard.polygon, -50, -50)).toBe(true);
