@@ -1,17 +1,12 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { FoldLineState, FoldPhase } from "../../index";
-import { MovingAndStaticBoards } from "../../utils/selectMovingBoard";
+import { FoldPhase, PendingFold } from "../../index";
 import { determineFoldRotation } from "../../utils/determineFoldRotation";
-import { rotateBoard } from "../../utils/rotateBoard";
 import { disposeObject3D } from "../../utils/disposeObject3D";
 
 /** 折りアニメーションの所要時間（ミリ秒） */
 const FOLD_DURATION_MS = 800;
-
-/** 折り上がった板を浮かせるZオフセット（z-fighting回避） */
-const FOLDED_Z_OFFSET = 0.05;
 
 /**
  * アニメーションの進行度（0〜1）を「ゆっくり始まり、中盤で加速し、
@@ -29,10 +24,8 @@ type UseFoldAnimation = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   controlsRef: React.MutableRefObject<OrbitControls | null>;
   foldPhase: FoldPhase;
-  setFoldPhase: (phase: FoldPhase) => void;
-  foldLineState: FoldLineState | null;
-  foldBoards: MovingAndStaticBoards | null;
-  setFoldBoards: (boards: MovingAndStaticBoards | null) => void;
+  pendingFold: PendingFold | null;
+  completeFold: () => void;
 }) => void;
 
 /**
@@ -43,35 +36,30 @@ type UseFoldAnimation = (props: {
  * - ピボットGroup（board_moving_pivot）をrequestAnimationFrameで
  *   0→180度回転させる（easeInOutCubic、描画はuseInitSceneの
  *   アニメーションループが毎フレーム行う）
- * - 回転軸の向きはdetermineFoldRotationで決定し、板は常に+Z側
+ * - 回転軸の向きはdetermineFoldRotationで決定し、動く片は常に+Z側
  *   （カメラ側）を通って折り返される
  * - アニメーション中はOrbitControlsを無効化する
  * - 完了時の処理:
  *   - 折り線シリンダーを削除
- *   - 折り上がった板を+Zへわずかにオフセット（z-fighting回避）
- *   - rotateBoardで最終頂点座標を板データへ反映（多重折りへの布石）
- *   - foldPhaseをfoldedへ遷移
+ *   - completeFoldを呼び、折り操作を履歴へ確定する
+ *     （折り後の板の描画は、履歴のリプレイ結果を使うuseRenderBoardsが行う）
  *
  * @param props.sceneRef - THREE.Sceneのref
  * @param props.controlsRef - OrbitControlsのref
  * @param props.foldPhase - 折り操作のフェーズ
- * @param props.setFoldPhase - フェーズを遷移させる関数
- * @param props.foldLineState - 確定した折り線の状態
- * @param props.foldBoards - 分割された板（完了時にbake結果で更新）
- * @param props.setFoldBoards - 分割された板を更新する関数
+ * @param props.pendingFold - アニメーション完了を待っている折り操作
+ * @param props.completeFold - 折り操作を履歴へ確定してidleへ戻す関数
  */
 export const useFoldAnimation: UseFoldAnimation = ({
   sceneRef,
   controlsRef,
   foldPhase,
-  setFoldPhase,
-  foldLineState,
-  foldBoards,
-  setFoldBoards,
+  pendingFold,
+  completeFold,
 }) => {
   useEffect(() => {
     if (foldPhase !== "folding") return;
-    if (!foldLineState || !foldBoards) return;
+    if (!pendingFold) return;
 
     const scene = sceneRef.current;
     if (!scene) return;
@@ -79,12 +67,15 @@ export const useFoldAnimation: UseFoldAnimation = ({
     const pivotGroup = scene.getObjectByName("board_moving_pivot");
     if (!pivotGroup) return;
 
-    const foldLine = { start: foldLineState.start, end: foldLineState.end };
-    const axis = determineFoldRotation(foldLine, foldBoards.movingBoard);
+    // 全ての動く片は折り線の同じ側にあるため、頂点をまとめて回転の向きを決める
+    const movingVertices = pendingFold.movingBoards.flatMap(
+      (board) => board.polygon
+    );
+    const axis = determineFoldRotation(pendingFold.step.foldLine, movingVertices);
 
-    // 軸を決定できない場合は回転せずに折りを終了する（通常は起こり得ない）
+    // 軸を決定できない場合は回転せずに折りを確定する（通常は起こり得ない）
     if (!axis) {
-      setFoldPhase("folded");
+      completeFold();
       return;
     }
 
@@ -99,25 +90,8 @@ export const useFoldAnimation: UseFoldAnimation = ({
         disposeObject3D(foldLineObject);
       }
 
-      // 完全に重なるとz-fightingが起きるため、折り上がった板をわずかに浮かせる
-      pivotGroup.position.z += FOLDED_Z_OFFSET;
-
-      // 最終的な頂点座標を板データへ反映する
-      const bakedMovingBoard = rotateBoard(
-        foldBoards.movingBoard,
-        foldLine.start,
-        axis,
-        Math.PI
-      ).map((vertex) =>
-        new THREE.Vector3(vertex.x, vertex.y, vertex.z + FOLDED_Z_OFFSET)
-      );
-      setFoldBoards({
-        movingBoard: bakedMovingBoard,
-        staticBoard: foldBoards.staticBoard,
-      });
-
       if (controls) controls.enabled = true;
-      setFoldPhase("folded");
+      completeFold();
     };
 
     let animationFrameId = 0;
@@ -143,13 +117,5 @@ export const useFoldAnimation: UseFoldAnimation = ({
       cancelAnimationFrame(animationFrameId);
       if (controls) controls.enabled = true;
     };
-  }, [
-    sceneRef,
-    controlsRef,
-    foldPhase,
-    setFoldPhase,
-    foldLineState,
-    foldBoards,
-    setFoldBoards,
-  ]);
+  }, [sceneRef, controlsRef, foldPhase, pendingFold, completeFold]);
 };

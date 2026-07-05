@@ -17,7 +17,8 @@ const EPSILON = 1e-6;
  * - 各板の辺と直線の交点、および直線上にある頂点を集め、
  *   直線方向のパラメータが最小・最大の2点をスパンとして返す
  * - 板群が複数の場合はすべての板を覆う1本の区間になる
- * - 正方形前提だった calculateFoldLineIntersections の一般化
+ * - 初期の正方形専用だった旧実装（calculateFoldLineIntersections）を
+ *   任意の板群へ一般化して置き換えたもの
  */
 export const calculateFoldLineSpan = (
   midpoint: THREE.Vector3,

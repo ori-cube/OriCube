@@ -9,6 +9,8 @@ interface Props {
   color?: string;
   size?: ButtonSizeProp;
   disable: boolean;
+  /** アイコンのみのボタンをスクリーンリーダーへ説明するラベル */
+  ariaLabel?: string;
 }
 
 export const IconButton: React.FC<Props> = ({
@@ -16,12 +18,14 @@ export const IconButton: React.FC<Props> = ({
   color = "#000",
   Icon,
   disable = false,
+  ariaLabel,
 }) => {
   return (
     <button
       onClick={handleClick}
       className={disable ? `${styles.button_disable}` : `${styles.button}`}
       disabled={disable}
+      aria-label={ariaLabel}
     >
       <Icon size={28} color={disable ? "#aaa" : color} />
     </button>

@@ -1,0 +1,31 @@
+import { Board, FoldStep, LayeredBoard } from "../../types";
+import { applyFoldStep } from "../applyFoldStep";
+
+/**
+ * 初期状態の板に折り手順を順に適用して、現在の板群を再現する
+ *
+ * @param initialBoard - 初期状態の板（折る前の正方形）
+ * @param steps - 折り手順の履歴
+ * @returns 履歴をすべて適用した後の板群
+ *
+ * @description
+ * - 折り手順の履歴が唯一の状態源であり、板の形状は常にこの関数で導出する
+ * - 常に初期状態から再計算するため、Undo/Redoを繰り返しても
+ *   浮動小数の誤差が蓄積しない
+ * - 適用できないステップがあった場合はそこで打ち切る
+ *   （履歴には適用可能と検証済みのステップだけが積まれるため、防御的処理）
+ */
+export const replayFoldSteps = (
+  initialBoard: Board,
+  steps: FoldStep[]
+): LayeredBoard[] => {
+  let boards: LayeredBoard[] = [{ polygon: initialBoard, layer: 0 }];
+
+  for (const step of steps) {
+    const result = applyFoldStep(boards, step);
+    if (!result) return boards;
+    boards = result.boards;
+  }
+
+  return boards;
+};

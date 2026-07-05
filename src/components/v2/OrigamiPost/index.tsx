@@ -1,33 +1,59 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { useInitScene, useDragDrop, useFoldAnimation } from "./hooks";
-import { MovingAndStaticBoards } from "./utils/selectMovingBoard";
+import { FoldStep, LayeredBoard } from "./types";
+import { createSquareBoard } from "./utils/createSquareBoard";
+import { replayFoldSteps } from "./utils/replayFoldSteps";
+import {
+  FoldHistory,
+  EMPTY_FOLD_HISTORY,
+  appliedFoldSteps,
+  pushFoldStep,
+  undoFoldStep,
+  redoFoldStep,
+  canUndo,
+  canRedo,
+} from "./utils/foldHistory";
+import { FoldCountSelector } from "./FoldCountSelector";
+import { Toolbar } from "./Toolbar";
 import styles from "./index.module.scss";
 
 /**
  * 折り操作のフェーズ
  *
  * - idle: 折り線の入力待ち（ドラッグ&ドロップ可能）
+ * - selecting: 折る枚数の選択待ち（ドラッグ&ドロップ不可）
  * - folding: 折りアニメーション中（ドラッグ&ドロップ不可）
- * - folded: 折り完了（ドラッグ&ドロップ不可）
  */
-export type FoldPhase = "idle" | "folding" | "folded";
+export type FoldPhase = "idle" | "selecting" | "folding";
 
 /**
- * 折り線の状態
+ * 折る枚数の選択を待っている折り操作
  */
-export interface FoldLineState {
+export interface FoldProposal {
   /** 折り線が通る中点 */
   midpoint: THREE.Vector3;
   /** 折り線の方向ベクトル */
   direction: THREE.Vector3;
-  /** 折り線の始点（折り紙境界との交点） */
-  start: THREE.Vector3;
-  /** 折り線の終点（折り紙境界との交点） */
-  end: THREE.Vector3;
+  /** ドラッグした頂点の元位置 */
+  dragVertex: THREE.Vector3;
+  /** 選択できる（折りが成立する）枚数の一覧 */
+  validCounts: number[];
+  /** 折る枚数の上限（頂点を共有する板の数） */
+  maxFoldCount: number;
+}
+
+/**
+ * アニメーション完了を待っている折り操作
+ */
+export interface PendingFold {
+  /** 適用する折り操作（アニメーション完了時に履歴へ積む） */
+  step: FoldStep;
+  /** 回転前の動く片（回転軸の決定に使用） */
+  movingBoards: LayeredBoard[];
 }
 
 export interface OrigamiPostV2Props {
@@ -48,13 +74,14 @@ export interface OrigamiPostV2Props {
  *
  * @description
  * - Three.jsで3D折り紙を描画
- * - 折り紙の頂点をドラッグして移動可能
+ * - 折り紙の頂点をドラッグ&ドロップして繰り返し折ることができる
+ * - 折り手順の履歴（FoldStep列）が唯一の状態源で、現在の板の形状は
+ *   リプレイ（replayFoldSteps）で導出する
  * - カメラの回転・ズーム機能
- * - レスポンシブ対応
  *
  * @param props.origamiColor - 折り紙の色（デフォルト: "#4A90E2"）
  * @param props.size - 折り紙のサイズ（デフォルト: 100）
- * @param props.cameraPosition - カメラの初期位置（デフォルト: {x: 0, y: 150, z: 0}）
+ * @param props.cameraPosition - カメラの初期位置（デフォルト: {x: 0, y: 0, z: 150}）
  * @param props.width - カンバスの幅（デフォルト: window.innerWidth - 320）
  * @param props.height - カンバスの高さ（デフォルト: window.innerHeight）
  */
@@ -75,20 +102,46 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   // 折り操作のフェーズ（idle以外ではドラッグ&ドロップを無効化）
   const [foldPhase, setFoldPhase] = useState<FoldPhase>("idle");
 
-  // 折り線の状態
-  const [foldLineState, setFoldLineState] = useState<FoldLineState | null>(
-    null
-  );
+  // 折り手順の履歴（唯一の状態源。Undo/Redoは適用済みステップ数の操作）
+  const [foldHistory, setFoldHistory] =
+    useState<FoldHistory>(EMPTY_FOLD_HISTORY);
 
-  // 分割された板（動く板と固定される板）
-  const [foldBoards, setFoldBoards] = useState<MovingAndStaticBoards | null>(
-    null
-  );
+  // 折る枚数の選択を待っている折り操作
+  const [foldProposal, setFoldProposal] = useState<FoldProposal | null>(null);
+
+  // アニメーション完了を待っている折り操作
+  const [pendingFold, setPendingFold] = useState<PendingFold | null>(null);
 
   // ドラッグ開始時の元の位置
   const [originalPoint, setOriginalPoint] = useState<THREE.Vector3 | null>(
     null
   );
+
+  // 現在の板群（適用済みの折り手順のリプレイで導出する）
+  const initialBoard = useMemo(() => createSquareBoard(size), [size]);
+  const currentBoards = useMemo(
+    () => replayFoldSteps(initialBoard, appliedFoldSteps(foldHistory)),
+    [initialBoard, foldHistory]
+  );
+
+  // 折りアニメーション完了時: 折り操作を履歴へ確定し、次の折りの入力待ちへ戻る
+  const completeFold = useCallback(() => {
+    if (!pendingFold) return;
+    setFoldHistory((prev) => pushFoldStep(prev, pendingFold.step));
+    setPendingFold(null);
+    setFoldPhase("idle");
+  }, [pendingFold]);
+
+  // Undo / Redo（折りの入力待ち中のみ受け付ける）
+  const handleUndo = useCallback(() => {
+    if (foldPhase !== "idle") return;
+    setFoldHistory(undoFoldStep);
+  }, [foldPhase]);
+
+  const handleRedo = useCallback(() => {
+    if (foldPhase !== "idle") return;
+    setFoldHistory(redoFoldStep);
+  }, [foldPhase]);
 
   // シーンの初期化
   useInitScene({
@@ -103,21 +156,22 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     cameraPosition,
   });
 
-  // ドラッグ&ドロップ機能
-  useDragDrop({
+  // ドラッグ&ドロップ機能（板の描画とスナップポイントの管理を含む）
+  const { confirmFold, cancelFold } = useDragDrop({
     canvasRef,
     sceneRef,
     cameraRef,
     rendererRef,
     raycasterRef,
     origamiColor,
-    size,
+    currentBoards,
     originalPoint,
     setOriginalPoint,
-    setFoldLineState,
     foldPhase,
     setFoldPhase,
-    setFoldBoards,
+    foldProposal,
+    setFoldProposal,
+    setPendingFold,
   });
 
   // 折り線を軸とした180度折りアニメーション
@@ -125,18 +179,32 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     sceneRef,
     controlsRef,
     foldPhase,
-    setFoldPhase,
-    foldLineState,
-    foldBoards,
-    setFoldBoards,
+    pendingFold,
+    completeFold,
   });
 
   return (
-    <canvas
-      ref={canvasRef}
-      id="origami-canvas"
-      className={styles.canvas}
-      style={{ width, height }}
-    />
+    <div className={styles.container}>
+      <canvas
+        ref={canvasRef}
+        id="origami-canvas"
+        className={styles.canvas}
+        style={{ width, height }}
+      />
+      <Toolbar
+        canUndo={foldPhase === "idle" && canUndo(foldHistory)}
+        canRedo={foldPhase === "idle" && canRedo(foldHistory)}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+      />
+      {foldPhase === "selecting" && foldProposal && (
+        <FoldCountSelector
+          maxFoldCount={foldProposal.maxFoldCount}
+          validCounts={foldProposal.validCounts}
+          onConfirm={confirmFold}
+          onCancel={cancelFold}
+        />
+      )}
+    </div>
   );
 };
