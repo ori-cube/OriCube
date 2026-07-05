@@ -2,10 +2,10 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase } from "../../index";
+import { Board } from "../../types";
 import { renderOrigamiBoard } from "./renderOrigamiBoard";
 import { renderSnapPoint } from "./renderPoint";
 import { disposeObject3D } from "../../utils/disposeObject3D";
-import { createSquareBoard } from "../../utils/createSquareBoard";
 
 type UseInitialRender = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
@@ -13,6 +13,7 @@ type UseInitialRender = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   origamiColor: string;
   size: number;
+  initialBoard: Board;
   draggedPoint: Point | null;
   foldPhase: FoldPhase;
 }) => void;
@@ -32,6 +33,7 @@ type UseInitialRender = (props: {
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.origamiColor - 折り紙の色
  * @param props.size - 折り紙のサイズ
+ * @param props.initialBoard - 折り紙の初期の板（スナップポイントの配置に使用）
  * @param props.draggedPoint - 現在ドラッグ中の点（描画から除外）
  * @param props.foldPhase - 折り操作のフェーズ（idle以外では描画しない）
  */
@@ -41,6 +43,7 @@ export const useInitialRender: UseInitialRender = ({
   cameraRef,
   origamiColor,
   size,
+  initialBoard,
   draggedPoint,
   foldPhase,
 }) => {
@@ -72,16 +75,17 @@ export const useInitialRender: UseInitialRender = ({
     });
 
     // スナップポイント（頂点）を描画（ドラッグ中の点は除外）
-    const vertices = generateVertices(size);
-    vertices.forEach((vertex, index) => {
+    initialBoard.forEach((vertex, index) => {
+      const point: Point = [vertex.x, vertex.y, vertex.z];
+
       // ドラッグ中の点は描画しない
-      if (draggedPoint && isSamePoint(vertex, draggedPoint)) {
+      if (draggedPoint && isSamePoint(point, draggedPoint)) {
         return;
       }
 
       renderSnapPoint({
         scene,
-        point: vertex,
+        point,
         name: `snapPoint_${index}`,
       });
     });
@@ -93,18 +97,11 @@ export const useInitialRender: UseInitialRender = ({
     cameraRef,
     origamiColor,
     size,
+    initialBoard,
     draggedPoint,
     foldPhase,
   ]);
 };
-
-// 正方形の頂点を生成（XY平面、Z=0）
-const generateVertices = (size: number): Point[] =>
-  createSquareBoard(size).map((vertex): Point => [
-    vertex.x,
-    vertex.y,
-    vertex.z,
-  ]);
 
 // 2つの点が同じかどうかを判定
 const isSamePoint = (point1: Point, point2: Point): boolean => {

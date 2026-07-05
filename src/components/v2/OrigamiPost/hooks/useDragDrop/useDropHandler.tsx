@@ -2,12 +2,11 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldLineState, FoldPhase } from "../../index";
-import { FoldLine } from "../../types";
+import { Board, FoldLine } from "../../types";
 import { calculateFoldLine } from "../../utils/calculateFoldLine";
 import { calculateFoldLineIntersections } from "../../utils/calculateFoldLineIntersections";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import { disposeObject3D } from "../../utils/disposeObject3D";
-import { createSquareBoard } from "../../utils/createSquareBoard";
 import { separateBoard } from "../../utils/separateBoard";
 import {
   selectMovingBoard,
@@ -20,6 +19,7 @@ type UseDropHandler = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
+  initialBoard: Board;
   draggedPoint: Point | null;
   setDraggedPoint: (point: Point | null) => void;
   setIsDragging: (isDragging: boolean) => void;
@@ -48,6 +48,7 @@ type UseDropHandler = (props: {
  * @param props.sceneRef - THREE.Sceneのref
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.rendererRef - THREE.WebGLRendererのref
+ * @param props.initialBoard - 折り紙の初期の板（分割の入力に使用）
  * @param props.draggedPoint - 現在ドラッグ中の点
  * @param props.setDraggedPoint - ドラッグ中の点を設定する関数
  * @param props.origamiColor - 折り紙の色（分割後の板の描画に使用）
@@ -60,6 +61,7 @@ export const useDropHandler: UseDropHandler = ({
   sceneRef,
   cameraRef,
   rendererRef,
+  initialBoard,
   draggedPoint,
   setDraggedPoint,
   setIsDragging,
@@ -106,16 +108,12 @@ export const useDropHandler: UseDropHandler = ({
         };
 
         // 板を折り線で2つに分割
-        const separated = separateBoard(
-          createSquareBoard(size),
-          foldLineSegment
-        );
+        const separated = separateBoard(initialBoard, foldLineSegment);
         if (!separated) return; // 分割できない折り線。再ドラッグを待つ
 
         // ドラッグした頂点を含む側を動く板として決定
         const boards = selectMovingBoard(
-          separated.leftBoard,
-          separated.rightBoard,
+          separated,
           originalPoint,
           foldLineSegment
         );
@@ -133,7 +131,7 @@ export const useDropHandler: UseDropHandler = ({
         visualizeFoldLine(scene, intersections.start, intersections.end);
 
         // 折り紙を分割された2枚の板に差し替え
-        replaceOrigamiWithBoards({
+        replaceSceneWithSeparatedBoards({
           scene,
           boards,
           pivotPoint: intersections.start,
@@ -194,7 +192,7 @@ export const useDropHandler: UseDropHandler = ({
 };
 
 /**
- * 折り紙（板とスナップポイント）を分割された2枚の板に差し替える
+ * シーン上の現在の折り紙を、分割された2枚の板に差し替える
  *
  * @param props.scene - Three.jsのシーン
  * @param props.boards - 分割された動く板と固定される板
@@ -203,13 +201,15 @@ export const useDropHandler: UseDropHandler = ({
  *
  * @description
  * - 既存の折り紙とスナップポイントを削除（リソースも破棄）
+ *   - TODO: 2手目以降に対応する際は、削除対象を初期折り紙（"origami"）ではなく
+ *     前回の折りで生成した板（"board_static" / "board_moving_pivot"）にする
  * - 固定される板は "board_static" としてシーンに直接追加
  * - 動く板は "board_moving" としてピボットGroup（"board_moving_pivot"）に入れる
  *   - Groupのpositionを折り線上の点に置き、板メッシュを逆オフセットすることで
  *     ワールド座標を維持したまま、Groupの回転＝折り線周りの回転になる
  * - 動く板はpolygonOffsetを有効にして、折り重なった際のz-fightingを防ぐ
  */
-const replaceOrigamiWithBoards = (props: {
+const replaceSceneWithSeparatedBoards = (props: {
   scene: THREE.Scene;
   boards: MovingAndStaticBoards;
   pivotPoint: THREE.Vector3;
