@@ -42,13 +42,15 @@ export const renderSnapPoint: RenderSnapPoint = ({
   scene.add(mesh);
 };
 
+// 色覚に頼らずドラッグ状態を区別できるよう、スナップポイントより大きく表示する
+const DRAGGED_POINT_SCALE = 1.5;
+
 /**
  * ドラッグ中の点をThree.jsシーンに描画する関数
  *
  * @description
  * - ドラッグ中の点を赤色（0xff0000）で表示
- * - スケールはスナップポイントと同じ（1）
- * - ドラッグ状態を視覚的に区別
+ * - スナップポイントより大きく表示し、色以外でもドラッグ状態を区別できるようにする
  *
  * @param props.scene - 描画対象のThree.jsシーン
  * @param props.point - 描画位置の座標 [x, y, z]
@@ -59,7 +61,7 @@ export const renderDraggedPoint: RenderSnapPoint = ({ scene, point, name }) => {
     scene,
     point,
     name,
-    color: 0xff0000, // 赤色でドラッグ中の点を表示
-    scale: 1,
+    color: 0xff0000,
+    scale: DRAGGED_POINT_SCALE,
   });
 };
