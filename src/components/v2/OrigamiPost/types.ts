@@ -18,3 +18,38 @@ export interface FoldLine {
   /** 折り線の終点 */
   end: THREE.Vector3;
 }
+
+/**
+ * レイヤー番号付きの板
+ *
+ * @description
+ * - polygonはXY平面上（z=0）で保持し、重なり順はlayerで表現する
+ * - 描画時に z = layer * オフセット で立体的に重ねる
+ * - layerは大きいほど表側（+Z側）。折るたびに再割り当てされるため
+ *   連番とは限らず、負の値も取り得る
+ */
+export interface LayeredBoard {
+  /** 板の多角形（XY平面上） */
+  polygon: Board;
+  /** 重なり順（大きいほど表側） */
+  layer: number;
+}
+
+/**
+ * 1回の折り操作（折り手順の履歴の1要素）
+ *
+ * @description
+ * 初期状態の正方形にFoldStepを順に適用（リプレイ）することで、
+ * 現在の板の形状を再現できる最小限の情報を持つ。
+ * この履歴がUndo/Redoと投稿データ化の基礎になる。
+ */
+export interface FoldStep {
+  /** 折り線（無限直線として扱う。start/endは表示用のスパン） */
+  foldLine: FoldLine;
+  /** ドラッグした頂点の元位置（折る板の特定と、動く側の判定に使用） */
+  dragVertex: THREE.Vector3;
+  /** 折る枚数（頂点を共有する板のうち、視点側から数えて何枚折るか） */
+  foldCount: number;
+  /** 折ったときに表側（+Z側）から見ていたか */
+  viewFront: boolean;
+}
