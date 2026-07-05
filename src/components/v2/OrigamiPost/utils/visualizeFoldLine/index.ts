@@ -22,12 +22,7 @@ export const visualizeFoldLine = (
   color: string = "#ff0000",
   radius: number = 0.5
 ): void => {
-  // 既存の折り線を削除
-  const existingFoldLine = scene.getObjectByName("foldLine");
-  if (existingFoldLine) {
-    scene.remove(existingFoldLine);
-    disposeObject3D(existingFoldLine);
-  }
+  removeFoldLine(scene);
 
   // 2点間の距離を計算
   const distance = start.distanceTo(end);
@@ -57,4 +52,15 @@ export const visualizeFoldLine = (
   // 名前を設定してシーンに追加
   cylinder.name = "foldLine";
   scene.add(cylinder);
+};
+
+/**
+ * シーン上の折り線（foldLine）を削除する（リソースも破棄）
+ */
+export const removeFoldLine = (scene: THREE.Scene): void => {
+  const existingFoldLine = scene.getObjectByName("foldLine");
+  if (existingFoldLine) {
+    scene.remove(existingFoldLine);
+    disposeObject3D(existingFoldLine);
+  }
 };

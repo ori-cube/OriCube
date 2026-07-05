@@ -7,15 +7,33 @@ import { useInitScene, useDragDrop, useFoldAnimation } from "./hooks";
 import { FoldStep, LayeredBoard } from "./types";
 import { createSquareBoard } from "./utils/createSquareBoard";
 import { replayFoldSteps } from "./utils/replayFoldSteps";
+import { FoldCountSelector } from "./FoldCountSelector";
 import styles from "./index.module.scss";
 
 /**
  * 折り操作のフェーズ
  *
  * - idle: 折り線の入力待ち（ドラッグ&ドロップ可能）
+ * - selecting: 折る枚数の選択待ち（ドラッグ&ドロップ不可）
  * - folding: 折りアニメーション中（ドラッグ&ドロップ不可）
  */
-export type FoldPhase = "idle" | "folding";
+export type FoldPhase = "idle" | "selecting" | "folding";
+
+/**
+ * 折る枚数の選択を待っている折り操作
+ */
+export interface FoldProposal {
+  /** 折り線が通る中点 */
+  midpoint: THREE.Vector3;
+  /** 折り線の方向ベクトル */
+  direction: THREE.Vector3;
+  /** ドラッグした頂点の元位置 */
+  dragVertex: THREE.Vector3;
+  /** 選択できる（折りが成立する）枚数の一覧 */
+  validCounts: number[];
+  /** 折る枚数の上限（頂点を共有する板の数） */
+  maxFoldCount: number;
+}
 
 /**
  * アニメーション完了を待っている折り操作
@@ -76,6 +94,9 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   // 折り手順の履歴（唯一の状態源）
   const [history, setHistory] = useState<FoldStep[]>([]);
 
+  // 折る枚数の選択を待っている折り操作
+  const [foldProposal, setFoldProposal] = useState<FoldProposal | null>(null);
+
   // アニメーション完了を待っている折り操作
   const [pendingFold, setPendingFold] = useState<PendingFold | null>(null);
 
@@ -113,7 +134,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   });
 
   // ドラッグ&ドロップ機能（板の描画とスナップポイントの管理を含む）
-  useDragDrop({
+  const { confirmFold, cancelFold } = useDragDrop({
     canvasRef,
     sceneRef,
     cameraRef,
@@ -125,6 +146,8 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     setOriginalPoint,
     foldPhase,
     setFoldPhase,
+    foldProposal,
+    setFoldProposal,
     setPendingFold,
   });
 
@@ -138,11 +161,21 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   });
 
   return (
-    <canvas
-      ref={canvasRef}
-      id="origami-canvas"
-      className={styles.canvas}
-      style={{ width, height }}
-    />
+    <div className={styles.container}>
+      <canvas
+        ref={canvasRef}
+        id="origami-canvas"
+        className={styles.canvas}
+        style={{ width, height }}
+      />
+      {foldPhase === "selecting" && foldProposal && (
+        <FoldCountSelector
+          maxFoldCount={foldProposal.maxFoldCount}
+          validCounts={foldProposal.validCounts}
+          onConfirm={confirmFold}
+          onCancel={cancelFold}
+        />
+      )}
+    </div>
   );
 };

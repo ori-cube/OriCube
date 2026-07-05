@@ -12,7 +12,10 @@ vi.mock("./hooks/useInitScene", () => ({
 }));
 
 vi.mock("./hooks/useDragDrop", () => ({
-  useDragDrop: vi.fn(() => {}),
+  useDragDrop: vi.fn(() => ({
+    confirmFold: vi.fn(),
+    cancelFold: vi.fn(),
+  })),
 }));
 
 describe("OrigamiPostV2", () => {
