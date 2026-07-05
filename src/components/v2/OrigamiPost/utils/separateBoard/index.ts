@@ -2,16 +2,6 @@ import * as THREE from "three";
 import { Board, FoldLine } from "../../types";
 import { isPointLeftOfLine } from "../isPointLeftOfLine";
 
-/**
- * 折り線で分割された2つの板
- */
-export interface SeparatedBoards {
-  /** 折り線の左側の板（有向折り線start→endに対して左） */
-  leftBoard: Board;
-  /** 折り線の右側の板 */
-  rightBoard: Board;
-}
-
 /** 面積がこの値未満の板は退化しているとみなす */
 const MIN_AREA = 1e-6;
 
@@ -20,23 +10,22 @@ const MIN_AREA = 1e-6;
  *
  * @param board - 分割対象の板（順序付き頂点列、XY平面上）
  * @param foldLine - 折り線（無限直線として扱う）
- * @returns 左右の板。分割できない場合（折り線が板を横切らない、
- *          折り線が辺と一致する等）はnull
+ * @returns 分割された2つの板（順序に意味はない）。分割できない場合
+ *          （折り線が板を横切らない、折り線が辺と一致する等）はnull
  *
  * @description
- * エッジウォーク方式（Sutherland–Hodgmanクリッピングの応用）:
- * 1. 各頂点を折り線の左/右/線上に分類
- * 2. 頂点列を順に走査し、左側の頂点はleftBoardへ、右側はrightBoardへ、
- *    線上の頂点は両方へ追加
- * 3. 辺が折り線を跨ぐ場合は交点を計算して両方へ追加
+ * 頂点列を一周しながら、次の規則で2つの板へ振り分ける:
+ * 1. 各頂点は、折り線のどちら側にあるかに応じて片方の板へ追加する
+ *    （折り線上にある頂点は両方の板へ追加する）
+ * 2. 辺が折り線を跨ぐ場合は交点を計算し、両方の板へ追加する
  *
- * 頂点の順序が自然に保たれるため、分割後のソートが不要。
+ * 元の頂点の並び順のまま振り分けるため、分割後のソートが不要。
  * 凸多角形の仮定も不要（旧実装のatan2ソート方式との違い）。
  */
 export const separateBoard = (
   board: Board,
   foldLine: FoldLine
-): SeparatedBoards | null => {
+): [Board, Board] | null => {
   if (board.length < 3) return null;
 
   // 折り線が退化している（始点と終点が同じ）場合は分割不可
@@ -46,6 +35,7 @@ export const separateBoard = (
     isPointLeftOfLine(vertex, foldLine.start, foldLine.end)
   );
 
+  // 振り分け先の2つの板（折り線のどちら側にあるかで分ける）
   const leftBoard: Board = [];
   const rightBoard: Board = [];
 
@@ -86,7 +76,7 @@ export const separateBoard = (
     return null;
   }
 
-  return { leftBoard, rightBoard };
+  return [leftBoard, rightBoard];
 };
 
 /**

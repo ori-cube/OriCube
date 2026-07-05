@@ -27,6 +27,13 @@ const containsPoint = (board: Board, x: number, y: number): boolean =>
     (vertex) => Math.abs(vertex.x - x) < 1e-6 && Math.abs(vertex.y - y) < 1e-6
   );
 
+/** 分割結果から指定の座標を含む板を取り出す（順序に依存しないため） */
+const findBoardContaining = (
+  boards: [Board, Board],
+  x: number,
+  y: number
+): Board | undefined => boards.find((board) => containsPoint(board, x, y));
+
 describe("separateBoard", () => {
   it("中央の縦の折り線で正方形を左右2つの長方形に分割する", () => {
     const board = createSquareBoard();
@@ -37,19 +44,23 @@ describe("separateBoard", () => {
     expect(result).not.toBeNull();
     if (!result) return;
 
-    // 左の板: x <= 0 の長方形
-    expect(result.leftBoard).toHaveLength(4);
-    expect(containsPoint(result.leftBoard, -50, -50)).toBe(true);
-    expect(containsPoint(result.leftBoard, 0, -50)).toBe(true);
-    expect(containsPoint(result.leftBoard, 0, 50)).toBe(true);
-    expect(containsPoint(result.leftBoard, -50, 50)).toBe(true);
+    // x <= 0 の長方形
+    const negativeXBoard = findBoardContaining(result, -50, -50);
+    expect(negativeXBoard).toBeDefined();
+    if (!negativeXBoard) return;
+    expect(negativeXBoard).toHaveLength(4);
+    expect(containsPoint(negativeXBoard, 0, -50)).toBe(true);
+    expect(containsPoint(negativeXBoard, 0, 50)).toBe(true);
+    expect(containsPoint(negativeXBoard, -50, 50)).toBe(true);
 
-    // 右の板: x >= 0 の長方形
-    expect(result.rightBoard).toHaveLength(4);
-    expect(containsPoint(result.rightBoard, 0, -50)).toBe(true);
-    expect(containsPoint(result.rightBoard, 50, -50)).toBe(true);
-    expect(containsPoint(result.rightBoard, 50, 50)).toBe(true);
-    expect(containsPoint(result.rightBoard, 0, 50)).toBe(true);
+    // x >= 0 の長方形
+    const positiveXBoard = findBoardContaining(result, 50, -50);
+    expect(positiveXBoard).toBeDefined();
+    if (!positiveXBoard) return;
+    expect(positiveXBoard).toHaveLength(4);
+    expect(containsPoint(positiveXBoard, 0, -50)).toBe(true);
+    expect(containsPoint(positiveXBoard, 50, 50)).toBe(true);
+    expect(containsPoint(positiveXBoard, 0, 50)).toBe(true);
   });
 
   it("対角線の折り線（頂点2つを通過）で2つの三角形に分割する", () => {
@@ -62,14 +73,18 @@ describe("separateBoard", () => {
     if (!result) return;
 
     // 線上の頂点(-50,-50)と(50,50)は両方の板に含まれる
-    expect(result.leftBoard).toHaveLength(3);
-    expect(result.rightBoard).toHaveLength(3);
-    expect(containsPoint(result.leftBoard, -50, -50)).toBe(true);
-    expect(containsPoint(result.leftBoard, 50, 50)).toBe(true);
-    expect(containsPoint(result.leftBoard, -50, 50)).toBe(true);
-    expect(containsPoint(result.rightBoard, -50, -50)).toBe(true);
-    expect(containsPoint(result.rightBoard, 50, 50)).toBe(true);
-    expect(containsPoint(result.rightBoard, 50, -50)).toBe(true);
+    result.forEach((separated) => {
+      expect(separated).toHaveLength(3);
+      expect(containsPoint(separated, -50, -50)).toBe(true);
+      expect(containsPoint(separated, 50, 50)).toBe(true);
+    });
+
+    // 対角線の両側の頂点はそれぞれ片方の板にのみ含まれる
+    const upperTriangle = findBoardContaining(result, -50, 50);
+    const lowerTriangle = findBoardContaining(result, 50, -50);
+    expect(upperTriangle).toBeDefined();
+    expect(lowerTriangle).toBeDefined();
+    expect(upperTriangle).not.toBe(lowerTriangle);
   });
 
   it("頂点1つを通過する折り線で三角形と四角形に分割する", () => {
@@ -82,9 +97,7 @@ describe("separateBoard", () => {
     expect(result).not.toBeNull();
     if (!result) return;
 
-    const [smaller, larger] = [result.leftBoard, result.rightBoard].sort(
-      (a, b) => a.length - b.length
-    );
+    const [smaller, larger] = [...result].sort((a, b) => a.length - b.length);
 
     // 下側: 三角形 (-50,-50), (50,-50), (50,0)
     expect(smaller).toHaveLength(3);
@@ -110,9 +123,7 @@ describe("separateBoard", () => {
     expect(result).not.toBeNull();
     if (!result) return;
 
-    const [smaller, larger] = [result.leftBoard, result.rightBoard].sort(
-      (a, b) => a.length - b.length
-    );
+    const [smaller, larger] = [...result].sort((a, b) => a.length - b.length);
 
     // 左下の角: 三角形 (-50,-50), (0,-50), (-50,0)
     expect(smaller).toHaveLength(3);
@@ -133,12 +144,14 @@ describe("separateBoard", () => {
     expect(result).not.toBeNull();
     if (!result) return;
 
-    // 左の板の頂点順: (-50,-50) → (0,-50) → (0,50) → (-50,50)
+    // x <= 0 の板の頂点順: (-50,-50) → (0,-50) → (0,50) → (-50,50)
     // 隣接する頂点同士は必ず辺を共有する（x座標かy座標が一致する長方形）
-    const left = result.leftBoard;
-    for (let i = 0; i < left.length; i++) {
-      const current = left[i];
-      const next = left[(i + 1) % left.length];
+    const negativeXBoard = findBoardContaining(result, -50, -50);
+    expect(negativeXBoard).toBeDefined();
+    if (!negativeXBoard) return;
+    for (let i = 0; i < negativeXBoard.length; i++) {
+      const current = negativeXBoard[i];
+      const next = negativeXBoard[(i + 1) % negativeXBoard.length];
       const sharesEdge =
         Math.abs(current.x - next.x) < 1e-6 ||
         Math.abs(current.y - next.y) < 1e-6;
@@ -200,9 +213,7 @@ describe("separateBoard", () => {
     expect(result).not.toBeNull();
     if (!result) return;
 
-    const [smaller, larger] = [result.leftBoard, result.rightBoard].sort(
-      (a, b) => a.length - b.length
-    );
+    const [smaller, larger] = [...result].sort((a, b) => a.length - b.length);
     expect(smaller).toHaveLength(3);
     expect(larger).toHaveLength(4);
     // 斜辺 y = -x と x = 0 の交点 (0, 0)
