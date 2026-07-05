@@ -177,6 +177,7 @@ export const useDropHandler: UseDropHandler = ({
     sceneRef,
     cameraRef,
     rendererRef,
+    initialBoard,
     draggedPoint,
     setDraggedPoint,
     setIsDragging,
