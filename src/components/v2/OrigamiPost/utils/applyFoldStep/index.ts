@@ -45,9 +45,7 @@ export const applyFoldStep = (
   if (boards.length === 0) return null;
 
   // 候補板を視点側（手前）から順に並べ、先頭foldCount枚を対象にする
-  const candidates = boards
-    .filter((board) => hasVertexAt(board.polygon, dragVertex))
-    .sort((a, b) => (viewFront ? b.layer - a.layer : a.layer - b.layer));
+  const candidates = findFoldCandidates(boards, dragVertex, viewFront);
 
   if (foldCount < 1 || foldCount > candidates.length) return null;
 
@@ -125,6 +123,23 @@ export const applyFoldStep = (
 
   return { boards: resultBoards, movingBoards, staticBoards };
 };
+
+/**
+ * 折りの候補板（指定位置に頂点を持つ板）を視点側から順に返す
+ *
+ * @param boards - 現在の板の一覧
+ * @param dragVertex - ドラッグした頂点の元位置
+ * @param viewFront - 表側（+Z側）から見ているか
+ * @returns 視点に近い順（表ならlayer降順）に並べた候補板
+ */
+export const findFoldCandidates = (
+  boards: LayeredBoard[],
+  dragVertex: THREE.Vector3,
+  viewFront: boolean
+): LayeredBoard[] =>
+  boards
+    .filter((board) => hasVertexAt(board.polygon, dragVertex))
+    .sort((a, b) => (viewFront ? b.layer - a.layer : a.layer - b.layer));
 
 /**
  * 板が指定位置（XY平面上）に頂点を持つか判定する

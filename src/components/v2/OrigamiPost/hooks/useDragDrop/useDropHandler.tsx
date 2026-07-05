@@ -1,44 +1,46 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
-import { FoldLineState, FoldPhase } from "../../index";
-import { Board, FoldLine } from "../../types";
+import { FoldPhase, PendingFold } from "../../index";
+import { FoldStep, LayeredBoard } from "../../types";
+import { BOARD_LAYER_OFFSET } from "../../constants";
 import { calculateFoldLine } from "../../utils/calculateFoldLine";
-import { calculateFoldLineIntersections } from "../../utils/calculateFoldLineIntersections";
+import { calculateFoldLineSpan } from "../../utils/calculateFoldLineSpan";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import { disposeObject3D } from "../../utils/disposeObject3D";
-import { separateBoard } from "../../utils/separateBoard";
 import {
-  selectMovingBoard,
-  MovingAndStaticBoards,
-} from "../../utils/selectMovingBoard";
+  applyFoldStep,
+  findFoldCandidates,
+  FoldStepResult,
+} from "../../utils/applyFoldStep";
 import { createBoardMesh } from "../../utils/createBoardMesh";
+import { removeBoardObjects } from "./removeBoardObjects";
 
 type UseDropHandler = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
-  initialBoard: Board;
+  currentBoards: LayeredBoard[];
   draggedPoint: Point | null;
   setDraggedPoint: (point: Point | null) => void;
   setIsDragging: (isDragging: boolean) => void;
   originalPoint: THREE.Vector3 | null;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
-  size: number;
   origamiColor: string;
-  setFoldLineState: (state: FoldLineState | null) => void;
   foldPhase: FoldPhase;
   setFoldPhase: (phase: FoldPhase) => void;
-  setFoldBoards: (boards: MovingAndStaticBoards | null) => void;
+  setPendingFold: (pending: PendingFold | null) => void;
 }) => void;
 
 /**
  * マウスドロップ処理を管理するカスタムフック
  *
  * @description
- * - マウスアップ時に折り線を計算し、板を2つに分割してシーンを差し替える
- * - 折りが成立する場合: 折り線を可視化し、折り紙を固定板と動く板に
+ * - マウスアップ時に折り線を計算し、折る対象の板を分割してシーンを差し替える
+ * - 折る対象はドラッグした頂点を持つ板のうち最前面の1枚
+ *   （候補が複数ある場合の枚数選択UIは後続PRで追加する）
+ * - 折りが成立する場合: 折り線を可視化し、板群を動かない板と動く片に
  *   差し替えてfoldingフェーズへ遷移
  * - 折りが成立しない場合（折り線が板を横切らない等）: 何もせずidleのまま
  *   再ドラッグを待つ
@@ -48,31 +50,29 @@ type UseDropHandler = (props: {
  * @param props.sceneRef - THREE.Sceneのref
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.rendererRef - THREE.WebGLRendererのref
- * @param props.initialBoard - 折り紙の初期の板（分割の入力に使用）
+ * @param props.currentBoards - 現在の板群（分割の入力に使用）
  * @param props.draggedPoint - 現在ドラッグ中の点
  * @param props.setDraggedPoint - ドラッグ中の点を設定する関数
  * @param props.origamiColor - 折り紙の色（分割後の板の描画に使用）
  * @param props.foldPhase - 折り操作のフェーズ（idle以外では処理しない）
  * @param props.setFoldPhase - フェーズを遷移させる関数
- * @param props.setFoldBoards - 分割された板を保存する関数
+ * @param props.setPendingFold - アニメーション待ちの折り操作を設定する関数
  */
 export const useDropHandler: UseDropHandler = ({
   canvasRef,
   sceneRef,
   cameraRef,
   rendererRef,
-  initialBoard,
+  currentBoards,
   draggedPoint,
   setDraggedPoint,
   setIsDragging,
   originalPoint,
   setOriginalPoint,
-  size,
   origamiColor,
-  setFoldLineState,
   foldPhase,
   setFoldPhase,
-  setFoldBoards,
+  setPendingFold,
 }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -92,57 +92,46 @@ export const useDropHandler: UseDropHandler = ({
       if (!originalPoint) return;
 
       // 折り線を計算（同一点の場合はnull。再ドラッグを待つ）
-      const foldLine = calculateFoldLine(originalPoint, droppedPoint);
-      if (!foldLine) return;
+      const foldLineInfo = calculateFoldLine(originalPoint, droppedPoint);
+      if (!foldLineInfo) return;
 
-      try {
-        // 折り紙境界との交点を計算
-        const intersections = calculateFoldLineIntersections(
-          foldLine.midpoint,
-          foldLine.direction,
-          size
-        );
-        const foldLineSegment: FoldLine = {
-          start: intersections.start,
-          end: intersections.end,
-        };
+      // 折る対象: ドラッグした頂点を持つ板のうち最前面の1枚
+      const candidates = findFoldCandidates(currentBoards, originalPoint, true);
+      if (candidates.length === 0) return;
+      const targets = candidates.slice(0, 1);
 
-        // 板を折り線で2つに分割
-        const separated = separateBoard(initialBoard, foldLineSegment);
-        if (!separated) return; // 分割できない折り線。再ドラッグを待つ
+      // 折り線が対象の板を横切る区間を計算（横切らない場合は再ドラッグを待つ）
+      const foldLineSpan = calculateFoldLineSpan(
+        foldLineInfo.midpoint,
+        foldLineInfo.direction,
+        targets.map((target) => target.polygon)
+      );
+      if (!foldLineSpan) return;
 
-        // ドラッグした頂点を含む側を動く板として決定
-        const boards = selectMovingBoard(
-          separated,
-          originalPoint,
-          foldLineSegment
-        );
-        if (!boards) return;
+      const step: FoldStep = {
+        foldLine: foldLineSpan,
+        dragVertex: new THREE.Vector3(originalPoint.x, originalPoint.y, 0),
+        foldCount: 1,
+        viewFront: true,
+      };
 
-        // 折り線情報を状態に保存
-        setFoldLineState({
-          midpoint: foldLine.midpoint,
-          direction: foldLine.direction,
-          start: intersections.start,
-          end: intersections.end,
-        });
+      // 折りを適用（分割できない折り線の場合はnull。再ドラッグを待つ）
+      const result = applyFoldStep(currentBoards, step);
+      if (!result) return;
 
-        // 折り線を可視化
-        visualizeFoldLine(scene, intersections.start, intersections.end);
+      // 折り線を可視化
+      visualizeFoldLine(scene, foldLineSpan.start, foldLineSpan.end);
 
-        // 折り紙を分割された2枚の板に差し替え
-        replaceSceneWithSeparatedBoards({
-          scene,
-          boards,
-          pivotPoint: intersections.start,
-          origamiColor,
-        });
+      // 板群を「動かない板」と「動く片」に差し替え
+      replaceSceneForFolding({
+        scene,
+        result,
+        pivotPoint: foldLineSpan.start,
+        origamiColor,
+      });
 
-        setFoldBoards(boards);
-        setFoldPhase("folding");
-      } catch (error) {
-        console.error("Invalid fold line:", error);
-      }
+      setPendingFold({ step, movingBoards: result.movingBoards });
+      setFoldPhase("folding");
     };
 
     const handleMouseUp = () => {
@@ -177,72 +166,72 @@ export const useDropHandler: UseDropHandler = ({
     sceneRef,
     cameraRef,
     rendererRef,
-    initialBoard,
+    currentBoards,
     draggedPoint,
     setDraggedPoint,
     setIsDragging,
     originalPoint,
     setOriginalPoint,
-    size,
     origamiColor,
-    setFoldLineState,
     foldPhase,
     setFoldPhase,
-    setFoldBoards,
+    setPendingFold,
   ]);
 };
 
 /**
- * シーン上の現在の折り紙を、分割された2枚の板に差し替える
+ * シーン上の板群を、折りアニメーション用の構成に差し替える
  *
  * @param props.scene - Three.jsのシーン
- * @param props.boards - 分割された動く板と固定される板
+ * @param props.result - 折り操作の適用結果
  * @param props.pivotPoint - 回転の基準点（折り線上の点）
  * @param props.origamiColor - 板の色
  *
  * @description
- * - 既存の折り紙とスナップポイントを削除（リソースも破棄）
- *   - TODO: 2手目以降に対応する際は、削除対象を初期折り紙（"origami"）ではなく
- *     前回の折りで生成した板（"board_static" / "board_moving_pivot"）にする
- * - 固定される板は "board_static" としてシーンに直接追加
- * - 動く板は "board_moving" としてピボットGroup（"board_moving_pivot"）に入れる
+ * - 既存の板とスナップポイントを削除（リソースも破棄）
+ * - 動かない板（対象板の固定片 + 折り対象外の板）は "board_static_*" として
+ *   シーンに直接追加
+ * - 動く片は "board_moving_*" としてピボットGroup（"board_moving_pivot"）に
+ *   入れる
  *   - Groupのpositionを折り線上の点に置き、板メッシュを逆オフセットすることで
  *     ワールド座標を維持したまま、Groupの回転＝折り線周りの回転になる
- * - 動く板はpolygonOffsetを有効にして、折り重なった際のz-fightingを防ぐ
+ * - 各板は重なり順（layer）に応じたZオフセットで配置する
+ * - 動く片はpolygonOffsetを有効にして、折り重なった際のz-fightingを防ぐ
  */
-const replaceSceneWithSeparatedBoards = (props: {
+const replaceSceneForFolding = (props: {
   scene: THREE.Scene;
-  boards: MovingAndStaticBoards;
+  result: FoldStepResult;
   pivotPoint: THREE.Vector3;
   origamiColor: string;
 }): void => {
-  const { scene, boards, pivotPoint, origamiColor } = props;
+  const { scene, result, pivotPoint, origamiColor } = props;
 
-  // 既存の折り紙とスナップポイントを削除
-  const obsoleteObjects = scene.children.filter(
-    (child) =>
-      child.name === "origami" || child.name.startsWith("snapPoint_")
-  );
-  obsoleteObjects.forEach((obj) => {
-    scene.remove(obj);
-    disposeObject3D(obj);
+  // 既存の板とスナップポイントを削除
+  removeBoardObjects(scene);
+
+  // 動かない板（対象板の固定片 + 折り対象外の板）
+  result.staticBoards.forEach((board, index) => {
+    const staticBoardMesh = createBoardMesh(board.polygon, origamiColor, {
+      name: `board_static_${index}`,
+    });
+    staticBoardMesh.position.z = board.layer * BOARD_LAYER_OFFSET;
+    scene.add(staticBoardMesh);
   });
 
-  // 固定される板
-  const staticBoardMesh = createBoardMesh(boards.staticBoard, origamiColor, {
-    name: "board_static",
-  });
-  scene.add(staticBoardMesh);
-
-  // 動く板（ピボットGroupに入れて折り線周りに回転できるようにする）
-  const movingBoardMesh = createBoardMesh(boards.movingBoard, origamiColor, {
-    name: "board_moving",
-    enablePolygonOffset: true,
-  });
+  // 動く片（ピボットGroupに入れて折り線周りに回転できるようにする）
   const pivotGroup = new THREE.Group();
   pivotGroup.name = "board_moving_pivot";
   pivotGroup.position.copy(pivotPoint);
-  movingBoardMesh.position.copy(pivotPoint.clone().negate());
-  pivotGroup.add(movingBoardMesh);
+
+  result.movingBoards.forEach((board, index) => {
+    const movingBoardMesh = createBoardMesh(board.polygon, origamiColor, {
+      name: `board_moving_${index}`,
+      enablePolygonOffset: true,
+    });
+    movingBoardMesh.position.copy(pivotPoint.clone().negate());
+    movingBoardMesh.position.z += board.layer * BOARD_LAYER_OFFSET;
+    pivotGroup.add(movingBoardMesh);
+  });
+
   scene.add(pivotGroup);
 };

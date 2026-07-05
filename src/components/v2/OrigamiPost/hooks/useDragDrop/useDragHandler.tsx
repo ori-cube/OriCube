@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase } from "../../index";
-import { Board } from "../../types";
+import { SnapPoint } from "../../utils/collectSnapPoints";
 import { renderDraggedPoint } from "./renderPoint";
 
 type UseDragHandler = (props: {
@@ -11,9 +11,9 @@ type UseDragHandler = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
+  snapPoints: SnapPoint[];
   setDraggedPoint: (point: Point | null) => void;
   setIsDragging: (isDragging: boolean) => void;
-  initialBoard: Board;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   foldPhase: FoldPhase;
 }) => void;
@@ -32,6 +32,7 @@ type UseDragHandler = (props: {
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.rendererRef - THREE.WebGLRendererのref
  * @param props.raycasterRef - THREE.Raycasterのref
+ * @param props.snapPoints - 集約済みのスナップポイント
  * @param props.setDraggedPoint - ドラッグ中の点を設定する関数
  */
 export const useDragHandler: UseDragHandler = ({
@@ -40,9 +41,9 @@ export const useDragHandler: UseDragHandler = ({
   cameraRef,
   rendererRef,
   raycasterRef,
+  snapPoints,
   setDraggedPoint,
   setIsDragging,
-  initialBoard,
   setOriginalPoint,
   foldPhase,
 }) => {
@@ -71,25 +72,26 @@ export const useDragHandler: UseDragHandler = ({
       raycaster.setFromCamera(mouse, camera);
 
       // スナップポイントとの交差をチェック
-      const snapPoints = scene.children.filter((child) =>
+      const snapPointMeshes = scene.children.filter((child) =>
         child.name.startsWith("snapPoint_")
       );
 
-      const intersects = raycaster.intersectObjects(snapPoints);
+      const intersects = raycaster.intersectObjects(snapPointMeshes);
 
       if (intersects.length > 0) {
         const intersectedPoint = intersects[0].object;
         const pointIndex = parseInt(intersectedPoint.name.split("_")[1]);
-        const vertex = initialBoard[pointIndex];
+        const snapPoint = snapPoints[pointIndex];
 
-        if (vertex) {
-          draggedPoint = [vertex.x, vertex.y, vertex.z];
+        if (snapPoint) {
+          const position = snapPoint.position;
+          draggedPoint = [position.x, position.y, position.z];
           setDraggedPoint(draggedPoint);
           setIsDragging(true);
           isDragging = true;
 
           // ドラッグ開始時の元の位置を保存
-          setOriginalPoint(vertex.clone());
+          setOriginalPoint(position.clone());
 
           // ドラッグ中の点を描画
           renderDraggedPoint({
@@ -155,9 +157,9 @@ export const useDragHandler: UseDragHandler = ({
     cameraRef,
     rendererRef,
     raycasterRef,
+    snapPoints,
     setDraggedPoint,
     setIsDragging,
-    initialBoard,
     setOriginalPoint,
     foldPhase,
   ]);
