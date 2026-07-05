@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldLineState, FoldPhase } from "../../index";
+import { MovingAndStaticBoards } from "../../utils/selectMovingBoard";
+import { createSquareBoard } from "../../utils/createSquareBoard";
 import { useInitialRender } from "./useInitialRender";
 import { useDragHandler } from "./useDragHandler";
 import { useDropHandler } from "./useDropHandler";
@@ -18,6 +20,8 @@ type UseDragDrop = (props: {
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   setFoldLineState: (state: FoldLineState | null) => void;
   foldPhase: FoldPhase;
+  setFoldPhase: (phase: FoldPhase) => void;
+  setFoldBoards: (boards: MovingAndStaticBoards | null) => void;
 }) => void;
 
 /**
@@ -49,9 +53,14 @@ export const useDragDrop: UseDragDrop = ({
   setOriginalPoint,
   setFoldLineState,
   foldPhase,
+  setFoldPhase,
+  setFoldBoards,
 }) => {
   const [draggedPoint, setDraggedPoint] = useState<Point | null>(null);
   const [, setIsDragging] = useState(false);
+
+  // 折り紙の初期の板。生成はここ1箇所のみで、各サブフックはこれを参照する
+  const initialBoard = useMemo(() => createSquareBoard(size), [size]);
 
   // 初期描画（ドラッグ中の点は除外）
   useInitialRender({
@@ -60,7 +69,9 @@ export const useDragDrop: UseDragDrop = ({
     cameraRef,
     origamiColor,
     size,
+    initialBoard,
     draggedPoint,
+    foldPhase,
   });
 
   // ドラッグ処理
@@ -72,7 +83,7 @@ export const useDragDrop: UseDragDrop = ({
     raycasterRef,
     setDraggedPoint,
     setIsDragging,
-    size,
+    initialBoard,
     setOriginalPoint,
     foldPhase,
   });
@@ -83,13 +94,17 @@ export const useDragDrop: UseDragDrop = ({
     sceneRef,
     cameraRef,
     rendererRef,
+    initialBoard,
     draggedPoint,
     setDraggedPoint,
     setIsDragging,
     originalPoint,
     setOriginalPoint,
     size,
+    origamiColor,
     setFoldLineState,
     foldPhase,
+    setFoldPhase,
+    setFoldBoards,
   });
 };

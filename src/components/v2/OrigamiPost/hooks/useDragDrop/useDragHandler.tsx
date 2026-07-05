@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase } from "../../index";
+import { Board } from "../../types";
 import { renderDraggedPoint } from "./renderPoint";
 
 type UseDragHandler = (props: {
@@ -12,7 +13,7 @@ type UseDragHandler = (props: {
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   setDraggedPoint: (point: Point | null) => void;
   setIsDragging: (isDragging: boolean) => void;
-  size: number;
+  initialBoard: Board;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   foldPhase: FoldPhase;
 }) => void;
@@ -41,7 +42,7 @@ export const useDragHandler: UseDragHandler = ({
   raycasterRef,
   setDraggedPoint,
   setIsDragging,
-  size,
+  initialBoard,
   setOriginalPoint,
   foldPhase,
 }) => {
@@ -79,21 +80,16 @@ export const useDragHandler: UseDragHandler = ({
       if (intersects.length > 0) {
         const intersectedPoint = intersects[0].object;
         const pointIndex = parseInt(intersectedPoint.name.split("_")[1]);
-        const vertices = generateVertices(size);
+        const vertex = initialBoard[pointIndex];
 
-        if (vertices[pointIndex]) {
-          draggedPoint = vertices[pointIndex];
+        if (vertex) {
+          draggedPoint = [vertex.x, vertex.y, vertex.z];
           setDraggedPoint(draggedPoint);
           setIsDragging(true);
           isDragging = true;
 
           // ドラッグ開始時の元の位置を保存
-          const original = new THREE.Vector3(
-            vertices[pointIndex][0],
-            vertices[pointIndex][1],
-            vertices[pointIndex][2]
-          );
-          setOriginalPoint(original);
+          setOriginalPoint(vertex.clone());
 
           // ドラッグ中の点を描画
           renderDraggedPoint({
@@ -161,19 +157,8 @@ export const useDragHandler: UseDragHandler = ({
     raycasterRef,
     setDraggedPoint,
     setIsDragging,
-    size,
+    initialBoard,
     setOriginalPoint,
     foldPhase,
   ]);
-};
-
-// 正方形の頂点を生成（useInitialRenderと同じ関数）
-const generateVertices = (size: number): Point[] => {
-  const halfSize = size / 2;
-  return [
-    [-halfSize, -halfSize, 0], // 左下
-    [halfSize, -halfSize, 0], // 右下
-    [halfSize, halfSize, 0], // 右上
-    [-halfSize, halfSize, 0], // 左上
-  ];
 };

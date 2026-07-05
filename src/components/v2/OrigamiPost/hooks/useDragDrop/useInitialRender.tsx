@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
+import { FoldPhase } from "../../index";
+import { Board } from "../../types";
 import { renderOrigamiBoard } from "./renderOrigamiBoard";
 import { renderSnapPoint } from "./renderPoint";
 import { disposeObject3D } from "../../utils/disposeObject3D";
@@ -11,7 +13,9 @@ type UseInitialRender = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   origamiColor: string;
   size: number;
+  initialBoard: Board;
   draggedPoint: Point | null;
+  foldPhase: FoldPhase;
 }) => void;
 
 /**
@@ -29,7 +33,9 @@ type UseInitialRender = (props: {
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.origamiColor - 折り紙の色
  * @param props.size - 折り紙のサイズ
+ * @param props.initialBoard - 折り紙の初期の板（スナップポイントの配置に使用）
  * @param props.draggedPoint - 現在ドラッグ中の点（描画から除外）
+ * @param props.foldPhase - 折り操作のフェーズ（idle以外では描画しない）
  */
 export const useInitialRender: UseInitialRender = ({
   sceneRef,
@@ -37,7 +43,9 @@ export const useInitialRender: UseInitialRender = ({
   cameraRef,
   origamiColor,
   size,
+  initialBoard,
   draggedPoint,
+  foldPhase,
 }) => {
   useEffect(() => {
     const scene = sceneRef.current;
@@ -45,6 +53,9 @@ export const useInitialRender: UseInitialRender = ({
     const camera = cameraRef.current;
 
     if (!scene || !renderer || !camera) return;
+
+    // idle以外のフェーズでは分割後の板が表示されているため、初期描画を行わない
+    if (foldPhase !== "idle") return;
 
     // シーンの初期化（既存のオブジェクトをクリア）
     const existingObjects = scene.children.filter(
@@ -64,33 +75,32 @@ export const useInitialRender: UseInitialRender = ({
     });
 
     // スナップポイント（頂点）を描画（ドラッグ中の点は除外）
-    const vertices = generateVertices(size);
-    vertices.forEach((vertex, index) => {
+    initialBoard.forEach((vertex, index) => {
+      const point: Point = [vertex.x, vertex.y, vertex.z];
+
       // ドラッグ中の点は描画しない
-      if (draggedPoint && isSamePoint(vertex, draggedPoint)) {
+      if (draggedPoint && isSamePoint(point, draggedPoint)) {
         return;
       }
 
       renderSnapPoint({
         scene,
-        point: vertex,
+        point,
         name: `snapPoint_${index}`,
       });
     });
 
     renderer.render(scene, camera);
-  }, [sceneRef, rendererRef, cameraRef, origamiColor, size, draggedPoint]);
-};
-
-// 正方形の頂点を生成（XY平面、Z=0）
-const generateVertices = (size: number): Point[] => {
-  const halfSize = size / 2;
-  return [
-    [-halfSize, -halfSize, 0], // 左下
-    [halfSize, -halfSize, 0], // 右下
-    [halfSize, halfSize, 0], // 右上
-    [-halfSize, halfSize, 0], // 左上
-  ];
+  }, [
+    sceneRef,
+    rendererRef,
+    cameraRef,
+    origamiColor,
+    size,
+    initialBoard,
+    draggedPoint,
+    foldPhase,
+  ]);
 };
 
 // 2つの点が同じかどうかを判定
