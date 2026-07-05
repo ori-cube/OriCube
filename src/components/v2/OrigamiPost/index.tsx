@@ -7,6 +7,15 @@ import { useInitScene, useDragDrop } from "./hooks";
 import styles from "./index.module.scss";
 
 /**
+ * 折り操作のフェーズ
+ *
+ * - idle: 折り線の入力待ち（ドラッグ&ドロップ可能）
+ * - folding: 折りアニメーション中（ドラッグ&ドロップ不可）
+ * - folded: 折り完了（ドラッグ&ドロップ不可）
+ */
+export type FoldPhase = "idle" | "folding" | "folded";
+
+/**
  * 折り線の状態
  */
 export interface FoldLineState {
@@ -62,6 +71,9 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   const controlsRef = useRef<OrbitControls | null>(null);
   const raycasterRef = useRef<THREE.Raycaster | null>(null);
 
+  // 折り操作のフェーズ（idle以外ではドラッグ&ドロップを無効化）
+  const [foldPhase] = useState<FoldPhase>("idle");
+
   // 折り線の状態
   const [, setFoldLineState] = useState<FoldLineState | null>(null);
 
@@ -95,6 +107,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     originalPoint,
     setOriginalPoint,
     setFoldLineState,
+    foldPhase,
   });
 
   return (

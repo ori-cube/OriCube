@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
+import { FoldPhase } from "../../index";
 import { renderDraggedPoint } from "./renderPoint";
 
 type UseDragHandler = (props: {
@@ -13,6 +14,7 @@ type UseDragHandler = (props: {
   setIsDragging: (isDragging: boolean) => void;
   size: number;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
+  foldPhase: FoldPhase;
 }) => void;
 
 /**
@@ -41,6 +43,7 @@ export const useDragHandler: UseDragHandler = ({
   setIsDragging,
   size,
   setOriginalPoint,
+  foldPhase,
 }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -50,6 +53,9 @@ export const useDragHandler: UseDragHandler = ({
     const raycaster = raycasterRef.current;
 
     if (!canvas || !scene || !camera || !renderer || !raycaster) return;
+
+    // idle以外のフェーズではドラッグ操作を受け付けない
+    if (foldPhase !== "idle") return;
 
     let isDragging = false;
     let draggedPoint: Point | null = null;
@@ -157,6 +163,7 @@ export const useDragHandler: UseDragHandler = ({
     setIsDragging,
     size,
     setOriginalPoint,
+    foldPhase,
   ]);
 };
 
