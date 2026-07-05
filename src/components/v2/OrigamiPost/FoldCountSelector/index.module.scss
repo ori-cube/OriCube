@@ -1,0 +1,97 @@
+.card {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+}
+
+.counts {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+%count-button-base {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.count_button {
+  @extend %count-button-base;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #333;
+
+  &:hover:not(:disabled) {
+    border-color: #007b94;
+    background: #f0f9fb;
+  }
+
+  &:disabled {
+    color: #bbb;
+    background: #f5f5f5;
+    cursor: not-allowed;
+  }
+}
+
+.count_button_selected {
+  @extend %count-button-base;
+  border: 1px solid #007b94;
+  background: #007b94;
+  color: #fff;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+%action-button-base {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel_button {
+  @extend %action-button-base;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #333;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.confirm_button {
+  @extend %action-button-base;
+  border: none;
+  background: #007b94;
+  color: #fff;
+
+  &:hover {
+    background: #00647a;
+  }
+}
