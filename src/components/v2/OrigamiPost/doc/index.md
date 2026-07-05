@@ -203,17 +203,19 @@ const handleMouseUp = () => {
 2. **`separateBoard(board, foldLine)`**
 
    - 場所: `utils/separateBoard/index.ts`
-   - **エッジウォーク方式**（Sutherland–Hodgman クリッピングの応用）で板を 2 分割
-   - 頂点列を順に走査し、左の頂点は leftBoard へ、右は rightBoard へ、
+   - 頂点列を一周しながら、各頂点を折り線のどちら側にあるかで片方の板へ振り分け、
      線上の頂点は両方へ追加。折り線を跨ぐ辺は交点を計算して両方へ追加
+   - 戻り値は分割された 2 つの板のタプル `[Board, Board]`（順序に意味はない。
+     左右どちら側かの分類は関数内部の実装詳細に留める）
    - 分割できない場合（折り線が板を横切らない、辺と一致、退化した板ができる）は `null`
    - **旧実装（`OrigamiPost/logics/separateBoard`）との違い**:
      - 旧: 頂点分類 → 交点追加 → atan2 ソート（凸多角形前提、epsilon 判定に潜在バグ）
-     - 新: エッジウォークで頂点順序が自然に保たれるためソート不要。凹多角形にも対応
+     - 新: 元の頂点の並び順のまま振り分けるためソート不要。凹多角形にも対応
 
-3. **`selectMovingBoard(leftBoard, rightBoard, originalPoint, foldLine)`**
+3. **`selectMovingBoard(boards, originalPoint, foldLine)`**
    - 場所: `utils/selectMovingBoard/index.ts`
-   - ドラッグした頂点（originalPoint）を含む側を「動く板」として返す
+   - 分割された 2 つの板のうち、ドラッグした頂点（originalPoint）と
+     折り線に対して同じ側にある板を「動く板」として返す
    - originalPoint が折り線上にある場合は `null`（防御的処理）
 
 #### 3-2. 板の分割描画（drop 時のシーン差し替え） ✅
