@@ -35,6 +35,12 @@ const createPendingFold = (): PendingFold => ({
         new THREE.Vector3(50, 50, 0),
         new THREE.Vector3(0, 50, 0),
       ],
+      sourcePolygon: [
+        new THREE.Vector3(0, -50, 0),
+        new THREE.Vector3(50, -50, 0),
+        new THREE.Vector3(50, 50, 0),
+        new THREE.Vector3(0, 50, 0),
+      ],
       layer: 0,
     },
   ],

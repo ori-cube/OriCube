@@ -1,37 +1,38 @@
 import * as THREE from "three";
-import { Board, FoldLine } from "../../types";
+import { Board, BoardPiece, FoldLine } from "../../types";
 import { isPointLeftOfLine } from "../isPointLeftOfLine";
 
 /**
- * 動く板と固定される板
+ * 動く片と固定される片
  */
-export interface MovingAndStaticBoards {
-  /** 折りで回転する板（ドラッグした頂点を含む側） */
-  movingBoard: Board;
-  /** 固定される板 */
-  staticBoard: Board;
+export interface MovingAndStaticPieces {
+  /** 折りで回転する片（ドラッグした頂点を含む側） */
+  movingPiece: BoardPiece;
+  /** 固定される片 */
+  staticPiece: BoardPiece;
 }
 
 /**
- * 分割された2つの板のうち、どちらが折りで動く板かを決定する
+ * 分割された2つの片のうち、どちらが折りで動く片かを決定する
  *
- * @param boards - 分割された2つの板（separateBoardの出力。順序は問わない）
+ * @param pieces - 分割された2つの片（separateBoardの出力。順序は問わない）
  * @param originalPoint - ドラッグした頂点の元の位置
  * @param foldLine - 折り線
- * @returns 動く板と固定される板。originalPointが折り線上にある場合はnull
+ * @returns 動く片と固定される片。originalPointが折り線上にある場合はnull
  *
  * @description
- * - 折り線に対してドラッグした頂点（originalPoint）と同じ側にある板が
+ * - 折り線に対してドラッグした頂点（originalPoint）と同じ側にある片が
  *   折りで動く
- * - 板がどちら側にあるかは、折り線上にない頂点を代表として判定する
+ * - 片がどちら側にあるかは、折り畳み空間のポリゴンの折り線上にない頂点を
+ *   代表として判定する
  * - 折り線はドラッグ前後の点を結ぶ線分の垂直二等分線であるため、
  *   originalPointが折り線上に乗ることは通常ないが、防御的にnullを返す
  */
 export const selectMovingBoard = (
-  boards: [Board, Board],
+  pieces: [BoardPiece, BoardPiece],
   originalPoint: THREE.Vector3,
   foldLine: FoldLine
-): MovingAndStaticBoards | null => {
+): MovingAndStaticPieces | null => {
   const originalPointSide = isPointLeftOfLine(
     originalPoint,
     foldLine.start,
@@ -39,15 +40,15 @@ export const selectMovingBoard = (
   );
   if (originalPointSide === null) return null;
 
-  const [firstBoard, secondBoard] = boards;
-  const firstBoardSide = getBoardSide(firstBoard, foldLine);
+  const [firstPiece, secondPiece] = pieces;
+  const firstPieceSide = getBoardSide(firstPiece.polygon, foldLine);
 
-  // 全頂点が折り線上にある退化した板（separateBoardの出力では起こり得ない）
-  if (firstBoardSide === null) return null;
+  // 全頂点が折り線上にある退化した片（separateBoardの出力では起こり得ない）
+  if (firstPieceSide === null) return null;
 
-  return firstBoardSide === originalPointSide
-    ? { movingBoard: firstBoard, staticBoard: secondBoard }
-    : { movingBoard: secondBoard, staticBoard: firstBoard };
+  return firstPieceSide === originalPointSide
+    ? { movingPiece: firstPiece, staticPiece: secondPiece }
+    : { movingPiece: secondPiece, staticPiece: firstPiece };
 };
 
 /**

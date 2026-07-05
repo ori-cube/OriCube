@@ -19,7 +19,14 @@ export const replayFoldSteps = (
   initialBoard: Board,
   steps: FoldStep[]
 ): LayeredBoard[] => {
-  let boards: LayeredBoard[] = [{ polygon: initialBoard, layer: 0 }];
+  // 初期状態では折り畳み空間と展開図空間が一致する
+  let boards: LayeredBoard[] = [
+    {
+      polygon: initialBoard,
+      sourcePolygon: initialBoard.map((vertex) => vertex.clone()),
+      layer: 0,
+    },
+  ];
 
   for (const step of steps) {
     const result = applyFoldStep(boards, step);
