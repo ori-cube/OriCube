@@ -204,7 +204,7 @@ const isTearingFold = (
 /**
  * 折り畳み空間の点から折り線（無限直線）までの距離を計算する
  */
-const distanceToFoldLine = (
+export const distanceToFoldLine = (
   point: THREE.Vector3,
   foldLine: FoldLine
 ): number => {

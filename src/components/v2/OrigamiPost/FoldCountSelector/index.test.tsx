@@ -8,6 +8,7 @@ describe("FoldCountSelector", () => {
       <FoldCountSelector
         maxFoldCount={3}
         validCounts={[1, 2, 3]}
+        squashAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -28,6 +29,7 @@ describe("FoldCountSelector", () => {
       <FoldCountSelector
         maxFoldCount={2}
         validCounts={[1, 2]}
+        squashAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -44,6 +46,7 @@ describe("FoldCountSelector", () => {
       <FoldCountSelector
         maxFoldCount={3}
         validCounts={[1, 2, 3]}
+        squashAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -60,6 +63,7 @@ describe("FoldCountSelector", () => {
       <FoldCountSelector
         maxFoldCount={3}
         validCounts={[1, 3]}
+        squashAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -70,6 +74,54 @@ describe("FoldCountSelector", () => {
     expect(screen.getByRole("button", { name: "3" })).toBeEnabled();
   });
 
+  it("開いて畳むが成立する場合のみ選択肢に表示される", () => {
+    const { rerender } = render(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[1, 2]}
+        squashAvailable={false}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "開いて畳む" })
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[1, 2]}
+        squashAvailable={true}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("button", { name: "開いて畳む" })
+    ).toBeInTheDocument();
+  });
+
+  it("開いて畳むを選んでから折ると開いて畳むで確定される", () => {
+    const onConfirm = vi.fn();
+    render(
+      <FoldCountSelector
+        maxFoldCount={4}
+        validCounts={[2, 4]}
+        squashAvailable={true}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "開いて畳む" }));
+    fireEvent.click(screen.getByRole("button", { name: "折る" }));
+
+    expect(onConfirm).toHaveBeenCalledWith("squash");
+  });
+
   it("キャンセルでonCancelが呼ばれ、onConfirmは呼ばれない", () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();
@@ -77,6 +129,7 @@ describe("FoldCountSelector", () => {
       <FoldCountSelector
         maxFoldCount={2}
         validCounts={[1, 2]}
+        squashAvailable={false}
         onConfirm={onConfirm}
         onCancel={onCancel}
       />

@@ -65,6 +65,7 @@ export const commenceFold = (props: {
   if (!foldLineSpan) return null;
 
   const step: FoldStep = {
+    kind: "fold",
     foldLine: foldLineSpan,
     dragVertex: new THREE.Vector3(dragVertex.x, dragVertex.y, 0),
     foldCount,
@@ -86,7 +87,7 @@ export const commenceFold = (props: {
     origamiColor,
   });
 
-  return { step, movingBoards: result.movingBoards };
+  return { kind: "fold", step, movingBoards: result.movingBoards };
 };
 
 /**

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as THREE from "three";
 import { replayFoldSteps } from "./index";
-import { Board, FoldStep } from "../../types";
+import { Board, FoldStep, OrigamiStep } from "../../types";
 import { createSquareBoard } from "../createSquareBoard";
 
 const createFoldStep = (
@@ -13,6 +13,7 @@ const createFoldStep = (
   dragY: number,
   foldCount = 1
 ): FoldStep => ({
+  kind: "fold",
   foldLine: {
     start: new THREE.Vector3(startX, startY, 0),
     end: new THREE.Vector3(endX, endY, 0),
@@ -65,6 +66,52 @@ describe("replayFoldSteps", () => {
     expect(topBoard).toBeDefined();
     if (!topBoard) return;
     expect(containsPoint(topBoard.polygon, -50, -50)).toBe(true);
+  });
+
+  it("通常の折りと開いて畳むが混在した履歴をリプレイできる", () => {
+    // 対角線で2回折った後、頂点(20,20)を(20,-20)へ開いて畳む
+    const steps: OrigamiStep[] = [
+      {
+        kind: "fold",
+        foldLine: {
+          start: new THREE.Vector3(-20, -20, 0),
+          end: new THREE.Vector3(20, 20, 0),
+        },
+        dragVertex: new THREE.Vector3(-20, 20, 0),
+        foldCount: 1,
+        viewFront: true,
+      },
+      {
+        kind: "fold",
+        foldLine: {
+          start: new THREE.Vector3(-20, 20, 0),
+          end: new THREE.Vector3(20, -20, 0),
+        },
+        dragVertex: new THREE.Vector3(-20, -20, 0),
+        foldCount: 2,
+        viewFront: true,
+      },
+      {
+        kind: "squash",
+        foldLine: {
+          start: new THREE.Vector3(0, 0, 0),
+          end: new THREE.Vector3(20, 0, 0),
+        },
+        dragVertex: new THREE.Vector3(20, 20, 0),
+        viewFront: true,
+      },
+    ];
+
+    const result = replayFoldSteps(createSquareBoard(40), steps);
+
+    expect(result).toHaveLength(6);
+
+    // 開いて畳んだ片が最前面（レイヤー6）に積まれ、先端はy=0で鏡映される
+    const topBoard = result.find((board) => board.layer === 6);
+    expect(topBoard).toBeDefined();
+    if (!topBoard) return;
+    expect(containsPoint(topBoard.polygon, 20, -20)).toBe(true);
+    expect(containsPoint(topBoard.polygon, 20, 20)).toBe(false);
   });
 
   it("適用できないステップ以降は打ち切り、直前までの状態を返す", () => {

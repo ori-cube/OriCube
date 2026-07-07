@@ -60,6 +60,33 @@
   color: #fff;
 }
 
+%squash-button-base {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.squash_button {
+  @extend %squash-button-base;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #333;
+
+  &:hover {
+    border-color: #007b94;
+    background: #f0f9fb;
+  }
+}
+
+.squash_button_selected {
+  @extend %squash-button-base;
+  border: 1px solid #007b94;
+  background: #007b94;
+  color: #fff;
+}
+
 .actions {
   display: flex;
   gap: 8px;

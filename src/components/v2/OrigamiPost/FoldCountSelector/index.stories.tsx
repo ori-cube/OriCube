@@ -32,6 +32,7 @@ export const Default: Story = {
   args: {
     maxFoldCount: 2,
     validCounts: [1, 2],
+    squashAvailable: false,
   },
 };
 
@@ -39,5 +40,14 @@ export const WithInvalidCount: Story = {
   args: {
     maxFoldCount: 3,
     validCounts: [1, 3],
+    squashAvailable: false,
+  },
+};
+
+export const WithSquash: Story = {
+  args: {
+    maxFoldCount: 4,
+    validCounts: [2, 4],
+    squashAvailable: true,
   },
 };
