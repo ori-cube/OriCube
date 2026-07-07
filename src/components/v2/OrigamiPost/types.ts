@@ -53,14 +53,15 @@ export interface LayeredBoard extends BoardPiece {
 }
 
 /**
- * 1回の折り操作（折り手順の履歴の1要素）
+ * 1回の通常の折り操作（折り手順の履歴の1要素）
  *
  * @description
- * 初期状態の正方形にFoldStepを順に適用（リプレイ）することで、
+ * 初期状態の正方形にOrigamiStepを順に適用（リプレイ）することで、
  * 現在の板の形状を再現できる最小限の情報を持つ。
  * この履歴がUndo/Redoと投稿データ化の基礎になる。
  */
 export interface FoldStep {
+  kind: "fold";
   /** 折り線（無限直線として扱う。start/endは表示用のスパン） */
   foldLine: FoldLine;
   /** ドラッグした頂点の元位置（折る板の特定と、動く側の判定に使用） */
@@ -70,3 +71,27 @@ export interface FoldStep {
   /** 折ったときに表側（+Z側）から見ていたか */
   viewFront: boolean;
 }
+
+/**
+ * 開いて畳む操作（スクワッシュフォールド）の履歴要素
+ *
+ * @description
+ * - 折り目（スパイン）でつながった視点側2枚のフラップを、ドラッグした
+ *   頂点の折り線で開いて平らに畳む操作
+ * - 対象のフラップや分割・変換の幾何はリプレイ時に板群から再導出する
+ *   ため、通常の折りと同じくジェスチャの最小情報のみを持つ
+ */
+export interface SquashFoldStep {
+  kind: "squash";
+  /** 折り線（無限直線として扱う。start/endは表示用のスパン） */
+  foldLine: FoldLine;
+  /** ドラッグした頂点の元位置（フラップの特定と、動く側の判定に使用） */
+  dragVertex: THREE.Vector3;
+  /** 折ったときに表側（+Z側）から見ていたか */
+  viewFront: boolean;
+}
+
+/**
+ * 折り手順の履歴の1要素（通常の折り or 開いて畳む）
+ */
+export type OrigamiStep = FoldStep | SquashFoldStep;

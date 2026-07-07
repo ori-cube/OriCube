@@ -12,6 +12,7 @@ import {
 import { FoldStep } from "../../types";
 
 const createFoldStep = (label: number): FoldStep => ({
+  kind: "fold",
   foldLine: {
     start: new THREE.Vector3(label, -50, 0),
     end: new THREE.Vector3(label, 50, 0),
