@@ -5,8 +5,14 @@ import { FoldPhase, PendingFold } from "../../index";
 import { determineFoldRotation } from "../../utils/determineFoldRotation";
 import { removeFoldLine } from "../../utils/visualizeFoldLine";
 import { easeInOutCubic } from "../../utils/easeInOutCubic";
-import { computeSquashAnimationPositions } from "../../utils/computeSquashAnimationPositions";
-import { computePetalAnimationPositions } from "../../utils/computePetalAnimationPositions";
+import {
+  computeSquashAnimationPositions,
+  deriveSquashRotationAxes,
+} from "../../utils/computeSquashAnimationPositions";
+import {
+  computePetalAnimationPositions,
+  derivePetalRotationAxes,
+} from "../../utils/computePetalAnimationPositions";
 import { updateMorphBoardMeshPositions } from "../../utils/createMorphBoardMesh";
 
 /** 折りアニメーションの所要時間（ミリ秒） */
@@ -179,27 +185,8 @@ const createSquashAngleApplier = (
     morphGroups.push(group);
   }
 
-  const mirrorFoldLinePiece = result.movingPieces.find(
-    (moving) => moving.motion === "mirrorFoldLine"
-  );
-  const mirrorHingePiece = result.movingPieces.find(
-    (moving) => moving.motion === "mirrorHinge"
-  );
-  if (!mirrorFoldLinePiece || !mirrorHingePiece) return null;
-
-  // 動く片は折ったときの視点側（表なら+Z、裏なら-Z）へ持ち上げる
-  const liftDirection = new THREE.Vector3(0, 0, step.viewFront ? 1 : -1);
-  const foldLineAxis = determineFoldRotation(
-    step.foldLine,
-    mirrorFoldLinePiece.piece.polygon,
-    liftDirection
-  );
-  const hingeAxis = determineFoldRotation(
-    result.hinge,
-    mirrorHingePiece.piece.polygon,
-    liftDirection
-  );
-  if (!foldLineAxis || !hingeAxis) return null;
+  const axes = deriveSquashRotationAxes(step, result);
+  if (!axes) return null;
 
   const spine = { start: result.spineApex, end: step.dragVertex };
 
@@ -209,8 +196,8 @@ const createSquashAngleApplier = (
       foldLine: step.foldLine,
       hinge: result.hinge,
       spine,
-      foldLineAxis,
-      hingeAxis,
+      foldLineAxis: axes.foldLineAxis,
+      hingeAxis: axes.hingeAxis,
       angle,
     });
     positions.forEach((piecePositions, index) => {
@@ -238,35 +225,8 @@ const createPetalAngleApplier = (
     morphGroups.push(group);
   }
 
-  // 動く片は折ったときの視点側（表なら+Z、裏なら-Z）へ持ち上げる
-  const liftDirection = new THREE.Vector3(0, 0, step.viewFront ? 1 : -1);
-
-  const centralPiece = result.movingPieces.find(
-    (moving) => moving.motion === "mirrorFoldLine"
-  );
-  if (!centralPiece) return null;
-  const foldLineAxis = determineFoldRotation(
-    result.foldLine,
-    centralPiece.piece.polygon,
-    liftDirection
-  );
-
-  // かぶせ折り線の回転軸は左右それぞれの耳片の持ち上がる向きで決める
-  const kiteAxisFor = (sideIndex: 0 | 1): THREE.Vector3 | null => {
-    const earPiece = result.movingPieces.find(
-      (moving) =>
-        moving.motion === "mirrorKite" && moving.sideIndex === sideIndex
-    );
-    if (!earPiece) return null;
-    return determineFoldRotation(
-      result.kiteLines[sideIndex],
-      earPiece.piece.polygon,
-      liftDirection
-    );
-  };
-  const firstKiteAxis = kiteAxisFor(0);
-  const secondKiteAxis = kiteAxisFor(1);
-  if (!foldLineAxis || !firstKiteAxis || !secondKiteAxis) return null;
+  const axes = derivePetalRotationAxes(step, result);
+  if (!axes) return null;
 
   return (angle: number) => {
     const positions = computePetalAnimationPositions({
@@ -274,8 +234,8 @@ const createPetalAngleApplier = (
       foldLine: result.foldLine,
       kiteLines: result.kiteLines,
       tuckCreases: result.tuckCreases,
-      foldLineAxis,
-      kiteAxes: [firstKiteAxis, secondKiteAxis],
+      foldLineAxis: axes.foldLineAxis,
+      kiteAxes: axes.kiteAxes,
       angle,
     });
     positions.forEach((piecePositions, index) => {
