@@ -2,7 +2,8 @@ import * as THREE from "three";
 import { Board, BoardPiece, FoldLine, FoldStep, LayeredBoard } from "../../types";
 import { separateBoard } from "../separateBoard";
 import { selectMovingBoard } from "../selectMovingBoard";
-import { rotateBoard } from "../rotateBoard";
+import { mirrorBoardAcrossLine } from "../rotateBoard";
+import { isPointLeftOfLine } from "../isPointLeftOfLine";
 import { SNAP_MERGE_TOLERANCE } from "../collectSnapPoints";
 import {
   findSharedSourceSegments,
@@ -32,14 +33,19 @@ export interface FoldStepResult {
  * 折りのセマンティクス:
  * 1. dragVertexと同一位置に頂点を持つ板を「候補板」とし、視点側
  *    （表ならlayer降順）から先頭foldCount枚を折る対象にする
- * 2. 対象板それぞれを折り線で分割する。1枚でも分割できなければ
- *    折り全体を不成立としてnullを返す。対象外の板は折り線が
- *    幾何的に横切っていても動かさない（対象の紙だけをつまんで折るため）
+ * 2. 対象板それぞれを折り線で分割する。折り線を跨がない（板全体が
+ *    ドラッグ頂点側にある）板は分割せず丸ごと動く片にする（既存の折り目に
+ *    沿って半分に畳む・めくる折り）。分割できなければ折り全体を不成立と
+ *    してnullを返す。対象外の板は折り線が幾何的に横切っていても
+ *    動かさない（対象の紙だけをつまんで折るため）
  * 3. 各対象板のdragVertexと同じ側の片が「動く片」になる
  * 4. 動く片が折り目でつながっている相手ごと動かない折り（紙が破れる折り）は
  *    不成立としてnullを返す
- * 5. 動く片は折り線周りに180度回転（XY平面上では鏡映）した座標になる
- * 6. 動く片のレイヤーは、表折りなら現在の最大レイヤーの上に
+ * 5. どの板も分割されない折りは、動く片が動かない板と折り目（折り線上の
+ *    ヒンジ）でつながっている場合だけ成立する（新しい折り目もヒンジもない
+ *    操作はモデル全体が回転するだけで、折りではない）
+ * 6. 動く片は折り線周りに180度回転（XY平面上では鏡映）した座標になる
+ * 7. 動く片のレイヤーは、表折りなら現在の最大レイヤーの上に
  *    元の重なり順を逆転して積む（裏折りなら最小レイヤーの下に積む）
  */
 export const applyFoldStep = (
@@ -58,43 +64,38 @@ export const applyFoldStep = (
   const targets = candidates.slice(0, foldCount);
   const targetSet = new Set(targets);
 
-  const axisDirection = new THREE.Vector3()
-    .subVectors(foldLine.end, foldLine.start)
-    .normalize();
-
   // 各対象板を分割し、動く片・固定片に振り分ける
   const splits: {
     target: LayeredBoard;
     movingPiece: BoardPiece;
-    staticPiece: BoardPiece;
+    staticPiece: BoardPiece | null;
   }[] = [];
 
   for (const target of targets) {
-    const separated = separateBoard(
-      target.polygon,
-      target.sourcePolygon,
-      foldLine
-    );
-    if (!separated) return null;
-
-    const selected = selectMovingBoard(separated, dragVertex, foldLine);
-    if (!selected) return null;
-
-    splits.push({
-      target,
-      movingPiece: selected.movingPiece,
-      staticPiece: selected.staticPiece,
-    });
+    const split = splitTargetBoard(target, dragVertex, foldLine);
+    if (!split) return null;
+    splits.push({ target, ...split });
   }
 
   // 紙が破れる折り（動く片が折り目でつながっている相手を置き去りにする折り）
   // は不成立
   const movingPieces = splits.map((split) => split.movingPiece);
   const nonMovingPieces: BoardPiece[] = [
-    ...splits.map((split) => split.staticPiece),
+    ...splits.flatMap((split) =>
+      split.staticPiece ? [split.staticPiece] : []
+    ),
     ...boards.filter((board) => !targetSet.has(board)),
   ];
   if (isTearingFold(movingPieces, nonMovingPieces, foldLine)) return null;
+
+  // どの板も分割されない折りは、動く片が動かない板と折り目でつながっている
+  // 場合だけ成立する（つながっていれば折り目は折り線上にあることを
+  // isTearingFoldが検証済み。新しい折り目もヒンジもない操作はモデル全体が
+  // 回転するだけで、折りではない）
+  const createsCrease = splits.some((split) => split.staticPiece !== null);
+  if (!createsCrease && !isHingedToNonMoving(movingPieces, nonMovingPieces)) {
+    return null;
+  }
 
   const layers = boards.map((board) => board.layer);
   const maxLayer = Math.max(...layers);
@@ -121,32 +122,93 @@ export const applyFoldStep = (
       ? maxLayer + 1 + (sortedSplits.length - 1 - index)
       : minLayer - 1 - index;
 
-    const staticBoard: LayeredBoard = {
-      ...split.staticPiece,
-      layer: split.target.layer,
-    };
+    // 丸ごと動く板（分割されない板）には固定片がない
+    if (split.staticPiece) {
+      const staticBoard: LayeredBoard = {
+        ...split.staticPiece,
+        layer: split.target.layer,
+      };
+      resultBoards.push(staticBoard);
+      staticBoards.push(staticBoard);
+    }
 
-    // 180度回転はXY平面上では鏡映になる。浮動小数の誤差でzが微小に
-    // ずれるとリプレイ時に判定が揺れるため、z=0に揃える。
     // sourcePolygon（展開図空間）は折りで変換されないためそのまま引き継ぐ
-    const mirroredPolygon = rotateBoard(
-      split.movingPiece.polygon,
-      foldLine.start,
-      axisDirection,
-      Math.PI
-    ).map((vertex) => new THREE.Vector3(vertex.x, vertex.y, 0));
-
-    resultBoards.push(staticBoard, {
-      polygon: mirroredPolygon,
+    resultBoards.push({
+      polygon: mirrorBoardAcrossLine(split.movingPiece.polygon, foldLine),
       sourcePolygon: split.movingPiece.sourcePolygon,
       layer: newLayer,
     });
-    staticBoards.push(staticBoard);
     movingBoards.push({ ...split.movingPiece, layer: split.target.layer });
   });
 
   return { boards: resultBoards, movingBoards, staticBoards };
 };
+
+/**
+ * 対象板を折り線で動く片と固定片に分ける
+ *
+ * @returns 分割できない場合はnull。板全体がドラッグ頂点側にある場合は
+ *          分割せず丸ごと動く片とし、staticPieceはnullになる
+ *
+ * @description
+ * - 折り線が板を横切る場合は分割する（新しい折り目を作る折り）
+ * - 板が折り線を跨がない場合は、既存の折り目に沿って板を丸ごと回す折り
+ *   （半分に畳む・めくり）として板全体を動く片にする。候補板はドラッグ
+ *   頂点（折り線上にない点）を持つため、折り線の反対側に全体がある
+ *   ことはない
+ */
+const splitTargetBoard = (
+  target: LayeredBoard,
+  dragVertex: THREE.Vector3,
+  foldLine: FoldLine
+): { movingPiece: BoardPiece; staticPiece: BoardPiece | null } | null => {
+  const dragVertexSide = isPointLeftOfLine(
+    dragVertex,
+    foldLine.start,
+    foldLine.end
+  );
+  if (dragVertexSide === null) return null;
+
+  const crossesFoldLine = target.polygon.some(
+    (vertex) =>
+      isPointLeftOfLine(vertex, foldLine.start, foldLine.end) ===
+      !dragVertexSide
+  );
+  if (!crossesFoldLine) {
+    return {
+      movingPiece: {
+        polygon: target.polygon,
+        sourcePolygon: target.sourcePolygon,
+      },
+      staticPiece: null,
+    };
+  }
+
+  const separated = separateBoard(
+    target.polygon,
+    target.sourcePolygon,
+    foldLine
+  );
+  if (!separated) return null;
+  return selectMovingBoard(separated, dragVertex, foldLine);
+};
+
+/**
+ * 動く片のいずれかが、動かない板と折り目（共有境界線分）でつながっているか
+ */
+const isHingedToNonMoving = (
+  movingPieces: BoardPiece[],
+  nonMovingPieces: BoardPiece[]
+): boolean =>
+  movingPieces.some((movingPiece) =>
+    nonMovingPieces.some(
+      (nonMovingPiece) =>
+        findSharedSourceSegments(
+          movingPiece.sourcePolygon,
+          nonMovingPiece.sourcePolygon
+        ).length > 0
+    )
+  );
 
 /**
  * 折りで紙が破れるかを判定する

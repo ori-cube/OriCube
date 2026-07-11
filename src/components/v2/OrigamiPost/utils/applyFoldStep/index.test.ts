@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import * as THREE from "three";
 import { applyFoldStep } from "./index";
-import { Board, FoldStep, LayeredBoard } from "../../types";
+import { replayFoldSteps } from "../replayFoldSteps";
+import { createSquareBoard } from "../createSquareBoard";
+import { Board, FoldStep, LayeredBoard, OrigamiStep } from "../../types";
 
 /** 一辺100の正方形の頂点列（原点中心、XY平面上） */
 const createSquarePolygon = (offsetX = 0): Board => [
@@ -329,6 +331,123 @@ describe("applyFoldStep", () => {
       if (!leftFlap || !rightFlap) return;
       expect(containsPoint(leftFlap.polygon, 0, 50)).toBe(true);
       expect(containsPoint(rightFlap.polygon, 0, 50)).toBe(true);
+    });
+  });
+
+  describe("既存の折り目に沿って畳む折り（板を分割しない折り）", () => {
+    it("折り目に沿って1枚めくると、板は分割されず丸ごと反対側へ移る", () => {
+      // 半分折り後、動いた片（レイヤー1）を折り目x=0に沿ってめくり戻す
+      const boards = createHalfFoldedBoards();
+      const step = createVerticalFoldStep({
+        dragVertex: new THREE.Vector3(-50, 50, 0),
+        foldCount: 1,
+      });
+
+      const result = applyFoldStep(boards, step);
+
+      expect(result).not.toBeNull();
+      if (!result) return;
+
+      // 分割されないため板の数は変わらない
+      expect(result.boards).toHaveLength(2);
+
+      // めくられた板は丸ごと右半分へ移り、最前面に積まれる
+      const turned = findBoardAtLayer(result.boards, 2);
+      expect(turned).toBeDefined();
+      if (!turned) return;
+      expect(containsPoint(turned.polygon, 50, 50)).toBe(true);
+      expect(containsPoint(turned.polygon, 50, -50)).toBe(true);
+
+      // 動かない板（左半分）はそのまま残る
+      const staticBoard = findBoardAtLayer(result.boards, 0);
+      expect(staticBoard).toBeDefined();
+      if (!staticBoard) return;
+      expect(containsPoint(staticBoard.polygon, -50, 50)).toBe(true);
+
+      // アニメーション用の動く片も分割されていない
+      expect(result.movingBoards).toHaveLength(1);
+      expect(result.movingBoards[0].polygon).toHaveLength(4);
+      expect(result.staticBoards).toHaveLength(1);
+    });
+
+    it("全ての板を丸ごと回すだけの操作はnullを返す（折りではない）", () => {
+      // 2枚とも折り目の同じ側にあり、どの板も分割されず、動かない板もない
+      const boards = createHalfFoldedBoards();
+      const step = createVerticalFoldStep({
+        dragVertex: new THREE.Vector3(-50, 50, 0),
+        foldCount: 2,
+      });
+
+      expect(applyFoldStep(boards, step)).toBeNull();
+    });
+
+    it("鶴の基本形を中心の折り目に沿って半分に畳める", () => {
+      const v = (x: number, y: number): THREE.Vector3 =>
+        new THREE.Vector3(x, y, 0);
+      const creaseArm = 20 * (2 - Math.SQRT2);
+      const craneSteps: OrigamiStep[] = [
+        {
+          kind: "fold",
+          foldLine: { start: v(-20, -20), end: v(20, 20) },
+          dragVertex: v(-20, 20),
+          foldCount: 1,
+          viewFront: true,
+        },
+        {
+          kind: "fold",
+          foldLine: { start: v(-20, 20), end: v(20, -20) },
+          dragVertex: v(-20, -20),
+          foldCount: 2,
+          viewFront: true,
+        },
+        {
+          kind: "squash",
+          foldLine: { start: v(0, 0), end: v(20, 0) },
+          dragVertex: v(20, 20),
+          viewFront: true,
+        },
+        {
+          kind: "squash",
+          foldLine: { start: v(0, 0), end: v(20, 0) },
+          dragVertex: v(20, 20),
+          viewFront: false,
+        },
+        {
+          kind: "petal",
+          foldLine: { start: v(creaseArm, 0), end: v(0, -creaseArm) },
+          dragVertex: v(20, -20),
+          viewFront: true,
+        },
+        {
+          kind: "petal",
+          foldLine: { start: v(creaseArm, 0), end: v(0, -creaseArm) },
+          dragVertex: v(20, -20),
+          viewFront: false,
+        },
+      ];
+      const birdBase = replayFoldSteps(createSquareBoard(40), craneSteps);
+      expect(birdBase).toHaveLength(20);
+
+      // 横の角をつまんで、中心の対角線（スパイン）で全体を半分に畳む
+      const step: FoldStep = {
+        kind: "fold",
+        foldLine: { start: v(0, 0), end: v(20, -20) },
+        dragVertex: v(creaseArm, 0),
+        foldCount: 10,
+        viewFront: true,
+      };
+
+      const result = applyFoldStep(birdBase, step);
+      expect(result).not.toBeNull();
+      if (!result) return;
+
+      // 板は分割されず20枚のまま、全ての板が折り目の左側（y <= -x）に収まる
+      expect(result.boards).toHaveLength(20);
+      expect(
+        result.boards.every((board) =>
+          board.polygon.every((vertex) => vertex.x + vertex.y <= 1e-6)
+        )
+      ).toBe(true);
     });
   });
 
