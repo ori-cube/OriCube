@@ -92,6 +92,26 @@ export interface SquashFoldStep {
 }
 
 /**
- * 折り手順の履歴の1要素（通常の折り or 開いて畳む）
+ * 花弁折り（ペタルフォールド）の履歴要素
+ *
+ * @description
+ * - 正方基本形の先端のように、スパインでつながった前面フラップ2枚と
+ *   その裏の相方2枚を、先端の持ち上げ＋左右のかぶせ折りで畳む操作
+ * - 折り線はジェスチャからではなく板群の構造から正準化して導出する
+ *   （かぶせ折りが成立する位置は構造から一意に決まるため）。
+ *   保存する折り線は正準化済みのもの
  */
-export type OrigamiStep = FoldStep | SquashFoldStep;
+export interface PetalFoldStep {
+  kind: "petal";
+  /** 折り線（正準化済み。スパンはかぶせ折り線との交点間） */
+  foldLine: FoldLine;
+  /** ドラッグした頂点の元位置（フラップの特定に使用） */
+  dragVertex: THREE.Vector3;
+  /** 折ったときに表側（+Z側）から見ていたか */
+  viewFront: boolean;
+}
+
+/**
+ * 折り手順の履歴の1要素（通常の折り・開いて畳む・花弁折り）
+ */
+export type OrigamiStep = FoldStep | SquashFoldStep | PetalFoldStep;

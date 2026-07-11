@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Board, BoardPiece } from "../../types";
+import { SNAP_MERGE_TOLERANCE } from "../collectSnapPoints";
 
 /**
  * 同一の境界線分とみなす展開図空間での距離の許容誤差
@@ -91,6 +92,54 @@ export const mapSourceBoundaryPointToFolded = (
   }
 
   return null;
+};
+
+/**
+ * 最終状態の全ての片のペアについて、紙の接続が保たれるかを検証する
+ *
+ * @param movingFinalPieces - 動く片の確定後の座標
+ * @param staticPieces - 動かない板（座標は現在のまま）
+ * @returns 接続が保たれる場合はtrue
+ *
+ * @description
+ * 2つの片が展開図上で共有する折り目の各端点を、それぞれの片の
+ * 頂点対応で折り畳み空間へ写像し、両者が一致することを要求する。
+ * 片ごとに異なる変換を受ける折り（開いて畳む・花弁折り）で、
+ * スパイン・カット辺・ヒンジ・想定外の接続をまとめて検証する。
+ * 動かない板同士は座標が変わらないため検証不要。
+ */
+export const isConnectivityPreserved = (
+  movingFinalPieces: BoardPiece[],
+  staticPieces: BoardPiece[]
+): boolean => {
+  for (let i = 0; i < movingFinalPieces.length; i++) {
+    const others = [...movingFinalPieces.slice(i + 1), ...staticPieces];
+    for (const other of others) {
+      if (!staysAttached(movingFinalPieces[i], other)) return false;
+    }
+  }
+  return true;
+};
+
+/**
+ * 2つの片が展開図上で共有する折り目が、折り畳み空間でも一致するか
+ */
+const staysAttached = (pieceA: BoardPiece, pieceB: BoardPiece): boolean => {
+  const sharedSegments = findSharedSourceSegments(
+    pieceA.sourcePolygon,
+    pieceB.sourcePolygon
+  );
+
+  for (const segment of sharedSegments) {
+    for (const sourceEndpoint of [segment.start, segment.end]) {
+      const foldedA = mapSourceBoundaryPointToFolded(pieceA, sourceEndpoint);
+      const foldedB = mapSourceBoundaryPointToFolded(pieceB, sourceEndpoint);
+      if (!foldedA || !foldedB) return false;
+      if (foldedA.distanceTo(foldedB) > SNAP_MERGE_TOLERANCE) return false;
+    }
+  }
+
+  return true;
 };
 
 /**

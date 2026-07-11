@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FoldChoice } from "../hooks";
 import styles from "./index.module.scss";
 
 interface Props {
@@ -8,30 +9,34 @@ interface Props {
   validCounts: number[];
   /** 開いて畳むが選択できるか */
   squashAvailable: boolean;
-  /** 選択した操作（枚数または開いて畳む）で折りを確定する */
-  onConfirm: (choice: number | "squash") => void;
+  /** 花弁折りが選択できるか */
+  petalAvailable: boolean;
+  /** 選択した操作（枚数・開いて畳む・花弁折り）で折りを確定する */
+  onConfirm: (choice: FoldChoice) => void;
   /** 折りを取りやめる */
   onCancel: () => void;
 }
 
 /**
- * 折り方（折る枚数・開いて畳む）を選択するフローティングカード
+ * 折り方（折る枚数・開いて畳む・花弁折り）を選択するフローティングカード
  *
  * @description
  * - 折りで頂点が重なり、複数の操作から選べる場合にキャンバス下部へ表示する
  * - 折りが成立しない枚数は選択できない
- * - 開いて畳むが成立する場合は枚数の選択肢に加えて表示する
- * - デフォルトは選択できる最小の枚数（枚数が選べない場合は開いて畳む）
+ * - 開いて畳む・花弁折りが成立する場合は枚数の選択肢に加えて表示する
+ * - デフォルトは選択できる最小の枚数（枚数が選べない場合は開いて畳む、
+ *   それもない場合は花弁折り）
  */
 export function FoldCountSelector({
   maxFoldCount,
   validCounts,
   squashAvailable,
+  petalAvailable,
   onConfirm,
   onCancel,
 }: Props) {
-  const [selectedChoice, setSelectedChoice] = useState<number | "squash">(
-    validCounts[0] ?? "squash"
+  const [selectedChoice, setSelectedChoice] = useState<FoldChoice>(
+    validCounts[0] ?? (squashAvailable ? "squash" : "petal")
   );
 
   const counts = Array.from({ length: maxFoldCount }, (_, index) => index + 1);
@@ -67,6 +72,19 @@ export function FoldCountSelector({
           onClick={() => setSelectedChoice("squash")}
         >
           開いて畳む
+        </button>
+      )}
+      {petalAvailable && (
+        <button
+          type="button"
+          className={
+            selectedChoice === "petal"
+              ? styles.squash_button_selected
+              : styles.squash_button
+          }
+          onClick={() => setSelectedChoice("petal")}
+        >
+          花弁折り
         </button>
       )}
       <div className={styles.actions}>

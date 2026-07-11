@@ -6,6 +6,7 @@ import { determineFoldRotation } from "../../utils/determineFoldRotation";
 import { removeFoldLine } from "../../utils/visualizeFoldLine";
 import { easeInOutCubic } from "../../utils/easeInOutCubic";
 import { computeSquashAnimationPositions } from "../../utils/computeSquashAnimationPositions";
+import { computePetalAnimationPositions } from "../../utils/computePetalAnimationPositions";
 import { updateMorphBoardMeshPositions } from "../../utils/createMorphBoardMesh";
 
 /** 折りアニメーションの所要時間（ミリ秒） */
@@ -30,6 +31,8 @@ type UseFoldAnimation = (props: {
  *   - 通常の折り: ピボットGroup（board_moving_pivot）を折り線周りに回転
  *   - 開いて畳む: モーフ板（board_squash_moving_*）の頂点座標を、頂点ごとの
  *     回転軸（折り線・ヒンジ・その合成）で毎フレーム書き換える
+ *   - 花弁折り: モーフ板（board_petal_moving_*）の頂点座標を、頂点ごとの
+ *     回転軸（折り線・かぶせ折り線・その合成）で毎フレーム書き換える
  * - 回転軸の向きはdetermineFoldRotationで決定し、動く片は常に折ったときの
  *   視点側（表なら+Z）を通って折り返される
  * - アニメーション中はOrbitControlsを無効化する
@@ -58,10 +61,7 @@ export const useFoldAnimation: UseFoldAnimation = ({
     const scene = sceneRef.current;
     if (!scene) return;
 
-    const applyAngle =
-      pendingFold.kind === "fold"
-        ? createFoldAngleApplier(scene, pendingFold)
-        : createSquashAngleApplier(scene, pendingFold);
+    const applyAngle = createAngleApplier(scene, pendingFold);
 
     // 回転を構成できない場合は回転せずに折りを確定する（通常は起こり得ない。
     // 確定後の描画は履歴のリプレイ結果を使うため最終状態は正しい）
@@ -106,6 +106,23 @@ export const useFoldAnimation: UseFoldAnimation = ({
       if (controls) controls.enabled = true;
     };
   }, [sceneRef, controlsRef, foldPhase, pendingFold, completeFold]);
+};
+
+/**
+ * 折り操作の種類に応じた回転適用関数を作成する
+ */
+const createAngleApplier = (
+  scene: THREE.Scene,
+  pendingFold: PendingFold
+): ((angle: number) => void) | null => {
+  switch (pendingFold.kind) {
+    case "fold":
+      return createFoldAngleApplier(scene, pendingFold);
+    case "squash":
+      return createSquashAngleApplier(scene, pendingFold);
+    case "petal":
+      return createPetalAngleApplier(scene, pendingFold);
+  }
 };
 
 /**
@@ -194,6 +211,71 @@ const createSquashAngleApplier = (
       spine,
       foldLineAxis,
       hingeAxis,
+      angle,
+    });
+    positions.forEach((piecePositions, index) => {
+      updateMorphBoardMeshPositions(morphGroups[index], piecePositions);
+    });
+  };
+};
+
+/**
+ * 花弁折りの回転適用関数を作成する
+ *
+ * @returns 回転角を受け取ってモーフ板の頂点座標を書き換える関数。
+ *          構成できない場合はnull
+ */
+const createPetalAngleApplier = (
+  scene: THREE.Scene,
+  pendingFold: Extract<PendingFold, { kind: "petal" }>
+): ((angle: number) => void) | null => {
+  const { step, result } = pendingFold;
+
+  const morphGroups: THREE.Object3D[] = [];
+  for (let i = 0; i < result.movingPieces.length; i++) {
+    const group = scene.getObjectByName(`board_petal_moving_${i}`);
+    if (!group) return null;
+    morphGroups.push(group);
+  }
+
+  // 動く片は折ったときの視点側（表なら+Z、裏なら-Z）へ持ち上げる
+  const liftDirection = new THREE.Vector3(0, 0, step.viewFront ? 1 : -1);
+
+  const centralPiece = result.movingPieces.find(
+    (moving) => moving.motion === "mirrorFoldLine"
+  );
+  if (!centralPiece) return null;
+  const foldLineAxis = determineFoldRotation(
+    result.foldLine,
+    centralPiece.piece.polygon,
+    liftDirection
+  );
+
+  // かぶせ折り線の回転軸は左右それぞれの耳片の持ち上がる向きで決める
+  const kiteAxisFor = (sideIndex: 0 | 1): THREE.Vector3 | null => {
+    const earPiece = result.movingPieces.find(
+      (moving) =>
+        moving.motion === "mirrorKite" && moving.sideIndex === sideIndex
+    );
+    if (!earPiece) return null;
+    return determineFoldRotation(
+      result.kiteLines[sideIndex],
+      earPiece.piece.polygon,
+      liftDirection
+    );
+  };
+  const firstKiteAxis = kiteAxisFor(0);
+  const secondKiteAxis = kiteAxisFor(1);
+  if (!foldLineAxis || !firstKiteAxis || !secondKiteAxis) return null;
+
+  return (angle: number) => {
+    const positions = computePetalAnimationPositions({
+      movingPieces: result.movingPieces,
+      foldLine: result.foldLine,
+      kiteLines: result.kiteLines,
+      tuckCreases: result.tuckCreases,
+      foldLineAxis,
+      kiteAxes: [firstKiteAxis, secondKiteAxis],
       angle,
     });
     positions.forEach((piecePositions, index) => {
