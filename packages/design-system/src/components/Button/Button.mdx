@@ -1,0 +1,93 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as ButtonStories from "./Button.stories";
+import { Button } from "./Button";
+
+<Meta of={ButtonStories} />
+
+# Button
+
+ユーザーの操作の起点となるアクションボタンです。[react-aria-components](https://react-spectrum.adobe.com/react-aria/Button.html) をベースに、キーボード操作・スクリーンリーダー対応を担保しています。
+
+<Canvas of={ButtonStories.Primary} />
+
+<Controls />
+
+## 使用原則
+
+### プライマリーボタン
+
+<Canvas of={ButtonStories.Primary} />
+
+- **画面内で原則1つ**とし、その画面で最も重要なアクション（送信・保存・次へ進む等）にのみ使用します。
+- 重要ではないアクションには使用しません。「主要なアクションが複数ある」と感じた場合は、ボタンを増やすのではなく**画面の情報設計を見直す**ことを検討します。
+- 【提案】ボタンを横に並べる場合、プライマリーは**右端**に配置します（「次へ」「保存」は右、「キャンセル」「戻る」は左）。
+
+### セカンダリーボタン
+
+<Canvas of={ButtonStories.Secondary} />
+
+- 主要アクションを補助するアクションに使用します。使用数に上限はありません。
+- **セカンダリーを2つ並べる状況で重要度に差がある場合は、重要度が高い方をプライマリーに昇格**させます。同格のアクションが並ぶ場合のみセカンダリー同士の併置を許容します。
+- セカンダリーが多くなりすぎる場合は、情報設計の見直しやメニューへの集約を検討します。
+
+### ボタン同士の間隔
+
+誤タップ防止のため、隣接するボタン間には以下の最小間隔を設けます。
+
+<table style={{ borderCollapse: "collapse", marginBottom: "16px" }}>
+  <thead>
+    <tr>
+      <th style={{ border: "1px solid #ccc", padding: "8px 16px" }}>サイズ</th>
+      <th style={{ border: "1px solid #ccc", padding: "8px 16px" }}>最小間隔</th>
+      <th style={{ border: "1px solid #ccc", padding: "8px 16px" }}>対応トークン</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{ border: "1px solid #ccc", padding: "8px 16px" }}>MD（高さ44px）</td>
+      <td style={{ border: "1px solid #ccc", padding: "8px 16px" }}>8px</td>
+      <td style={{ border: "1px solid #ccc", padding: "8px 16px" }}><code>--spacing-xs</code></td>
+    </tr>
+    <tr>
+      <td style={{ border: "1px solid #ccc", padding: "8px 16px" }}>SM（高さ24px）</td>
+      <td style={{ border: "1px solid #ccc", padding: "8px 16px" }}>12px</td>
+      <td style={{ border: "1px solid #ccc", padding: "8px 16px" }}><code>--spacing-sm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+- MD はタッチターゲットとして十分な高さ（44px）があるため、視覚的な分離として 8px を最小とします。
+- SM は高さ24pxで最小ターゲットサイズ（24×24px）をぎりぎり満たすサイズのため、ターゲット同士が近いと誤操作しやすくなります。そのため MD より広い **12px 以上**を最小間隔とします。
+- 【提案】SM は補助的・高密度な UI（テーブル内の操作等）に限定して使用し、主要な操作フローでは MD を使用します。
+
+<div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
+  <Button variant="secondary" text="キャンセル" />
+  <Button text="保存する" />
+</div>
+
+<sub>MD同士: 8px 間隔・プライマリーは右端</sub>
+
+<div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "16px", marginBottom: "8px" }}>
+  <Button size="sm" variant="secondary" prefixIcon="PreviousIcon" text="前へ" />
+  <Button size="sm" variant="secondary" suffixIcon="NextIcon" text="次へ" />
+</div>
+
+<sub>SM同士: 12px 間隔・同格のアクションのためセカンダリー併置</sub>
+
+## サイズ
+
+- **MD（デフォルト）**: 高さ44px。基本的にこちらを使用します。
+- **SM**: 高さ24px。高密度な UI 向け。単独でもタッチターゲットが小さいため、多用しないでください。
+
+## アイコン
+
+`prefixIcon` / `suffixIcon` にデザインシステムのアイコン名を指定できます。アイコンは操作の想起を助ける目的で使用し、装飾目的で多用しません。
+
+<Canvas of={ButtonStories.WithPrefixIcon} />
+<Canvas of={ButtonStories.WithSuffixIcon} />
+
+## 参考にしたデザインシステム
+
+- [デジタル庁デザインシステム — ボタン](https://design.digital.go.jp/dads/components/button/)
+- [SmartHR Design System — Button](https://smarthr.design/products/components/button/)
+- [WCAG 2.2 — Understanding SC 2.5.8: Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html)
