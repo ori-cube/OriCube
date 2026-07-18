@@ -1,0 +1,77 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xxs);
+  border: var(--border-width-md) solid transparent;
+  border-radius: var(--border-radius-md);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.button[data-focus-visible] {
+  outline: var(--border-width-lg) solid var(--border-bold);
+  outline-offset: 2px;
+}
+
+.button[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.primary {
+  background-color: var(--background-primary-action-enabled);
+  color: var(--text-primary-action);
+}
+
+.primary[data-hovered] {
+  background-color: var(--background-primary-action-hover);
+}
+
+.primary[data-pressed] {
+  background-color: var(--background-primary-action-pressed);
+}
+
+.secondary {
+  background-color: var(--background-secondary-action-enabled);
+  border-color: var(--border-default);
+  color: var(--text-default);
+}
+
+.secondary[data-hovered] {
+  background-color: var(--background-secondary-action-hover);
+}
+
+.secondary[data-pressed] {
+  background-color: var(--background-secondary-action-pressed);
+}
+
+.sm {
+  --button-padding-x: var(--spacing-sm);
+  --button-padding-x-with-icon: var(--spacing-xs);
+
+  /* a11y: line-height 16px + padding 8px で高さ22px以上を担保 */
+  padding: var(--spacing-xxs) var(--button-padding-x);
+  font-size: 0.875rem;
+  line-height: 1rem;
+}
+
+.md {
+  --button-padding-x: var(--spacing-md);
+  --button-padding-x-with-icon: var(--spacing-sm);
+
+  /* a11y: line-height 28px + padding 16px でタッチターゲット44px以上を担保 */
+  padding: var(--spacing-xs) var(--button-padding-x);
+  font-size: 1rem;
+  line-height: 1.75rem;
+}
+
+.hasPrefix {
+  padding-left: var(--button-padding-x-with-icon);
+}
+
+.hasSuffix {
+  padding-right: var(--button-padding-x-with-icon);
+}
