@@ -9,6 +9,7 @@ import { useRenderBoards } from "./useRenderBoards";
 import { useDragHandler } from "./useDragHandler";
 import { useDropHandler } from "./useDropHandler";
 import { commenceFold } from "./commenceFold";
+import { commenceSquashFold } from "./commenceSquashFold";
 
 type UseDragDrop = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -26,9 +27,9 @@ type UseDragDrop = (props: {
   setFoldProposal: (proposal: FoldProposal | null) => void;
   setPendingFold: (pending: PendingFold | null) => void;
 }) => {
-  /** 枚数選択中の折りを指定枚数で確定する */
-  confirmFold: (foldCount: number) => void;
-  /** 枚数選択中の折りを取りやめる */
+  /** 選択中の折りを指定した操作（枚数または開いて畳む）で確定する */
+  confirmFold: (choice: number | "squash") => void;
+  /** 選択中の折りを取りやめる */
   cancelFold: () => void;
 };
 
@@ -124,26 +125,37 @@ export const useDragDrop: UseDragDrop = ({
     setPendingFold,
   });
 
-  // 枚数選択中の折りを指定枚数で確定する
+  // 選択中の折りを指定した操作（枚数または開いて畳む）で確定する
   const confirmFold = useCallback(
-    (foldCount: number) => {
+    (choice: number | "squash") => {
       const scene = sceneRef.current;
       if (!scene || foldPhase !== "selecting" || !foldProposal) return;
 
-      const pending = commenceFold({
-        scene,
-        currentBoards,
-        midpoint: foldProposal.midpoint,
-        direction: foldProposal.direction,
-        dragVertex: foldProposal.dragVertex,
-        foldCount,
-        viewFront: foldProposal.viewFront,
-        origamiColor,
-      });
+      const pending =
+        choice === "squash"
+          ? commenceSquashFold({
+              scene,
+              currentBoards,
+              midpoint: foldProposal.midpoint,
+              direction: foldProposal.direction,
+              dragVertex: foldProposal.dragVertex,
+              viewFront: foldProposal.viewFront,
+              origamiColor,
+            })
+          : commenceFold({
+              scene,
+              currentBoards,
+              midpoint: foldProposal.midpoint,
+              direction: foldProposal.direction,
+              dragVertex: foldProposal.dragVertex,
+              foldCount: choice,
+              viewFront: foldProposal.viewFront,
+              origamiColor,
+            });
 
       setFoldProposal(null);
 
-      // 成立しない枚数はUI側で無効化しているため通常起こらないが、防御的にキャンセル扱い
+      // 成立しない操作はUI側で無効化しているため通常起こらないが、防御的にキャンセル扱い
       if (!pending) {
         removeFoldLine(scene);
         setFoldPhase("idle");

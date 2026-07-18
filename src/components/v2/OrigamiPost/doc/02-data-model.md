@@ -22,6 +22,10 @@ LayeredBoard extends BoardPiece  シーンに存在する1枚の板
 └── layer: number                  重なり順。大きいほど表側（+Z側）
 
 FoldLine = { start, end }        折り線。無限直線として扱い、start/endは表示・分割入力用のスパン
+
+OrigamiStep                      折り手順の履歴の1要素（kindで判別するユニオン）
+├── FoldStep    (kind: "fold")     通常の折り
+└── SquashFoldStep (kind: "squash") 開いて畳む（スクワッシュフォールド）
 ```
 
 `polygon` と `sourcePolygon` は同じ長さで、**インデックス i の頂点同士が紙上の同一点に対応する**。この対応は `separateBoard` が両者を同じ補間比率でロックステップ分割することで維持される（[04 折りの実行ロジック](./04-fold-execution.md)）。
@@ -30,18 +34,30 @@ FoldLine = { start, end }        折り線。無限直線として扱い、start
 
 `layer` は折るたびに再割り当てされるため連番とは限らず、負の値も取り得る（裏折りは最小レイヤーの下に積むため）。描画時は `z = layer * BOARD_LAYER_OFFSET` で浮かせて立体感と z-fighting 回避を両立する（`constants.ts`）。
 
-## FoldStep — 1回の折り操作
+## OrigamiStep — 1回の折り操作
 
 ```typescript
 interface FoldStep {
+  kind: "fold";
   foldLine: FoldLine;        // 折り線
   dragVertex: THREE.Vector3; // ドラッグした頂点の元位置（折る板の特定と動く側の判定に使用）
   foldCount: number;         // 折る枚数（頂点を共有する板のうち視点側から数えて何枚折るか）
   viewFront: boolean;        // 折ったときに表側（+Z側）から見ていたか
 }
+
+interface SquashFoldStep {
+  kind: "squash";
+  foldLine: FoldLine;        // 折り線
+  dragVertex: THREE.Vector3; // ドラッグした頂点の元位置（フラップの特定と動く側の判定に使用）
+  viewFront: boolean;        // 折ったときに表側（+Z側）から見ていたか
+}
+
+type OrigamiStep = FoldStep | SquashFoldStep;
 ```
 
-初期状態の正方形に `FoldStep` を順に適用すれば現在の形状を再現できる、**最小限の情報**だけを持つ。板の座標そのものは含まないことに注意。カメラ位置にも依存しない（視点は `viewFront` として折った時点で記録済み）ため、リプレイは決定的になる。
+初期状態の正方形に `OrigamiStep` を順に適用すれば現在の形状を再現できる、**最小限の情報**だけを持つ。板の座標そのものは含まないことに注意。カメラ位置にも依存しない（視点は `viewFront` として折った時点で記録済み）ため、リプレイは決定的になる。
+
+`SquashFoldStep`（[09 開いて畳む](./09-squash-fold.md)）も同じ原則に従い、対象のフラップやヒンジ等の幾何はリプレイ時に板群から再導出する。`foldCount` を持たないのは対象が常に視点側2枚だから。
 
 ## 設計原則: 履歴が唯一の状態源
 
@@ -55,7 +71,7 @@ const currentBoards = useMemo(
 );
 ```
 
-`replayFoldSteps`（`utils/replayFoldSteps/index.ts`）は初期正方形を `LayeredBoard`（layer=0、`sourcePolygon` は `polygon` のコピー）に包み、`applyFoldStep` を順に適用するだけの純関数。
+`replayFoldSteps`（`utils/replayFoldSteps/index.ts`）は初期正方形を `LayeredBoard`（layer=0、`sourcePolygon` は `polygon` のコピー）に包み、各ステップを `kind` で適用関数（`applyFoldStep` / `applySquashFoldStep`）へ振り分けて順に適用するだけの純関数。
 
 この設計を採る理由:
 
@@ -69,8 +85,9 @@ const currentBoards = useMemo(
 
 | パス | 役割 |
 | --- | --- |
-| `types.ts` | `Board` / `FoldLine` / `BoardPiece` / `LayeredBoard` / `FoldStep` の定義 |
+| `types.ts` | `Board` / `FoldLine` / `BoardPiece` / `LayeredBoard` / `OrigamiStep`（`FoldStep` / `SquashFoldStep`）の定義 |
 | `constants.ts` | `BOARD_LAYER_OFFSET`（レイヤー1つ分の描画Zオフセット） |
-| `utils/replayFoldSteps/index.ts` | 履歴のリプレイによる現在の板群の導出 |
+| `utils/replayFoldSteps/index.ts` | 履歴のリプレイによる現在の板群の導出（`kind` による振り分け） |
 | `utils/createSquareBoard/index.ts` | 初期状態の正方形 `Board` の生成 |
-| `utils/applyFoldStep/index.ts` | 1ステップの適用（リプレイの中核。[04](./04-fold-execution.md) 参照） |
+| `utils/applyFoldStep/index.ts` | 通常の折り1ステップの適用（[04](./04-fold-execution.md) 参照） |
+| `utils/applySquashFoldStep/index.ts` | 開いて畳む1ステップの適用（[09](./09-squash-fold.md) 参照） |

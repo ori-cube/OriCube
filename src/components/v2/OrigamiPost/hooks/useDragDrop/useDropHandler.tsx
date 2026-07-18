@@ -8,7 +8,12 @@ import { calculateFoldLineSpan } from "../../utils/calculateFoldLineSpan";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import { disposeObject3D } from "../../utils/disposeObject3D";
 import { applyFoldStep, findFoldCandidates } from "../../utils/applyFoldStep";
+import {
+  applySquashFoldStep,
+  buildSquashFoldStep,
+} from "../../utils/applySquashFoldStep";
 import { commenceFold } from "./commenceFold";
+import { commenceSquashFold } from "./commenceSquashFold";
 
 type UseDropHandler = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -32,12 +37,14 @@ type UseDropHandler = (props: {
  * マウスドロップ処理を管理するカスタムフック
  *
  * @description
- * - マウスアップ時に折り線を計算し、折りが成立する枚数の数で分岐する:
- *   - 折れる枚数が1通り（候補が1枚、または破れ判定などで1通りに定まる場合）:
- *     選択させずにその枚数でシーンを差し替え、foldingフェーズへ
- *   - 折れる枚数が複数通り: 折り線をプレビュー表示し、折る枚数を選択する
+ * - マウスアップ時に折り線を計算し、成立する操作（折れる枚数と開いて畳む）
+ *   の数で分岐する:
+ *   - 成立する操作が1通り（枚数が1通りで開いて畳むが不成立、または
+ *     開いて畳むだけが成立する場合）: 選択させずにその操作でシーンを
+ *     差し替え、foldingフェーズへ
+ *   - 成立する操作が複数通り: 折り線をプレビュー表示し、操作を選択する
  *     selectingフェーズへ（確定はuseDragDropのconfirmFold）
- * - 折りが成立しない場合（折り線が板を横切らない、紙が破れる等）:
+ * - どの操作も成立しない場合（折り線が板を横切らない、紙が破れる等）:
  *   何もせずidleのまま再ドラッグを待つ
  * - 折りの成否に関わらずドラッグ中の点はクリアする
  *
@@ -104,6 +111,7 @@ export const useDropHandler: UseDropHandler = ({
 
         const isValid =
           applyFoldStep(currentBoards, {
+            kind: "fold",
             foldLine: span,
             dragVertex,
             foldCount: count,
@@ -149,10 +157,41 @@ export const useDropHandler: UseDropHandler = ({
         candidates,
         viewFront
       );
-      if (validCounts.length === 0) return;
 
-      // 折れる枚数が1通りに定まる場合は選択させず、その枚数でそのまま折る
-      if (validCounts.length === 1) {
+      // 開いて畳むが成立するかを判定する
+      const squashStep = buildSquashFoldStep({
+        boards: currentBoards,
+        midpoint: foldLineInfo.midpoint,
+        direction: foldLineInfo.direction,
+        dragVertex,
+        viewFront,
+      });
+      const squashAvailable =
+        squashStep !== null &&
+        applySquashFoldStep(currentBoards, squashStep) !== null;
+
+      if (validCounts.length === 0 && !squashAvailable) return;
+
+      // 開いて畳むだけが成立する場合は選択させず、そのまま開いて畳む
+      if (validCounts.length === 0) {
+        const pending = commenceSquashFold({
+          scene,
+          currentBoards,
+          midpoint: foldLineInfo.midpoint,
+          direction: foldLineInfo.direction,
+          dragVertex,
+          viewFront,
+          origamiColor,
+        });
+        if (!pending) return;
+
+        setPendingFold(pending);
+        setFoldPhase("folding");
+        return;
+      }
+
+      // 折れる枚数が1通りで開いて畳むも不成立なら選択させず、そのまま折る
+      if (validCounts.length === 1 && !squashAvailable) {
         const pending = commenceFold({
           scene,
           currentBoards,
@@ -170,7 +209,7 @@ export const useDropHandler: UseDropHandler = ({
         return;
       }
 
-      // 複数の枚数から選べる場合のみ、折る枚数の選択へ。
+      // 複数の選択肢（枚数や開いて畳む）から選べる場合のみ、選択へ。
       // 全候補を覆うスパンで折り線をプレビュー表示する
       const previewSpan = calculateFoldLineSpan(
         foldLineInfo.midpoint,
@@ -186,6 +225,7 @@ export const useDropHandler: UseDropHandler = ({
         dragVertex,
         validCounts,
         maxFoldCount: candidates.length,
+        squashAvailable,
         viewFront,
       });
       setFoldPhase("selecting");

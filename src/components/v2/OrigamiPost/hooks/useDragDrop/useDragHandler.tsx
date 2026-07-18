@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase } from "../../index";
 import { SnapPoint } from "../../utils/collectSnapPoints";
+import { snapToNearestSnapPoint } from "../../utils/snapToNearestSnapPoint";
 import { renderDraggedPoint } from "./renderPoint";
 
 type UseDragHandler = (props: {
@@ -24,7 +25,8 @@ type UseDragHandler = (props: {
  * @description
  * - マウスダウン時にスナップポイントとの交差を検出
  * - ドラッグ中の点を赤色で表示
- * - マウス移動時にドラッグ中の点の位置を更新
+ * - マウス移動時にドラッグ中の点の位置を更新。近くの頂点（スナップポイント）
+ *   があればその座標へ吸着させる
  * - マウスアップ時にドラッグ状態をリセット
  *
  * @param props.canvasRef - HTMLCanvasElementのref
@@ -121,14 +123,17 @@ export const useDragHandler: UseDragHandler = ({
       const intersection = new THREE.Vector3();
 
       if (raycaster.ray.intersectPlane(groundPlane, intersection)) {
+        // 近くの頂点があればその座標へ吸着させる（頂点同士が正確に重なり、
+        // ドロップ時に綺麗な折り線を作れる）
+        const snappedPosition = snapToNearestSnapPoint(
+          intersection,
+          snapPoints
+        );
+
         // ドラッグ中の点の位置を更新
         const draggedPointMesh = scene.getObjectByName("draggedPoint");
         if (draggedPointMesh) {
-          draggedPointMesh.position.set(
-            intersection.x,
-            intersection.y,
-            intersection.z
-          );
+          draggedPointMesh.position.copy(snappedPosition);
           renderer.render(scene, camera);
         }
       }

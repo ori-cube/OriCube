@@ -14,6 +14,17 @@
 
 マウスレイと地面平面 `THREE.Plane((0,0,1), 0)`（= XY 平面）との交点を計算し、`draggedPoint` メッシュの位置を更新する。板やスナップポイントのデータは一切変更しない。
 
+### 頂点スナップ（吸着） — snapToNearestSnapPoint
+
+頂点から頂点へ動かして折る操作が大半だが、マウスの解像度の限界でドロップ位置が目標の頂点から微妙にずれる。ずれが `SNAP_MERGE_TOLERANCE`（0.1）を超えると、折りで重なるはずの頂点が別々のスナップポイントとして集約され、次の折りで枚数の候補が正しく数えられない。
+
+そこでドラッグ中の点が近くのスナップポイントに接近したら、その座標へ吸着させる:
+
+- 吸着半径は `SNAP_ATTRACTION_RADIUS = 8`（ワールド空間、板の一辺 100 に対して）。XY 平面上のユークリッド距離で判定し、半径内で最も近いものへ吸着する
+- 適用箇所は mousemove のみ。ドロップ処理は `draggedPoint` メッシュの位置を読むため、**ドロップ座標も自動的に吸着済み**になる
+- 吸着した座標で折ると鏡映後の頂点が既存頂点と正確に重なり、`collectSnapPoints` の集約が意図どおり機能する
+- ドラッグ開始点へ吸着させて戻すと折り線が計算されず（同一点 → null）、そのままキャンセル操作になる
+
 ## ドロップ時の折り線計算（useDropHandler の mouseup）
 
 ### 折り線の導出 — calculateFoldLine
@@ -49,7 +60,7 @@
 
 ### ドロップ後の分岐
 
-折り線導出後の「折れる枚数の検証 → 即折り or 枚数選択」の分岐は [05](./05-multi-board-folding.md)、折りの実行そのものは [04](./04-fold-execution.md) を参照。折りの成否に関わらず、ドラッグ中の点はシーンから削除され状態はリセットされる。
+折り線導出後の「折れる枚数・開いて畳むの検証 → 即実行 or 選択」の分岐は [05](./05-multi-board-folding.md)、折りの実行そのものは [04](./04-fold-execution.md)（通常の折り）と [09](./09-squash-fold.md)（開いて畳む）を参照。折りの成否に関わらず、ドラッグ中の点はシーンから削除され状態はリセットされる。
 
 ## 関連ソース
 
@@ -58,5 +69,6 @@
 | `hooks/useDragDrop/useDragHandler.tsx` | mousedown / mousemove。レイキャストと点の移動 |
 | `hooks/useDragDrop/useDropHandler.tsx` | mouseup。折り線計算から分岐までの起点 |
 | `hooks/useDragDrop/renderPoint.tsx` | スナップポイント・ドラッグ中の点の描画 |
+| `utils/snapToNearestSnapPoint/index.ts` | 頂点スナップと `SNAP_ATTRACTION_RADIUS` の定義 |
 | `utils/calculateFoldLine/index.ts` | 垂直二等分線としての折り線の導出 |
 | `utils/calculateFoldLineSpan/index.ts` | 折り線が板群を横切るスパンの計算 |

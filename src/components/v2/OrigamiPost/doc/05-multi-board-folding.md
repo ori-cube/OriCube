@@ -1,6 +1,6 @@
-# 05 複数枚対象時の挙動と枚数選択
+# 05 複数枚対象時の挙動と折り方選択
 
-折りを重ねると複数の板が同じ位置に頂点を持つようになる。このとき「何枚まとめて折るか」をどう決めるかを説明する。
+折りを重ねると複数の板が同じ位置に頂点を持つようになる。このとき「何枚まとめて折るか」「開いて畳むか」をどう決めるかを説明する。
 
 ## 折りのセマンティクス
 
@@ -40,22 +40,25 @@ mouseup
   → calculateFoldLine（折り線が引けなければ何もしない）
   → findFoldCandidates（候補0枚なら何もしない）
   → collectValidCounts: 1〜候補数の各枚数について折りの成立を事前検証
-      成立枚数 0 通り → 何もしない（idleのまま再ドラッグを待つ）
-      成立枚数 1 通り → その枚数で commenceFold → folding へ（選択させない）
-      成立枚数 複数通り → 折り線をプレビュー表示し、FoldProposal を保存 → selecting へ
+  → 開いて畳むの成立も判定（buildSquashFoldStep + applySquashFoldStep。[09](./09-squash-fold.md)）
+      すべて不成立 → 何もしない（idleのまま再ドラッグを待つ）
+      開いて畳むのみ成立 → commenceSquashFold → folding へ（選択させない）
+      成立枚数 1 通りで開いて畳むは不成立 → その枚数で commenceFold → folding へ（選択させない）
+      選択肢が複数（枚数が複数通り、または枚数と開いて畳むの両方が成立）
+        → 折り線をプレビュー表示し、FoldProposal を保存 → selecting へ
 ```
 
-事前検証は「その枚数で `applyFoldStep` を実際に実行して null でないか」を試すだけ。分割不可・破れ判定（[06](./06-tear-prevention.md)）による不成立がここで除外されるため、「候補は3枚あるが折れるのは1枚だけ」のようなケースでは選択 UI を出さず即折りになる。
+事前検証は「その枚数で `applyFoldStep` を実際に実行して null でないか」を試すだけ。分割不可・破れ判定（[06](./06-tear-prevention.md)）による不成立がここで除外されるため、「候補は3枚あるが折れるのは1枚だけ」のようなケースでは選択 UI を出さず即折りになる。ただし開いて畳むも成立する場合は、枚数が1通りでも選択カードを出す。
 
-## 枚数選択（selecting フェーズ）
+## 折り方選択（selecting フェーズ）
 
 - 折り線は**全候補を覆うスパン**でプレビュー表示する（何枚選んでも折り線の位置関係が視覚的に分かるように）
-- `FoldCountSelector` がキャンバス下部にカードを表示。成立しない枚数のボタンは無効化され、デフォルトは選択できる最小の枚数
-- 「折る」→ `confirmFold(count)`（`useDragDrop`）が `commenceFold` を呼んで folding へ
+- `FoldCountSelector` がキャンバス下部にカードを表示。成立しない枚数のボタンは無効化され、デフォルトは選択できる最小の枚数（枚数が選べない場合は「開いて畳む」）。開いて畳むが成立する場合（`FoldProposal.squashAvailable`）は枚数に加えて「開いて畳む」の選択肢を表示する
+- 「折る」→ `confirmFold(choice)`（`useDragDrop`、`choice` は枚数または `"squash"`）が `commenceFold` / `commenceSquashFold` を呼んで folding へ
 - 「キャンセル」→ `cancelFold()` が折り線を消して idle へ
 - selecting 中はドラッグ&ドロップと Undo/Redo は無効
 
-`commenceFold` は折りの確定処理（対象板でのスパン再計算 → `applyFoldStep` → 折り線可視化 → シーン差し替え）の共通関数で、即時フローと枚数選択後の両方から呼ばれる。確定時のスパンは選択された枚数の対象板だけで計算し直すため、プレビューより短くなることがある。
+`commenceFold` は折りの確定処理（対象板でのスパン再計算 → `applyFoldStep` → 折り線可視化 → シーン差し替え）の共通関数で、即時フローと選択後の両方から呼ばれる。確定時のスパンは選択された枚数の対象板だけで計算し直すため、プレビューより短くなることがある。開いて畳む側の確定処理は `commenceSquashFold`（[09](./09-squash-fold.md)）。
 
 ## 関連ソース
 
@@ -63,7 +66,8 @@ mouseup
 | --- | --- |
 | `utils/collectSnapPoints/index.ts` | 頂点の集約と `SNAP_MERGE_TOLERANCE` の定義 |
 | `utils/applyFoldStep/index.ts` | `findFoldCandidates`（候補板の視点順ソート） |
-| `hooks/useDragDrop/useDropHandler.tsx` | `collectValidCounts` と即折り / 枚数選択の分岐 |
-| `hooks/useDragDrop/commenceFold.ts` | 折りの確定処理（両フロー共通） |
+| `hooks/useDragDrop/useDropHandler.tsx` | `collectValidCounts` と即実行 / 選択の分岐 |
+| `hooks/useDragDrop/commenceFold.ts` | 通常の折りの確定処理（両フロー共通） |
+| `hooks/useDragDrop/commenceSquashFold.ts` | 開いて畳むの確定処理 |
 | `hooks/useDragDrop/index.tsx` | `confirmFold` / `cancelFold` |
-| `FoldCountSelector/index.tsx` | 枚数選択カード UI |
+| `FoldCountSelector/index.tsx` | 折り方（枚数・開いて畳む）選択カード UI |

@@ -27,6 +27,7 @@ const createSquare = (layer: number, sourceOffsetX = 0): LayeredBoard => ({
 const createVerticalFoldStep = (
   overrides: Partial<FoldStep> = {}
 ): FoldStep => ({
+  kind: "fold",
   foldLine: {
     start: new THREE.Vector3(0, -50, 0),
     end: new THREE.Vector3(0, 50, 0),
@@ -41,6 +42,7 @@ const createVerticalFoldStep = (
 const createHorizontalFoldStep = (
   overrides: Partial<FoldStep> = {}
 ): FoldStep => ({
+  kind: "fold",
   foldLine: {
     start: new THREE.Vector3(-50, 0, 0),
     end: new THREE.Vector3(50, 0, 0),

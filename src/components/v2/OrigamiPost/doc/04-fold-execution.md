@@ -1,6 +1,6 @@
 # 04 折りの実行ロジック
 
-`applyFoldStep`（`utils/applyFoldStep/index.ts`）が「現在の板群 + 1つの `FoldStep` → 折り後の板群」を計算する純関数で、リプレイの中核。折りが成立しない場合は null を返し、呼び出し側は折り全体を不成立として扱う。
+`applyFoldStep`（`utils/applyFoldStep/index.ts`）が「現在の板群 + 1つの `FoldStep` → 折り後の板群」を計算する純関数で、リプレイの中核。折りが成立しない場合は null を返し、呼び出し側は折り全体を不成立として扱う。本ドキュメントは通常の折り（`kind: "fold"`）を対象とし、開いて畳む（`kind: "squash"`、`applySquashFoldStep`）は [09](./09-squash-fold.md) を参照。
 
 ## applyFoldStep のパイプライン
 

@@ -9,7 +9,8 @@ import {
   useFoldAnimation,
   useFlipView,
 } from "./hooks";
-import { FoldStep, LayeredBoard } from "./types";
+import { FoldStep, LayeredBoard, SquashFoldStep } from "./types";
+import { SquashFoldStepResult } from "./utils/applySquashFoldStep";
 import { createSquareBoard } from "./utils/createSquareBoard";
 import { replayFoldSteps } from "./utils/replayFoldSteps";
 import {
@@ -49,6 +50,8 @@ export interface FoldProposal {
   validCounts: number[];
   /** 折る枚数の上限（頂点を共有する板の数） */
   maxFoldCount: number;
+  /** 開いて畳むが選択できるか */
+  squashAvailable: boolean;
   /** ドロップ時に表側（+Z側）から見ていたか */
   viewFront: boolean;
 }
@@ -56,12 +59,21 @@ export interface FoldProposal {
 /**
  * アニメーション完了を待っている折り操作
  */
-export interface PendingFold {
-  /** 適用する折り操作（アニメーション完了時に履歴へ積む） */
-  step: FoldStep;
-  /** 回転前の動く片（回転軸の決定に使用） */
-  movingBoards: LayeredBoard[];
-}
+export type PendingFold =
+  | {
+      kind: "fold";
+      /** 適用する折り操作（アニメーション完了時に履歴へ積む） */
+      step: FoldStep;
+      /** 回転前の動く片（回転軸の決定に使用） */
+      movingBoards: LayeredBoard[];
+    }
+  | {
+      kind: "squash";
+      /** 適用する開いて畳む操作（アニメーション完了時に履歴へ積む） */
+      step: SquashFoldStep;
+      /** 適用結果（動く片と回転軸の決定に使用） */
+      result: SquashFoldStepResult;
+    };
 
 export interface OrigamiPostV2Props {
   /** 折り紙の色 */
@@ -213,6 +225,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
         <FoldCountSelector
           maxFoldCount={foldProposal.maxFoldCount}
           validCounts={foldProposal.validCounts}
+          squashAvailable={foldProposal.squashAvailable}
           onConfirm={confirmFold}
           onCancel={cancelFold}
         />

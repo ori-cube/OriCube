@@ -7,22 +7,29 @@ import { disposeObject3D } from "../disposeObject3D";
  * @param scene - Three.jsのシーン
  * @param start - 折り線の始点
  * @param end - 折り線の終点
- * @param color - 折り線の色（デフォルト: 赤）
- * @param radius - 円柱の半径（デフォルト: 0.5）
+ * @param options.color - 折り線の色（デフォルト: 赤）
+ * @param options.radius - 円柱の半径（デフォルト: 0.5）
+ * @param options.name - オブジェクト名（デフォルト: "foldLine"。
+ *        開いて畳むのヒンジ線のように複数の線を表示する場合は
+ *        "foldLine"で始まる別名を指定する）
  *
  * @description
- * - 既存の折り線があれば削除
+ * - 同名の既存の折り線があれば置き換える
  * - 2点を結ぶ円柱のジオメトリで折り線を描画
- * - 折り線の名前は "foldLine" で固定
  */
 export const visualizeFoldLine = (
   scene: THREE.Scene,
   start: THREE.Vector3,
   end: THREE.Vector3,
-  color: string = "#ff0000",
-  radius: number = 0.5
+  options: { color?: string; radius?: number; name?: string } = {}
 ): void => {
-  removeFoldLine(scene);
+  const { color = "#ff0000", radius = 0.5, name = "foldLine" } = options;
+
+  const existingLine = scene.getObjectByName(name);
+  if (existingLine) {
+    scene.remove(existingLine);
+    disposeObject3D(existingLine);
+  }
 
   // 2点間の距離を計算
   const distance = start.distanceTo(end);
@@ -50,17 +57,20 @@ export const visualizeFoldLine = (
   }
 
   // 名前を設定してシーンに追加
-  cylinder.name = "foldLine";
+  cylinder.name = name;
   scene.add(cylinder);
 };
 
 /**
- * シーン上の折り線（foldLine）を削除する（リソースも破棄）
+ * シーン上の折り線（名前が"foldLine"で始まるもの）をすべて削除する
+ * （リソースも破棄）
  */
 export const removeFoldLine = (scene: THREE.Scene): void => {
-  const existingFoldLine = scene.getObjectByName("foldLine");
-  if (existingFoldLine) {
-    scene.remove(existingFoldLine);
-    disposeObject3D(existingFoldLine);
-  }
+  const foldLines = scene.children.filter((child) =>
+    child.name.startsWith("foldLine")
+  );
+  foldLines.forEach((foldLine) => {
+    scene.remove(foldLine);
+    disposeObject3D(foldLine);
+  });
 };
