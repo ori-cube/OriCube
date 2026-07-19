@@ -1,8 +1,7 @@
 import * as THREE from "three";
-import { SnapPoint } from "../collectSnapPoints";
 
 /**
- * ドラッグ中の点がスナップポイントに吸着するXY平面上の距離の閾値
+ * ドラッグ中の点がスナップ先に吸着するXY平面上の距離の閾値
  *
  * 板の一辺（100）に対して視覚的に「近い」と感じる範囲で、
  * 隣接するスナップポイント同士を誤って掴まない程度の大きさにしている
@@ -10,36 +9,34 @@ import { SnapPoint } from "../collectSnapPoints";
 export const SNAP_ATTRACTION_RADIUS = 8;
 
 /**
- * 位置に最も近いスナップポイントへ吸着させた座標を返す
+ * 位置に最も近いスナップ先へ吸着させた座標を返す
  *
  * @param position - ドラッグ中の点の位置（XY平面上）
- * @param snapPoints - 吸着先の候補となるスナップポイント
- * @returns 吸着半径内に最も近いスナップポイントがあればその座標のコピー、
+ * @param snapTargets - 吸着先の候補となる座標（頂点のスナップポイントと
+ *   辺の折り込み先=アライメント候補を合わせたもの）
+ * @returns 吸着半径内に最も近い候補があればその座標のコピー、
  *   なければ入力のpositionをそのまま返す
  *
  * @description
- * - 頂点から頂点へ動かして折る操作が大半のため、近接した頂点へ正確に
+ * - 頂点から頂点へ動かして折る操作が大半のため、近接した候補へ正確に
  *   重なるよう吸着させることで、綺麗に折れる折り線を作りやすくする
- * - 距離はXY平面上で判定する（スナップポイントはz=0に集約済み）
+ * - 距離はXY平面上で判定する（候補はz=0に集約済み）
  * - 複数が半径内にある場合は最も近いものへ吸着する
  */
 export const snapToNearestSnapPoint = (
   position: THREE.Vector3,
-  snapPoints: SnapPoint[]
+  snapTargets: THREE.Vector3[]
 ): THREE.Vector3 => {
-  let nearest: SnapPoint | null = null;
+  let nearest: THREE.Vector3 | null = null;
   let nearestDistance = SNAP_ATTRACTION_RADIUS;
 
-  for (const snapPoint of snapPoints) {
-    const distance = Math.hypot(
-      snapPoint.position.x - position.x,
-      snapPoint.position.y - position.y
-    );
+  for (const target of snapTargets) {
+    const distance = Math.hypot(target.x - position.x, target.y - position.y);
     if (distance <= nearestDistance) {
-      nearest = snapPoint;
+      nearest = target;
       nearestDistance = distance;
     }
   }
 
-  return nearest ? nearest.position.clone() : position;
+  return nearest ? nearest.clone() : position;
 };

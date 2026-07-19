@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase } from "../../index";
+import { LayeredBoard } from "../../types";
 import { SnapPoint } from "../../utils/collectSnapPoints";
 import { snapToNearestSnapPoint } from "../../utils/snapToNearestSnapPoint";
+import { collectAlignmentSnapPoints } from "../../utils/collectAlignmentSnapPoints";
 import { renderDraggedPoint } from "./renderPoint";
 
 type UseDragHandler = (props: {
@@ -12,6 +14,7 @@ type UseDragHandler = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
+  currentBoards: LayeredBoard[];
   snapPoints: SnapPoint[];
   setDraggedPoint: (point: Point | null) => void;
   setIsDragging: (isDragging: boolean) => void;
@@ -25,8 +28,9 @@ type UseDragHandler = (props: {
  * @description
  * - マウスダウン時にスナップポイントとの交差を検出
  * - ドラッグ中の点を赤色で表示
- * - マウス移動時にドラッグ中の点の位置を更新。近くの頂点（スナップポイント）
- *   があればその座標へ吸着させる
+ * - マウス移動時にドラッグ中の点の位置を更新。近くの吸着先（頂点の
+ *   スナップポイント + 辺の折り込み先=アライメント候補）があれば
+ *   その座標へ吸着させる
  * - マウスアップ時にドラッグ状態をリセット
  *
  * @param props.canvasRef - HTMLCanvasElementのref
@@ -34,6 +38,7 @@ type UseDragHandler = (props: {
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.rendererRef - THREE.WebGLRendererのref
  * @param props.raycasterRef - THREE.Raycasterのref
+ * @param props.currentBoards - 現在の板群（アライメント候補の計算に使用）
  * @param props.snapPoints - 集約済みのスナップポイント
  * @param props.setDraggedPoint - ドラッグ中の点を設定する関数
  */
@@ -43,6 +48,7 @@ export const useDragHandler: UseDragHandler = ({
   cameraRef,
   rendererRef,
   raycasterRef,
+  currentBoards,
   snapPoints,
   setDraggedPoint,
   setIsDragging,
@@ -63,6 +69,9 @@ export const useDragHandler: UseDragHandler = ({
 
     let isDragging = false;
     let draggedPoint: Point | null = null;
+    // ドラッグ中の吸着先（頂点のスナップポイント + ドラッグ頂点に応じた
+    // アライメント候補）。ドラッグ開始時に計算する
+    let snapTargets: THREE.Vector3[] = [];
 
     const handleMouseDown = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -95,6 +104,13 @@ export const useDragHandler: UseDragHandler = ({
           // ドラッグ開始時の元の位置を保存
           setOriginalPoint(position.clone());
 
+          // 吸着先を計算: 全頂点のスナップポイントに、このドラッグ頂点の
+          // 辺の折り込み先（アライメント候補）を加える
+          snapTargets = [
+            ...snapPoints.map((snapPoint) => snapPoint.position),
+            ...collectAlignmentSnapPoints(currentBoards, position),
+          ];
+
           // ドラッグ中の点を描画
           renderDraggedPoint({
             scene,
@@ -123,11 +139,11 @@ export const useDragHandler: UseDragHandler = ({
       const intersection = new THREE.Vector3();
 
       if (raycaster.ray.intersectPlane(groundPlane, intersection)) {
-        // 近くの頂点があればその座標へ吸着させる（頂点同士が正確に重なり、
-        // ドロップ時に綺麗な折り線を作れる）
+        // 近くの吸着先があればその座標へ吸着させる（頂点同士や辺の
+        // 折り込み先へ正確に重なり、ドロップ時に綺麗な折り線を作れる）
         const snappedPosition = snapToNearestSnapPoint(
           intersection,
-          snapPoints
+          snapTargets
         );
 
         // ドラッグ中の点の位置を更新
@@ -162,6 +178,7 @@ export const useDragHandler: UseDragHandler = ({
     cameraRef,
     rendererRef,
     raycasterRef,
+    currentBoards,
     snapPoints,
     setDraggedPoint,
     setIsDragging,

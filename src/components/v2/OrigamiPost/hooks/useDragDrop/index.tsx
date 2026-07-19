@@ -103,6 +103,7 @@ export const useDragDrop: UseDragDrop = ({
     cameraRef,
     rendererRef,
     raycasterRef,
+    currentBoards,
     snapPoints,
     setDraggedPoint,
     setIsDragging,

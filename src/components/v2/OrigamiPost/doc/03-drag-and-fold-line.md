@@ -25,6 +25,23 @@
 - 吸着した座標で折ると鏡映後の頂点が既存頂点と正確に重なり、`collectSnapPoints` の集約が意図どおり機能する
 - ドラッグ開始点へ吸着させて戻すと折り線が計算されず（同一点 → null）、そのままキャンセル操作になる
 
+### 辺の折り込み先への吸着 — collectAlignmentSnapPoints
+
+「辺を別の辺（折り目）に沿わせて折る」操作の畳み先は、既存の頂点と一致しない無理数座標になることが多い（例: 鶴の基本形で足を細くする折り。畳み先はスパイン上の点で、スパイン方向に 0.5 ずれただけで折り筋が下の先端から外れ、破れ判定で折れる枚数の候補が消える）。頂点への吸着だけではこの操作を正確にドロップできない。
+
+そこでドラッグ開始時に、ドラッグ頂点 D に応じた**アライメント候補**を計算し、頂点のスナップポイントと合わせて吸着先にする:
+
+- D と辺でつながる各頂点 W について、W から出る他の辺の方向へ |D–W| 進んだ点 `W + |D–W|・unit(方向)` を候補にする（辺 D–W をその辺に沿わせて畳んだときの D の畳み先）
+- D の位置と一致する候補（辺を自分自身に沿わせる無意味な折り）は除外し、同一位置の候補は集約する
+- 候補はドラッグ頂点に依存するため mousedown 時に計算し、mousemove では頂点スナップポイントと合わせて最も近いものへ吸着する（候補の描画はしない。吸着によるドラッグ中の点の移動がフィードバックになる）
+
+### スナップまわりの既知の課題（未着手）
+
+折りが進むとスナップポイントが増え、操作性が下がる問題が確認されている:
+
+- 頂点が増えるほど吸着先が密集し、意図しない場所に吸着しやすくなる
+- 奥のレイヤーに埋もれた板の頂点までスナップポイントとして表示・吸着対象になっている。手前から見えている頂点だけに絞る（レイヤーや重なりで可視判定する）方が操作しやすい
+
 ## ドロップ時の折り線計算（useDropHandler の mouseup）
 
 ### 折り線の導出 — calculateFoldLine
@@ -69,6 +86,7 @@
 | `hooks/useDragDrop/useDragHandler.tsx` | mousedown / mousemove。レイキャストと点の移動 |
 | `hooks/useDragDrop/useDropHandler.tsx` | mouseup。折り線計算から分岐までの起点 |
 | `hooks/useDragDrop/renderPoint.tsx` | スナップポイント・ドラッグ中の点の描画 |
-| `utils/snapToNearestSnapPoint/index.ts` | 頂点スナップと `SNAP_ATTRACTION_RADIUS` の定義 |
+| `utils/snapToNearestSnapPoint/index.ts` | 吸着先への吸着と `SNAP_ATTRACTION_RADIUS` の定義 |
+| `utils/collectAlignmentSnapPoints/index.ts` | 辺の折り込み先（アライメント候補）の列挙 |
 | `utils/calculateFoldLine/index.ts` | 垂直二等分線としての折り線の導出 |
 | `utils/calculateFoldLineSpan/index.ts` | 折り線が板群を横切るスパンの計算 |
