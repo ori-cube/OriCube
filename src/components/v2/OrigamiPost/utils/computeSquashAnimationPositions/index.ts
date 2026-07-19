@@ -93,7 +93,7 @@ const rotateVertex = (
 /**
  * XY平面上の点と線分の距離を計算する
  */
-const distanceToSegment = (
+export const distanceToSegment = (
   point: THREE.Vector3,
   segmentStart: THREE.Vector3,
   segmentEnd: THREE.Vector3

@@ -9,6 +9,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={3}
         validCounts={[1, 2, 3]}
         squashAvailable={false}
+        petalAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -30,6 +31,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={2}
         validCounts={[1, 2]}
         squashAvailable={false}
+        petalAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -47,6 +49,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={3}
         validCounts={[1, 2, 3]}
         squashAvailable={false}
+        petalAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -64,6 +67,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={3}
         validCounts={[1, 3]}
         squashAvailable={false}
+        petalAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -80,6 +84,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={2}
         validCounts={[1, 2]}
         squashAvailable={false}
+        petalAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -94,6 +99,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={2}
         validCounts={[1, 2]}
         squashAvailable={true}
+        petalAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -111,6 +117,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={4}
         validCounts={[2, 4]}
         squashAvailable={true}
+        petalAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -122,6 +129,57 @@ describe("FoldCountSelector", () => {
     expect(onConfirm).toHaveBeenCalledWith("squash");
   });
 
+  it("花弁折りが成立する場合のみ選択肢に表示される", () => {
+    const { rerender } = render(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[1, 2]}
+        squashAvailable={false}
+        petalAvailable={false}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "花弁折り" })
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[1, 2]}
+        squashAvailable={false}
+        petalAvailable={true}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("button", { name: "花弁折り" })
+    ).toBeInTheDocument();
+  });
+
+  it("花弁折りを選んでから折ると花弁折りで確定される", () => {
+    const onConfirm = vi.fn();
+    render(
+      <FoldCountSelector
+        maxFoldCount={8}
+        validCounts={[2, 4]}
+        squashAvailable={true}
+        petalAvailable={true}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "花弁折り" }));
+    fireEvent.click(screen.getByRole("button", { name: "折る" }));
+
+    expect(onConfirm).toHaveBeenCalledWith("petal");
+  });
+
   it("キャンセルでonCancelが呼ばれ、onConfirmは呼ばれない", () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();
@@ -130,6 +188,7 @@ describe("FoldCountSelector", () => {
         maxFoldCount={2}
         validCounts={[1, 2]}
         squashAvailable={false}
+        petalAvailable={false}
         onConfirm={onConfirm}
         onCancel={onCancel}
       />

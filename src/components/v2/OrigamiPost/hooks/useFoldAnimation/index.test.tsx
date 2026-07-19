@@ -3,8 +3,9 @@ import { renderHook } from "@testing-library/react";
 import * as THREE from "three";
 import { useFoldAnimation } from "./index";
 import { PendingFold } from "../../index";
-import { FoldStep, SquashFoldStep } from "../../types";
+import { FoldStep, OrigamiStep, PetalFoldStep, SquashFoldStep } from "../../types";
 import { applySquashFoldStep } from "../../utils/applySquashFoldStep";
+import { applyPetalFoldStep } from "../../utils/applyPetalFoldStep";
 import { createMorphBoardMesh } from "../../utils/createMorphBoardMesh";
 import { replayFoldSteps } from "../../utils/replayFoldSteps";
 import { createSquareBoard } from "../../utils/createSquareBoard";
@@ -128,6 +129,91 @@ const createSquashScene = () => {
   });
 
   const pendingFold: PendingFold = { kind: "squash", step, result };
+
+  return { scene, morphGroups, pendingFold, result };
+};
+
+/**
+ * 花弁折りのアニメーション待ち状態を作る
+ * （鶴の正方基本形の先端(20,-20)を花弁折りする）
+ */
+const createPetalScene = () => {
+  const foldSteps: OrigamiStep[] = [
+    {
+      kind: "fold",
+      foldLine: {
+        start: new THREE.Vector3(-20, -20, 0),
+        end: new THREE.Vector3(20, 20, 0),
+      },
+      dragVertex: new THREE.Vector3(-20, 20, 0),
+      foldCount: 1,
+      viewFront: true,
+    },
+    {
+      kind: "fold",
+      foldLine: {
+        start: new THREE.Vector3(-20, 20, 0),
+        end: new THREE.Vector3(20, -20, 0),
+      },
+      dragVertex: new THREE.Vector3(-20, -20, 0),
+      foldCount: 2,
+      viewFront: true,
+    },
+    {
+      kind: "squash",
+      foldLine: {
+        start: new THREE.Vector3(0, 0, 0),
+        end: new THREE.Vector3(20, 0, 0),
+      },
+      dragVertex: new THREE.Vector3(20, 20, 0),
+      viewFront: true,
+    },
+    {
+      kind: "squash",
+      foldLine: {
+        start: new THREE.Vector3(0, 0, 0),
+        end: new THREE.Vector3(20, 0, 0),
+      },
+      dragVertex: new THREE.Vector3(20, 20, 0),
+      viewFront: false,
+    },
+  ];
+  const boards = replayFoldSteps(createSquareBoard(40), foldSteps);
+
+  const creaseArm = 20 * (2 - Math.SQRT2);
+  const step: PetalFoldStep = {
+    kind: "petal",
+    foldLine: {
+      start: new THREE.Vector3(creaseArm, 0, 0),
+      end: new THREE.Vector3(0, -creaseArm, 0),
+    },
+    dragVertex: new THREE.Vector3(20, -20, 0),
+    viewFront: true,
+  };
+  const result = applyPetalFoldStep(boards, step);
+  if (!result) throw new Error("前提の花弁折りが成立しませんでした");
+
+  const scene = new THREE.Scene();
+
+  const foldLineObject = new THREE.Group();
+  foldLineObject.name = "foldLine";
+  scene.add(foldLineObject);
+
+  result.kiteLines.forEach((_, index) => {
+    const kiteLineObject = new THREE.Group();
+    kiteLineObject.name = `foldLine_kite_${index}`;
+    scene.add(kiteLineObject);
+  });
+
+  const morphGroups = result.movingPieces.map((moving, index) => {
+    const group = createMorphBoardMesh(moving.piece.polygon, "#4A90E2", {
+      name: `board_petal_moving_${index}`,
+    });
+    scene.add(group);
+    return group;
+  });
+
+  const pendingFold: PendingFold = { kind: "petal", step, result };
 
   return { scene, morphGroups, pendingFold, result };
 };
@@ -325,6 +411,68 @@ describe("useFoldAnimation", () => {
 
       expect(scene.getObjectByName("foldLine")).toBeUndefined();
       expect(scene.getObjectByName("foldLine_hinge")).toBeUndefined();
+    });
+  });
+
+  describe("花弁折り", () => {
+    it("アニメーション中はモーフ板の頂点が持ち上がり、完了時に確定位置へ着地する", () => {
+      const { scene, morphGroups, pendingFold, result } = createPetalScene();
+      const completeFold = vi.fn();
+
+      renderHook(() =>
+        useFoldAnimation({
+          sceneRef: { current: scene },
+          controlsRef: { current: null },
+          foldPhase: "folding",
+          pendingFold,
+          completeFold,
+        })
+      );
+
+      flushAnimationFrame(0);
+
+      // 中間フレームでは動く頂点が+Z側へ持ち上がる（表側から折るため）
+      flushAnimationFrame(400);
+      const liftedVertices = morphGroups.flatMap((group, groupIndex) =>
+        result.movingPieces[groupIndex].piece.polygon.map((_, vertexIndex) =>
+          getMorphVertex(group, vertexIndex)
+        )
+      );
+      expect(liftedVertices.some((vertex) => vertex.z > 1)).toBe(true);
+      expect(completeFold).not.toHaveBeenCalled();
+
+      // 完了フレームでは確定後の座標に一致する
+      flushAnimationFrame(800);
+      result.movingPieces.forEach((moving, groupIndex) => {
+        moving.finalPiece.polygon.forEach((expected, vertexIndex) => {
+          const actual = getMorphVertex(morphGroups[groupIndex], vertexIndex);
+          expect(actual.x).toBeCloseTo(expected.x, 4);
+          expect(actual.y).toBeCloseTo(expected.y, 4);
+          expect(actual.z).toBeCloseTo(expected.z, 4);
+        });
+      });
+      expect(completeFold).toHaveBeenCalledOnce();
+    });
+
+    it("完了時に折り線とかぶせ折り線が削除される", () => {
+      const { scene, pendingFold } = createPetalScene();
+
+      renderHook(() =>
+        useFoldAnimation({
+          sceneRef: { current: scene },
+          controlsRef: { current: null },
+          foldPhase: "folding",
+          pendingFold,
+          completeFold: vi.fn(),
+        })
+      );
+
+      flushAnimationFrame(0);
+      flushAnimationFrame(800);
+
+      expect(scene.getObjectByName("foldLine")).toBeUndefined();
+      expect(scene.getObjectByName("foldLine_kite_0")).toBeUndefined();
+      expect(scene.getObjectByName("foldLine_kite_1")).toBeUndefined();
     });
   });
 });

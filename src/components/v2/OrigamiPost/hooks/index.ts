@@ -9,5 +9,6 @@
  */
 export { useInitScene } from "./useInitScene";
 export { useDragDrop } from "./useDragDrop";
+export type { FoldChoice } from "./useDragDrop";
 export { useFoldAnimation } from "./useFoldAnimation";
 export { useFlipView } from "./useFlipView";

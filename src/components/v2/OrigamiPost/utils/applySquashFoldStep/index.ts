@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import {
-  Board,
   BoardPiece,
   FoldLine,
   LayeredBoard,
@@ -8,12 +7,13 @@ import {
 } from "../../types";
 import { separateBoard } from "../separateBoard";
 import { selectMovingBoard } from "../selectMovingBoard";
-import { rotateBoard } from "../rotateBoard";
+import { mirrorBoardAcrossLine } from "../rotateBoard";
 import { SNAP_MERGE_TOLERANCE } from "../collectSnapPoints";
 import { calculateFoldLineSpan } from "../calculateFoldLineSpan";
 import { findFoldCandidates, distanceToFoldLine } from "../applyFoldStep";
 import {
   findSharedSourceSegments,
+  isConnectivityPreserved,
   mapSourceBoundaryPointToFolded,
 } from "../findSharedSourceSegments";
 
@@ -106,31 +106,19 @@ export const applySquashFoldStep = (
   const backSplit = splitByFoldLine(backFlap, dragVertex, foldLine);
   if (!frontSplit || !backSplit) return null;
 
-  const foldAxis = lineDirection(foldLine);
-  const hingeAxis = lineDirection(hinge);
-
   // 3つの動く片の確定後の座標を計算する
   const frontUpperFinal: BoardPiece = {
-    polygon: mirrorAcrossLine(
-      frontSplit.movingPiece.polygon,
-      foldLine.start,
-      foldAxis
-    ),
+    polygon: mirrorBoardAcrossLine(frontSplit.movingPiece.polygon, foldLine),
     sourcePolygon: frontSplit.movingPiece.sourcePolygon,
   };
   const backLowerFinal: BoardPiece = {
-    polygon: mirrorAcrossLine(
-      backSplit.staticPiece.polygon,
-      hinge.start,
-      hingeAxis
-    ),
+    polygon: mirrorBoardAcrossLine(backSplit.staticPiece.polygon, hinge),
     sourcePolygon: backSplit.staticPiece.sourcePolygon,
   };
   const backUpperFinal: BoardPiece = {
-    polygon: mirrorAcrossLine(
-      mirrorAcrossLine(backSplit.movingPiece.polygon, foldLine.start, foldAxis),
-      hinge.start,
-      hingeAxis
+    polygon: mirrorBoardAcrossLine(
+      mirrorBoardAcrossLine(backSplit.movingPiece.polygon, foldLine),
+      hinge
     ),
     sourcePolygon: backSplit.movingPiece.sourcePolygon,
   };
@@ -386,70 +374,6 @@ const splitByFoldLine = (
   if (!separated) return null;
   return selectMovingBoard(separated, dragVertex, foldLine);
 };
-
-/**
- * 最終状態の全ての片のペアについて、紙の接続が保たれるかを検証する
- *
- * @param movingFinalPieces - 動く片の確定後の座標
- * @param staticPieces - 動かない板（座標は現在のまま）
- * @returns 接続が保たれる場合はtrue
- *
- * @description
- * 2つの片が展開図上で共有する折り目の各端点を、それぞれの片の
- * 頂点対応で折り畳み空間へ写像し、両者が一致することを要求する。
- * これはapplyFoldStepの破れ判定を「片ごとに異なる変換」へ一般化した
- * もので、スパイン・カット辺・ヒンジ・想定外の接続をまとめて検証する。
- * 動かない板同士は座標が変わらないため検証不要。
- */
-const isConnectivityPreserved = (
-  movingFinalPieces: BoardPiece[],
-  staticPieces: BoardPiece[]
-): boolean => {
-  for (let i = 0; i < movingFinalPieces.length; i++) {
-    const others = [...movingFinalPieces.slice(i + 1), ...staticPieces];
-    for (const other of others) {
-      if (!staysAttached(movingFinalPieces[i], other)) return false;
-    }
-  }
-  return true;
-};
-
-/**
- * 2つの片が展開図上で共有する折り目が、折り畳み空間でも一致するか
- */
-const staysAttached = (pieceA: BoardPiece, pieceB: BoardPiece): boolean => {
-  const sharedSegments = findSharedSourceSegments(
-    pieceA.sourcePolygon,
-    pieceB.sourcePolygon
-  );
-
-  for (const segment of sharedSegments) {
-    for (const sourceEndpoint of [segment.start, segment.end]) {
-      const foldedA = mapSourceBoundaryPointToFolded(pieceA, sourceEndpoint);
-      const foldedB = mapSourceBoundaryPointToFolded(pieceB, sourceEndpoint);
-      if (!foldedA || !foldedB) return false;
-      if (foldedA.distanceTo(foldedB) > SNAP_MERGE_TOLERANCE) return false;
-    }
-  }
-
-  return true;
-};
-
-/**
- * 板を直線周りに180度回転（XY平面上では鏡映）し、z=0に揃える
- *
- * @description
- * 180度回転では軸方向の符号は結果に影響しない。浮動小数の誤差でzが
- * 微小にずれるとリプレイ時の判定が揺れるため、z=0に揃える
- */
-const mirrorAcrossLine = (
-  polygon: Board,
-  linePoint: THREE.Vector3,
-  axisDirection: THREE.Vector3
-): Board =>
-  rotateBoard(polygon, linePoint, axisDirection, Math.PI).map(
-    (vertex) => new THREE.Vector3(vertex.x, vertex.y, 0)
-  );
 
 /**
  * 折り線の正規化済み方向ベクトルを返す

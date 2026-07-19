@@ -1,6 +1,7 @@
 import { Board, LayeredBoard, OrigamiStep } from "../../types";
 import { applyFoldStep } from "../applyFoldStep";
 import { applySquashFoldStep } from "../applySquashFoldStep";
+import { applyPetalFoldStep } from "../applyPetalFoldStep";
 
 /**
  * 初期状態の板に折り手順を順に適用して、現在の板群を再現する
@@ -50,6 +51,8 @@ const applyStep = (
       return applyFoldStep(boards, step);
     case "squash":
       return applySquashFoldStep(boards, step);
+    case "petal":
+      return applyPetalFoldStep(boards, step);
     default:
       return assertNever(step);
   }

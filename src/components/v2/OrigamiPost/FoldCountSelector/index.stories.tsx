@@ -33,6 +33,7 @@ export const Default: Story = {
     maxFoldCount: 2,
     validCounts: [1, 2],
     squashAvailable: false,
+    petalAvailable: false,
   },
 };
 
@@ -41,6 +42,7 @@ export const WithInvalidCount: Story = {
     maxFoldCount: 3,
     validCounts: [1, 3],
     squashAvailable: false,
+    petalAvailable: false,
   },
 };
 
@@ -49,5 +51,15 @@ export const WithSquash: Story = {
     maxFoldCount: 4,
     validCounts: [2, 4],
     squashAvailable: true,
+    petalAvailable: false,
+  },
+};
+
+export const WithPetal: Story = {
+  args: {
+    maxFoldCount: 8,
+    validCounts: [2, 4],
+    squashAvailable: true,
+    petalAvailable: true,
   },
 };

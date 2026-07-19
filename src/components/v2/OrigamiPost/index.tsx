@@ -9,8 +9,14 @@ import {
   useFoldAnimation,
   useFlipView,
 } from "./hooks";
-import { FoldStep, LayeredBoard, SquashFoldStep } from "./types";
+import {
+  FoldStep,
+  LayeredBoard,
+  PetalFoldStep,
+  SquashFoldStep,
+} from "./types";
 import { SquashFoldStepResult } from "./utils/applySquashFoldStep";
+import { PetalFoldStepResult } from "./utils/applyPetalFoldStep";
 import { createSquareBoard } from "./utils/createSquareBoard";
 import { replayFoldSteps } from "./utils/replayFoldSteps";
 import {
@@ -52,6 +58,8 @@ export interface FoldProposal {
   maxFoldCount: number;
   /** 開いて畳むが選択できるか */
   squashAvailable: boolean;
+  /** 花弁折りが選択できるか */
+  petalAvailable: boolean;
   /** ドロップ時に表側（+Z側）から見ていたか */
   viewFront: boolean;
 }
@@ -73,6 +81,13 @@ export type PendingFold =
       step: SquashFoldStep;
       /** 適用結果（動く片と回転軸の決定に使用） */
       result: SquashFoldStepResult;
+    }
+  | {
+      kind: "petal";
+      /** 適用する花弁折り操作（アニメーション完了時に履歴へ積む） */
+      step: PetalFoldStep;
+      /** 適用結果（動く片と回転軸の決定に使用） */
+      result: PetalFoldStepResult;
     };
 
 export interface OrigamiPostV2Props {
@@ -226,6 +241,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
           maxFoldCount={foldProposal.maxFoldCount}
           validCounts={foldProposal.validCounts}
           squashAvailable={foldProposal.squashAvailable}
+          petalAvailable={foldProposal.petalAvailable}
           onConfirm={confirmFold}
           onCancel={cancelFold}
         />

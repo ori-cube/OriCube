@@ -10,6 +10,10 @@ import { useDragHandler } from "./useDragHandler";
 import { useDropHandler } from "./useDropHandler";
 import { commenceFold } from "./commenceFold";
 import { commenceSquashFold } from "./commenceSquashFold";
+import { commencePetalFold } from "./commencePetalFold";
+
+/** 枚数選択UIで選べる操作（折る枚数・開いて畳む・花弁折り） */
+export type FoldChoice = number | "squash" | "petal";
 
 type UseDragDrop = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -27,8 +31,8 @@ type UseDragDrop = (props: {
   setFoldProposal: (proposal: FoldProposal | null) => void;
   setPendingFold: (pending: PendingFold | null) => void;
 }) => {
-  /** 選択中の折りを指定した操作（枚数または開いて畳む）で確定する */
-  confirmFold: (choice: number | "squash") => void;
+  /** 選択中の折りを指定した操作（枚数・開いて畳む・花弁折り）で確定する */
+  confirmFold: (choice: FoldChoice) => void;
   /** 選択中の折りを取りやめる */
   cancelFold: () => void;
 };
@@ -125,33 +129,30 @@ export const useDragDrop: UseDragDrop = ({
     setPendingFold,
   });
 
-  // 選択中の折りを指定した操作（枚数または開いて畳む）で確定する
+  // 選択中の折りを指定した操作（枚数・開いて畳む・花弁折り）で確定する
   const confirmFold = useCallback(
-    (choice: number | "squash") => {
+    (choice: FoldChoice) => {
       const scene = sceneRef.current;
       if (!scene || foldPhase !== "selecting" || !foldProposal) return;
 
-      const pending =
-        choice === "squash"
-          ? commenceSquashFold({
-              scene,
-              currentBoards,
-              midpoint: foldProposal.midpoint,
-              direction: foldProposal.direction,
-              dragVertex: foldProposal.dragVertex,
-              viewFront: foldProposal.viewFront,
-              origamiColor,
-            })
-          : commenceFold({
-              scene,
-              currentBoards,
-              midpoint: foldProposal.midpoint,
-              direction: foldProposal.direction,
-              dragVertex: foldProposal.dragVertex,
-              foldCount: choice,
-              viewFront: foldProposal.viewFront,
-              origamiColor,
-            });
+      const commenceProps = {
+        scene,
+        currentBoards,
+        midpoint: foldProposal.midpoint,
+        direction: foldProposal.direction,
+        dragVertex: foldProposal.dragVertex,
+        viewFront: foldProposal.viewFront,
+        origamiColor,
+      };
+
+      let pending: PendingFold | null;
+      if (choice === "squash") {
+        pending = commenceSquashFold(commenceProps);
+      } else if (choice === "petal") {
+        pending = commencePetalFold(commenceProps);
+      } else {
+        pending = commenceFold({ ...commenceProps, foldCount: choice });
+      }
 
       setFoldProposal(null);
 
