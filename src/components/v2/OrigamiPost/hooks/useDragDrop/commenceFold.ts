@@ -4,11 +4,7 @@ import { FoldStep, LayeredBoard } from "../../types";
 import { BOARD_LAYER_OFFSET } from "../../constants";
 import { calculateFoldLineSpan } from "../../utils/calculateFoldLineSpan";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
-import {
-  applyFoldStep,
-  findFoldCandidates,
-  FoldStepResult,
-} from "../../utils/applyFoldStep";
+import { applyFoldStep, findFoldCandidates } from "../../utils/applyFoldStep";
 import { createBoardMesh } from "../../utils/createBoardMesh";
 import { removeBoardObjects } from "./removeBoardObjects";
 
@@ -40,6 +36,8 @@ export const commenceFold = (props: {
   foldCount: number;
   viewFront: boolean;
   origamiColor: string;
+  /** 折り角（ラジアン、省略時はπ = 180度の平面折り） */
+  angle?: number;
 }): PendingFold | null => {
   const {
     scene,
@@ -50,6 +48,7 @@ export const commenceFold = (props: {
     foldCount,
     viewFront,
     origamiColor,
+    angle,
   } = props;
 
   const candidates = findFoldCandidates(currentBoards, dragVertex, viewFront);
@@ -70,6 +69,8 @@ export const commenceFold = (props: {
     dragVertex: new THREE.Vector3(dragVertex.x, dragVertex.y, 0),
     foldCount,
     viewFront,
+    // 平面折り（180度）は省略形とし、仕上げ角度のときだけ持たせる
+    ...(angle !== undefined && angle < Math.PI ? { angle } : {}),
   };
 
   // 折りを適用（分割できない折り線の場合はnull）
@@ -94,7 +95,7 @@ export const commenceFold = (props: {
  * シーン上の板群を、折りアニメーション用の構成に差し替える
  *
  * @param props.scene - Three.jsのシーン
- * @param props.result - 折り操作の適用結果
+ * @param props.result - 折り操作の適用結果（動かない板と動く片）
  * @param props.pivotPoint - 回転の基準点（折り線上の点）
  * @param props.origamiColor - 板の色
  *
@@ -108,10 +109,12 @@ export const commenceFold = (props: {
  *     ワールド座標を維持したまま、Groupの回転＝折り線周りの回転になる
  * - 各板は重なり順（layer）に応じたZオフセットで配置する
  * - 動く片はpolygonOffsetを有効にして、折り重なった際のz-fightingを防ぐ
+ * - 動く片が単一のピボット回転で折り返される操作（通常の折り・中割り折り）で
+ *   共用する
  */
-const replaceSceneForFolding = (props: {
+export const replaceSceneForFolding = (props: {
   scene: THREE.Scene;
-  result: FoldStepResult;
+  result: { staticBoards: LayeredBoard[]; movingBoards: LayeredBoard[] };
   pivotPoint: THREE.Vector3;
   origamiColor: string;
 }): void => {

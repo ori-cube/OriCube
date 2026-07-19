@@ -87,6 +87,17 @@
   color: #fff;
 }
 
+.angle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: #007b94;
+  }
+}
+
 .actions {
   display: flex;
   gap: 8px;

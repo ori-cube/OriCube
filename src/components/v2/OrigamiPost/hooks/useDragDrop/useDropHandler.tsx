@@ -16,10 +16,14 @@ import {
   applyPetalFoldStep,
   buildPetalFoldStep,
 } from "../../utils/applyPetalFoldStep";
+import {
+  applyInsideReverseFoldStep,
+  buildInsideReverseFoldStep,
+} from "../../utils/applyInsideReverseFoldStep";
 import { SNAP_ATTRACTION_RADIUS } from "../../utils/snapToNearestSnapPoint";
-import { commenceFold } from "./commenceFold";
 import { commenceSquashFold } from "./commenceSquashFold";
 import { commencePetalFold } from "./commencePetalFold";
+import { commenceInsideReverseFold } from "./commenceInsideReverseFold";
 
 type UseDropHandler = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -44,11 +48,12 @@ type UseDropHandler = (props: {
  *
  * @description
  * - マウスアップ時に折り線を計算し、成立する操作（折れる枚数・開いて畳む・
- *   花弁折り）の数で分岐する:
- *   - 成立する操作が1通り: 選択させずにその操作でシーンを差し替え、
- *     foldingフェーズへ
- *   - 成立する操作が複数通り: 折り線をプレビュー表示し、操作を選択する
- *     selectingフェーズへ（確定はuseDragDropのconfirmFold）
+ *   花弁折り・中割り折り）で分岐する:
+ *   - 成立する操作が1通りで通常の折りを含まない: 選択させずにその操作で
+ *     シーンを差し替え、foldingフェーズへ
+ *   - それ以外: 折り線をプレビュー表示し、操作（と折り角度）を選択する
+ *     selectingフェーズへ（確定はuseDragDropのconfirmFold）。通常の折りは
+ *     1通りでも折り角度を指定できるよう選択カードを出す
  * - どの操作も成立しない場合（折り線が板を横切らない、紙が破れる等）:
  *   何もせずidleのまま再ドラッグを待つ
  * - 折りの成否に関わらずドラッグ中の点はクリアする
@@ -187,14 +192,28 @@ export const useDropHandler: UseDropHandler = ({
         petalStep !== null &&
         applyPetalFoldStep(currentBoards, petalStep) !== null;
 
+      const insideReverseStep = buildInsideReverseFoldStep({
+        boards: currentBoards,
+        midpoint: foldLineInfo.midpoint,
+        direction: foldLineInfo.direction,
+        dragVertex,
+        viewFront,
+      });
+      const insideReverseAvailable =
+        insideReverseStep !== null &&
+        applyInsideReverseFoldStep(currentBoards, insideReverseStep) !== null;
+
       const operationCount =
         validCounts.length +
         (squashAvailable ? 1 : 0) +
-        (petalAvailable ? 1 : 0);
+        (petalAvailable ? 1 : 0) +
+        (insideReverseAvailable ? 1 : 0);
       if (operationCount === 0) return;
 
-      // 成立する操作が1通りに定まる場合は選択させず、そのまま実行する
-      if (operationCount === 1) {
+      // 成立する操作が1通りに定まり、かつ通常の折りを含まない場合のみ
+      // 選択させずそのまま実行する。通常の折りが成立する場合は枚数が
+      // 1通りでも選択カードを出す（折り角度を指定できるようにするため）
+      if (operationCount === 1 && validCounts.length === 0) {
         const commenceProps = {
           scene,
           currentBoards,
@@ -211,10 +230,7 @@ export const useDropHandler: UseDropHandler = ({
         } else if (petalAvailable) {
           pending = commencePetalFold(commenceProps);
         } else {
-          pending = commenceFold({
-            ...commenceProps,
-            foldCount: validCounts[0],
-          });
+          pending = commenceInsideReverseFold(commenceProps);
         }
         if (!pending) return;
 
@@ -241,6 +257,7 @@ export const useDropHandler: UseDropHandler = ({
         maxFoldCount: candidates.length,
         squashAvailable,
         petalAvailable,
+        insideReverseAvailable,
         viewFront,
       });
       setFoldPhase("selecting");

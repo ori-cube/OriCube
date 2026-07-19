@@ -23,6 +23,7 @@ const meta: Meta<typeof Toolbar> = {
     onUndo: { action: "undo" },
     onRedo: { action: "redo" },
     onFlip: { action: "flip" },
+    onToggleViewMode: { action: "toggleViewMode" },
   },
 };
 
@@ -34,6 +35,8 @@ export const Default: Story = {
     canUndo: true,
     canRedo: true,
     canFlip: true,
+    canToggleViewMode: true,
+    isViewing: false,
   },
 };
 
@@ -42,5 +45,17 @@ export const AllDisabled: Story = {
     canUndo: false,
     canRedo: false,
     canFlip: false,
+    canToggleViewMode: false,
+    isViewing: false,
+  },
+};
+
+export const Viewing: Story = {
+  args: {
+    canUndo: false,
+    canRedo: false,
+    canFlip: false,
+    canToggleViewMode: true,
+    isViewing: true,
   },
 };

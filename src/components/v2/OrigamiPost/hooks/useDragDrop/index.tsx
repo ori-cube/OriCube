@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase, FoldProposal, PendingFold } from "../../index";
 import { LayeredBoard } from "../../types";
+import { FinishingRotation } from "../../utils/replayFoldSteps";
 import { collectSnapPoints } from "../../utils/collectSnapPoints";
 import { removeFoldLine } from "../../utils/visualizeFoldLine";
 import { useRenderBoards } from "./useRenderBoards";
@@ -11,9 +12,10 @@ import { useDropHandler } from "./useDropHandler";
 import { commenceFold } from "./commenceFold";
 import { commenceSquashFold } from "./commenceSquashFold";
 import { commencePetalFold } from "./commencePetalFold";
+import { commenceInsideReverseFold } from "./commenceInsideReverseFold";
 
-/** 枚数選択UIで選べる操作（折る枚数・開いて畳む・花弁折り） */
-export type FoldChoice = number | "squash" | "petal";
+/** 枚数選択UIで選べる操作（折る枚数・開いて畳む・花弁折り・中割り折り） */
+export type FoldChoice = number | "squash" | "petal" | "insideReverse";
 
 type UseDragDrop = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -23,6 +25,7 @@ type UseDragDrop = (props: {
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   origamiColor: string;
   currentBoards: LayeredBoard[];
+  finishingRotations: Map<LayeredBoard, FinishingRotation>;
   originalPoint: THREE.Vector3 | null;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   foldPhase: FoldPhase;
@@ -31,8 +34,13 @@ type UseDragDrop = (props: {
   setFoldProposal: (proposal: FoldProposal | null) => void;
   setPendingFold: (pending: PendingFold | null) => void;
 }) => {
-  /** 選択中の折りを指定した操作（枚数・開いて畳む・花弁折り）で確定する */
-  confirmFold: (choice: FoldChoice) => void;
+  /**
+   * 選択中の折りを指定した操作で確定する
+   *
+   * @param choice - 選択した操作（枚数・開いて畳む・花弁折り・中割り折り）
+   * @param angle - 折り角（ラジアン。枚数選択時のみ意味を持つ）
+   */
+  confirmFold: (choice: FoldChoice, angle: number) => void;
   /** 選択中の折りを取りやめる */
   cancelFold: () => void;
 };
@@ -67,6 +75,7 @@ export const useDragDrop: UseDragDrop = ({
   raycasterRef,
   origamiColor,
   currentBoards,
+  finishingRotations,
   originalPoint,
   setOriginalPoint,
   foldPhase,
@@ -91,6 +100,7 @@ export const useDragDrop: UseDragDrop = ({
     cameraRef,
     origamiColor,
     currentBoards,
+    finishingRotations,
     snapPoints,
     draggedPoint,
     foldPhase,
@@ -130,9 +140,9 @@ export const useDragDrop: UseDragDrop = ({
     setPendingFold,
   });
 
-  // 選択中の折りを指定した操作（枚数・開いて畳む・花弁折り）で確定する
+  // 選択中の折りを指定した操作（枚数・開いて畳む・花弁折り・中割り折り）で確定する
   const confirmFold = useCallback(
-    (choice: FoldChoice) => {
+    (choice: FoldChoice, angle: number) => {
       const scene = sceneRef.current;
       if (!scene || foldPhase !== "selecting" || !foldProposal) return;
 
@@ -151,8 +161,10 @@ export const useDragDrop: UseDragDrop = ({
         pending = commenceSquashFold(commenceProps);
       } else if (choice === "petal") {
         pending = commencePetalFold(commenceProps);
+      } else if (choice === "insideReverse") {
+        pending = commenceInsideReverseFold(commenceProps);
       } else {
-        pending = commenceFold({ ...commenceProps, foldCount: choice });
+        pending = commenceFold({ ...commenceProps, foldCount: choice, angle });
       }
 
       setFoldProposal(null);

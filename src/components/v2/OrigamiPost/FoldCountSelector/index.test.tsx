@@ -10,6 +10,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2, 3]}
         squashAvailable={false}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -32,6 +33,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2]}
         squashAvailable={false}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -39,7 +41,7 @@ describe("FoldCountSelector", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "折る" }));
 
-    expect(onConfirm).toHaveBeenCalledWith(1);
+    expect(onConfirm).toHaveBeenCalledWith(1, Math.PI);
   });
 
   it("枚数を選び直してから折るとその枚数で確定される", () => {
@@ -50,6 +52,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2, 3]}
         squashAvailable={false}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -58,7 +61,7 @@ describe("FoldCountSelector", () => {
     fireEvent.click(screen.getByRole("button", { name: "2" }));
     fireEvent.click(screen.getByRole("button", { name: "折る" }));
 
-    expect(onConfirm).toHaveBeenCalledWith(2);
+    expect(onConfirm).toHaveBeenCalledWith(2, Math.PI);
   });
 
   it("折りが成立しない枚数は選択できない", () => {
@@ -68,6 +71,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 3]}
         squashAvailable={false}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -85,6 +89,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2]}
         squashAvailable={false}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -100,6 +105,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2]}
         squashAvailable={true}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -118,6 +124,7 @@ describe("FoldCountSelector", () => {
         validCounts={[2, 4]}
         squashAvailable={true}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -126,7 +133,7 @@ describe("FoldCountSelector", () => {
     fireEvent.click(screen.getByRole("button", { name: "開いて畳む" }));
     fireEvent.click(screen.getByRole("button", { name: "折る" }));
 
-    expect(onConfirm).toHaveBeenCalledWith("squash");
+    expect(onConfirm).toHaveBeenCalledWith("squash", Math.PI);
   });
 
   it("花弁折りが成立する場合のみ選択肢に表示される", () => {
@@ -136,6 +143,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2]}
         squashAvailable={false}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -151,6 +159,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2]}
         squashAvailable={false}
         petalAvailable={true}
+        insideReverseAvailable={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -169,6 +178,7 @@ describe("FoldCountSelector", () => {
         validCounts={[2, 4]}
         squashAvailable={true}
         petalAvailable={true}
+        insideReverseAvailable={false}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
       />
@@ -177,7 +187,101 @@ describe("FoldCountSelector", () => {
     fireEvent.click(screen.getByRole("button", { name: "花弁折り" }));
     fireEvent.click(screen.getByRole("button", { name: "折る" }));
 
-    expect(onConfirm).toHaveBeenCalledWith("petal");
+    expect(onConfirm).toHaveBeenCalledWith("petal", Math.PI);
+  });
+
+  it("中割り折りが成立する場合のみ選択肢に表示される", () => {
+    const { rerender } = render(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[1, 2]}
+        squashAvailable={false}
+        petalAvailable={false}
+        insideReverseAvailable={false}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "中割り折り" })
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[1, 2]}
+        squashAvailable={false}
+        petalAvailable={false}
+        insideReverseAvailable={true}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("button", { name: "中割り折り" })
+    ).toBeInTheDocument();
+  });
+
+  it("中割り折りを選んでから折ると中割り折りで確定される", () => {
+    const onConfirm = vi.fn();
+    render(
+      <FoldCountSelector
+        maxFoldCount={16}
+        validCounts={[16]}
+        squashAvailable={false}
+        petalAvailable={false}
+        insideReverseAvailable={true}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "中割り折り" }));
+    fireEvent.click(screen.getByRole("button", { name: "折る" }));
+
+    expect(onConfirm).toHaveBeenCalledWith("insideReverse", Math.PI);
+  });
+
+  it("折り角度を下げてから折ると仕上げ角度で確定される", () => {
+    const onConfirm = vi.fn();
+    render(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[1, 2]}
+        squashAvailable={false}
+        petalAvailable={false}
+        insideReverseAvailable={false}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.change(screen.getByRole("slider", { name: "折り角度" }), {
+      target: { value: "150" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "折る" }));
+
+    expect(onConfirm).toHaveBeenCalledWith(1, (150 * Math.PI) / 180);
+  });
+
+  it("折り角度スライダーは枚数選択時のみ表示される", () => {
+    render(
+      <FoldCountSelector
+        maxFoldCount={2}
+        validCounts={[]}
+        squashAvailable={true}
+        petalAvailable={false}
+        insideReverseAvailable={false}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.queryByRole("slider", { name: "折り角度" })
+    ).not.toBeInTheDocument();
   });
 
   it("キャンセルでonCancelが呼ばれ、onConfirmは呼ばれない", () => {
@@ -189,6 +293,7 @@ describe("FoldCountSelector", () => {
         validCounts={[1, 2]}
         squashAvailable={false}
         petalAvailable={false}
+        insideReverseAvailable={false}
         onConfirm={onConfirm}
         onCancel={onCancel}
       />
