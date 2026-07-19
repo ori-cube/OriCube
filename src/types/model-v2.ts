@@ -47,13 +47,21 @@ export interface MoveBoardV2 {
 /** 折り手順の1ステップ（答え形式） */
 export interface StepV2 {
   /** 折り操作の種類 */
-  kind: "fold" | "squash" | "petal";
+  kind: "fold" | "squash" | "petal" | "insideReverse";
   /** アニメーション中も動かない板 */
   fixBoards: FixBoardV2[];
   /** 動く板 */
   moveBoards: MoveBoardV2[];
   /** 表示用の折り線（開いて畳むはヒンジ、花弁折りはかぶせ折り線を含む） */
   foldLines: SegmentV2[];
+  /**
+   * 回転再生の目標角（ラジアン、省略時はπ = 180度）
+   *
+   * @description
+   * 180度未満は仕上げ角度（例: 鶴の羽の150度折り）。閲覧側はθを
+   * 0からこの角度まで進めて再生する
+   */
+  targetAngle?: number;
 }
 
 /** ジェスチャ履歴の1要素（再編集・ソルバ改良時の再エクスポート用） */
@@ -64,6 +72,8 @@ export type HistoryStepV2 =
       dragVertex: PointV2;
       foldCount: number;
       viewFront: boolean;
+      /** 折り角（ラジアン、省略時はπ = 180度の平面折り） */
+      angle?: number;
     }
   | {
       kind: "squash";
@@ -73,6 +83,12 @@ export type HistoryStepV2 =
     }
   | {
       kind: "petal";
+      foldLine: SegmentV2;
+      dragVertex: PointV2;
+      viewFront: boolean;
+    }
+  | {
+      kind: "insideReverse";
       foldLine: SegmentV2;
       dragVertex: PointV2;
       viewFront: boolean;

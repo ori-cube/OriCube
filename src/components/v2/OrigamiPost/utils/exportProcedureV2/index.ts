@@ -12,6 +12,7 @@ import {
 import {
   FoldLine,
   FoldStep,
+  InsideReverseFoldStep,
   LayeredBoard,
   OrigamiStep,
   PetalFoldStep,
@@ -21,6 +22,7 @@ import { createSquareBoard } from "../createSquareBoard";
 import { applyFoldStep } from "../applyFoldStep";
 import { applySquashFoldStep } from "../applySquashFoldStep";
 import { applyPetalFoldStep } from "../applyPetalFoldStep";
+import { applyInsideReverseFoldStep } from "../applyInsideReverseFoldStep";
 import { determineFoldRotation } from "../determineFoldRotation";
 import {
   collectSquashVertexAxes,
@@ -94,6 +96,8 @@ const exportStep = (
       return exportSquashStep(boards, step);
     case "petal":
       return exportPetalStep(boards, step);
+    case "insideReverse":
+      return exportInsideReverseStep(boards, step);
   }
 };
 
@@ -133,6 +137,9 @@ const exportFoldStep = (
         vertexAxes: board.polygon.map(() => [toAxisV2(rotation)]),
       })),
       foldLines: [toSegmentV2(step.foldLine)],
+      ...(step.angle !== undefined && step.angle < Math.PI
+        ? { targetAngle: step.angle }
+        : {}),
     },
     boards: result.boards,
   };
@@ -213,6 +220,47 @@ const exportPetalStep = (
 };
 
 /**
+ * 中割り折り: 通常の折りと同じく、全ての動く片の全頂点が折り線周りの単一回転
+ */
+const exportInsideReverseStep = (
+  boards: LayeredBoard[],
+  step: InsideReverseFoldStep
+): { exportedStep: StepV2; boards: LayeredBoard[] } | null => {
+  const result = applyInsideReverseFoldStep(boards, step);
+  if (!result) return null;
+
+  const liftDirection = new THREE.Vector3(0, 0, step.viewFront ? 1 : -1);
+  const movingVertices = result.movingBoards.flatMap(
+    (board) => board.polygon
+  );
+  const axisDirection = determineFoldRotation(
+    step.foldLine,
+    movingVertices,
+    liftDirection
+  );
+  if (!axisDirection) return null;
+
+  const rotation: VertexAxis = {
+    origin: step.foldLine.start,
+    direction: axisDirection,
+  };
+
+  return {
+    exportedStep: {
+      kind: "insideReverse",
+      fixBoards: result.staticBoards.map(toFixBoard),
+      moveBoards: result.movingBoards.map((board) => ({
+        polygon: board.polygon.map(toPointV2),
+        layer: board.layer,
+        vertexAxes: board.polygon.map(() => [toAxisV2(rotation)]),
+      })),
+      foldLines: [toSegmentV2(step.foldLine)],
+    },
+    boards: result.boards,
+  };
+};
+
+/**
  * ジェスチャ履歴の1要素を保存形式へ変換する
  */
 const serializeHistoryStep = (step: OrigamiStep): HistoryStepV2 => {
@@ -224,6 +272,9 @@ const serializeHistoryStep = (step: OrigamiStep): HistoryStepV2 => {
         dragVertex: toPointV2(step.dragVertex),
         foldCount: step.foldCount,
         viewFront: step.viewFront,
+        ...(step.angle !== undefined && step.angle < Math.PI
+          ? { angle: step.angle }
+          : {}),
       };
     case "squash":
       return {
@@ -235,6 +286,13 @@ const serializeHistoryStep = (step: OrigamiStep): HistoryStepV2 => {
     case "petal":
       return {
         kind: "petal",
+        foldLine: toSegmentV2(step.foldLine),
+        dragVertex: toPointV2(step.dragVertex),
+        viewFront: step.viewFront,
+      };
+    case "insideReverse":
+      return {
+        kind: "insideReverse",
         foldLine: toSegmentV2(step.foldLine),
         dragVertex: toPointV2(step.dragVertex),
         viewFront: step.viewFront,

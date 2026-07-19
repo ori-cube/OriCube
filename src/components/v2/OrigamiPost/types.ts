@@ -70,6 +70,17 @@ export interface FoldStep {
   foldCount: number;
   /** 折ったときに表側（+Z側）から見ていたか */
   viewFront: boolean;
+  /**
+   * 折り角（ラジアン、省略時はπ = 180度の平面折り）
+   *
+   * @description
+   * - πより小さい値は仕上げ角度（例: 鶴の羽の150度折り）。板の分割・
+   *   破れ判定などのエンジン処理は180度折りとして扱い（平面プロキシ）、
+   *   描画とアニメーションだけが実際の角度で表示する
+   * - 仕上げ角度の板にさらに折りを重ねると物理的に破綻するため、
+   *   仕上げは最後の手として使う想定
+   */
+  angle?: number;
 }
 
 /**
@@ -112,6 +123,29 @@ export interface PetalFoldStep {
 }
 
 /**
- * 折り手順の履歴の1要素（通常の折り・開いて畳む・花弁折り）
+ * 中割り折り（インサイドリバースフォールド）の履歴要素
+ *
+ * @description
+ * - 鶴の首・尾のように、折り目で重なった1本の「点」（展開図連結な板の束）の
+ *   先端を、折り筋を反転させながらレイヤーの間へ差し込む操作
+ * - 動かす点はドラッグ頂点を共有する候補板のうち、視点側の先頭板と
+ *   展開図上でつながっている連結成分として特定する（リプレイ時に再導出）
  */
-export type OrigamiStep = FoldStep | SquashFoldStep | PetalFoldStep;
+export interface InsideReverseFoldStep {
+  kind: "insideReverse";
+  /** 折り線（無限直線として扱う。start/endは表示用のスパン） */
+  foldLine: FoldLine;
+  /** ドラッグした頂点の元位置（動かす点の特定に使用） */
+  dragVertex: THREE.Vector3;
+  /** 折ったときに表側（+Z側）から見ていたか */
+  viewFront: boolean;
+}
+
+/**
+ * 折り手順の履歴の1要素（通常の折り・開いて畳む・花弁折り・中割り折り）
+ */
+export type OrigamiStep =
+  | FoldStep
+  | SquashFoldStep
+  | PetalFoldStep
+  | InsideReverseFoldStep;
