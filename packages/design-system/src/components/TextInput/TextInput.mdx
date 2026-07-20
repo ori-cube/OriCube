@@ -1,0 +1,74 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as TextInputStories from "./TextInput.stories";
+
+<Meta of={TextInputStories} />
+
+# TextInput
+
+1行のテキスト入力欄です。ラベル・サポートテキスト・エラーメッセージを1つのコンポーネントにまとめており、[react-aria-components](https://react-spectrum.adobe.com/react-aria/TextField.html) をベースに、ラベルとの関連付け・エラーの読み上げなどのアクセシビリティを担保しています。
+
+<Canvas of={TextInputStories.Default} />
+
+<Controls />
+
+## 使用原則
+
+### ラベルと必須表現
+
+<Canvas of={TextInputStories.Required} />
+
+- 必須の入力欄には `required` を指定します。ラベルの後ろに**「（必須）」が赤文字で表示**されます。
+- アスタリスク（`*`）による必須表現は使用しません。記号は意味が伝わりにくく、スクリーンリーダー向けに別途 `aria-label` を用意する必要が生じるためです。「（必須）」という文字ならば、視覚的にもスクリーンリーダーにもそのまま伝わります。
+
+### サポートテキスト（description）
+
+<Canvas of={TextInputStories.WithDescription} />
+
+- 「全角で入力してください」のような**入力ルールの説明は、必ず description で行います**。プレースホルダーで説明してはいけません。
+- サポートテキストは**ラベルと入力欄の間**に表示されます。エラーメッセージは入力欄の下に表示されるため、入力欄の下にテキストが2つ並んで「どちらを読めばよいのか」が分かりづらくなることを避けています。
+- プレースホルダーは入力を始めると消えてしまうため、入力中・入力後にルールを確認できなくなります。説明は常に表示される description が担い、プレースホルダーはあくまで**入力例を示すためだけ**に使う、という役割分担を徹底します。
+
+### プレースホルダー
+
+- プレースホルダーには**入力例のみ**を指定します。`placeholder="例：山田 太郎"` のように、値が入力例であることが伝わる形（「例：」を冠するなど）で渡してください。表示されている文字が実際の入力値ではなく未入力状態の例であることが、色のコントラストに頼らず文字情報として伝わります。
+- プレースホルダーは補助情報です。**なくても伝わる場合は省略**し、プレースホルダーがなくても入力できるよう、ラベルと description だけで完結する設計にします。
+- プレースホルダーの文字色は専用トークン `--text-placeholder`（`neutral-40` / #757575）です。白背景とのコントラスト比は約 4.6:1 で WCAG AA（1.4.3 Contrast (Minimum) の 4.5:1）を満たしつつ、入力値の文字色 `--text-default`（#1f1f1f）より明るい色にすることで、色の濃さでも入力値と区別できるようにしています。
+
+### 入力目的の指定（autoComplete / type / inputMode）
+
+<Canvas of={TextInputStories.Email} />
+
+- 氏名・メール・電話番号など**入力目的が既知の欄には `autoComplete` を必ず指定**します（例：`autoComplete="email"`）。ブラウザの自動入力が効き、認知・運動に配慮が必要なユーザーの入力負担を下げられます（WCAG 1.3.5 Identify Input Purpose）。
+- メール・電話・数値などは `type`（`email` / `tel` / `number` 等）を指定します。バリデーションやモバイルのキーボード種別に反映されます。
+- 必要に応じて `inputMode` でソフトウェアキーボードの種別を明示します（例：`inputMode="email"`）。
+- これらは props としてそのまま `<input>` に渡されます。
+
+### エラーメッセージ
+
+<Canvas of={TextInputStories.WithError} />
+
+- `errorMessage` を渡すと、入力欄がエラー状態になり、メッセージが入力欄に関連付けてスクリーンリーダーにも通知されます。エラー状態とメッセージ表示は常に連動し、片方だけになることはありません。
+- エラーは**赤枠だけでなく警告アイコンを併記**します。色だけに頼らずエラーであることを伝えるためです（WCAG 1.4.1 Use of Color）。
+- エラーメッセージの文面は、次の**3ステップをすべて満たす**ように書きます。
+  1. **通知**: エラーが発生したことを伝える（例：「エラー：」）
+  2. **説明**: どのようなエラーなのかを伝える（例：「お名前が入力されていません。」）
+  3. **リカバリー**: どうすれば解消できるかを伝える（例：「お名前を全角で入力してください。」）
+- 全体では「エラー：お名前が入力されていません。お名前を全角で入力してください。」のような文面になります。エラーの特定と修正方法の提示は WCAG の達成基準でもあり、これを満たすことでどんなユーザーにも親切なフォームになります。
+
+#### スクリーンリーダーでの読み上げ
+
+`errorMessage` と `description` の両方が指定されている入力欄では、`errorMessage` を渡すと入力欄に `aria-invalid` が付き、エラーメッセージと description がどちらも `aria-describedby` で入力欄に関連付けられます。そのため入力欄にフォーカスが当たると、次の順で読み上げられます（例はラベル「お名前」・description「全角で入力してください」・エラーの場合）。
+
+> お名前、編集テキスト、**無効な入力**、全角で入力してください、エラー：お名前が入力されていません。
+
+- まず `aria-invalid` により「**無効な入力である**」という状態が伝わり、続いて description（入力ルール）、最後にエラー文が読まれます。エラー状態そのものは状態として通知されるため、色や枠線が見えなくてもエラーであることが分かります。
+- **エラー時も description（入力ルール）はあえて読み上げから外していません**。「全角で入力してください」のようなルールは、エラーを直している最中にこそ必要な情報だからです。エラーになった瞬間にルールが読まれなくなると、修正の手がかりを最も必要なタイミングで失ってしまいます。この挙動は [react-aria-components](https://react-spectrum.adobe.com/react-aria/TextField.html) の標準の関連付けに従っています。
+
+## 参考にした基準・デザインシステム
+
+- [WCAG 2.2 — 1.3.5 Identify Input Purpose](https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html)
+- [WCAG 2.2 — 1.4.1 Use of Color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html)
+- [WCAG 2.2 — 1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)
+- [WCAG 2.2 — 3.3.1 Error Identification](https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html)
+- [WCAG 2.2 — 3.3.3 Error Suggestion](https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html)
+- [react-aria — TextField](https://react-spectrum.adobe.com/react-aria/TextField.html)

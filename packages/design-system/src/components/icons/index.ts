@@ -2,6 +2,7 @@ export { default as ArrowBottomIcon } from "./generated/ArrowBottomIcon";
 export { default as ArrowLeftIcon } from "./generated/ArrowLeftIcon";
 export { default as ArrowRightIcon } from "./generated/ArrowRightIcon";
 export { default as ArrowUpIcon } from "./generated/ArrowUpIcon";
+export { default as CautionIcon } from "./generated/CautionIcon";
 export { default as CloseIcon } from "./generated/CloseIcon";
 export { default as GoogleIcon } from "./generated/GoogleIcon";
 export { default as MenuIcon } from "./generated/MenuIcon";

@@ -1,2 +1,4 @@
 packages:
   - "packages/*"
+patchedDependencies:
+  vite-plugin-storybook-nextjs@3.3.0: patches/vite-plugin-storybook-nextjs@3.3.0.patch
