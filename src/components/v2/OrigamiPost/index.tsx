@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import {
@@ -8,9 +8,11 @@ import {
   useDragDrop,
   useFoldAnimation,
   useFlipView,
+  useViewMode,
 } from "./hooks";
 import {
   FoldStep,
+  InsideReverseFoldStep,
   LayeredBoard,
   PetalFoldStep,
   SquashFoldStep,
@@ -18,7 +20,7 @@ import {
 import { SquashFoldStepResult } from "./utils/applySquashFoldStep";
 import { PetalFoldStepResult } from "./utils/applyPetalFoldStep";
 import { createSquareBoard } from "./utils/createSquareBoard";
-import { replayFoldSteps } from "./utils/replayFoldSteps";
+import { replayFoldStepsDetailed } from "./utils/replayFoldSteps";
 import {
   FoldHistory,
   EMPTY_FOLD_HISTORY,
@@ -29,6 +31,10 @@ import {
   canUndo,
   canRedo,
 } from "./utils/foldHistory";
+import {
+  serializeOrigamiState,
+  SerializedOrigamiState,
+} from "./utils/serializeOrigamiState";
 import { FoldCountSelector } from "./FoldCountSelector";
 import { Toolbar } from "./Toolbar";
 import styles from "./index.module.scss";
@@ -39,8 +45,16 @@ import styles from "./index.module.scss";
  * - idle: 折り線の入力待ち（ドラッグ&ドロップ可能）
  * - selecting: 折る枚数の選択待ち（ドラッグ&ドロップ不可）
  * - folding: 折りアニメーション中（ドラッグ&ドロップ不可）
+ * - viewing: ビューモード（確認用の回転視点。ドラッグ&ドロップ不可）
  */
-export type FoldPhase = "idle" | "selecting" | "folding";
+export type FoldPhase = "idle" | "selecting" | "folding" | "viewing";
+
+declare global {
+  interface Window {
+    /** 現在の折り状態をJSONでコンソールに出力する（デバッグ・状況共有用） */
+    dumpOrigami?: () => SerializedOrigamiState;
+  }
+}
 
 /**
  * 折る枚数の選択を待っている折り操作
@@ -60,6 +74,8 @@ export interface FoldProposal {
   squashAvailable: boolean;
   /** 花弁折りが選択できるか */
   petalAvailable: boolean;
+  /** 中割り折りが選択できるか */
+  insideReverseAvailable: boolean;
   /** ドロップ時に表側（+Z側）から見ていたか */
   viewFront: boolean;
 }
@@ -88,6 +104,13 @@ export type PendingFold =
       step: PetalFoldStep;
       /** 適用結果（動く片と回転軸の決定に使用） */
       result: PetalFoldStepResult;
+    }
+  | {
+      kind: "insideReverse";
+      /** 適用する中割り折り操作（アニメーション完了時に履歴へ積む） */
+      step: InsideReverseFoldStep;
+      /** 回転前の動く先端片（回転軸の決定に使用） */
+      movingBoards: LayeredBoard[];
     };
 
 export interface OrigamiPostV2Props {
@@ -153,10 +176,27 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
 
   // 現在の板群（適用済みの折り手順のリプレイで導出する）
   const initialBoard = useMemo(() => createSquareBoard(size), [size]);
-  const currentBoards = useMemo(
-    () => replayFoldSteps(initialBoard, appliedFoldSteps(foldHistory)),
+  const replayResult = useMemo(
+    () => replayFoldStepsDetailed(initialBoard, appliedFoldSteps(foldHistory)),
     [initialBoard, foldHistory]
   );
+  const currentBoards = replayResult.boards;
+  const finishingRotations = replayResult.finishingRotations;
+
+  // 現在の状態をコンソールから取り出せるようにする（dumpOrigami() / copy(dumpOrigami())）
+  useEffect(() => {
+    window.dumpOrigami = () => {
+      const state = serializeOrigamiState(
+        currentBoards,
+        appliedFoldSteps(foldHistory)
+      );
+      console.log(JSON.stringify(state, null, 2));
+      return state;
+    };
+    return () => {
+      delete window.dumpOrigami;
+    };
+  }, [currentBoards, foldHistory]);
 
   // 折りアニメーション完了時: 折り操作を履歴へ確定し、次の折りの入力待ちへ戻る
   const completeFold = useCallback(() => {
@@ -199,6 +239,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     raycasterRef,
     origamiColor,
     currentBoards,
+    finishingRotations,
     originalPoint,
     setOriginalPoint,
     foldPhase,
@@ -220,6 +261,14 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   // 折り紙を裏返す視点回転
   const { flipView, isFlipping } = useFlipView({ cameraRef, controlsRef });
 
+  // ビューモード（確認用の回転視点）
+  const { toggleViewMode } = useViewMode({
+    cameraRef,
+    controlsRef,
+    foldPhase,
+    setFoldPhase,
+  });
+
   return (
     <div className={styles.container}>
       <canvas
@@ -232,9 +281,14 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
         canUndo={foldPhase === "idle" && !isFlipping && canUndo(foldHistory)}
         canRedo={foldPhase === "idle" && !isFlipping && canRedo(foldHistory)}
         canFlip={foldPhase === "idle" && !isFlipping}
+        canToggleViewMode={
+          (foldPhase === "idle" || foldPhase === "viewing") && !isFlipping
+        }
+        isViewing={foldPhase === "viewing"}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onFlip={flipView}
+        onToggleViewMode={toggleViewMode}
       />
       {foldPhase === "selecting" && foldProposal && (
         <FoldCountSelector
@@ -242,6 +296,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
           validCounts={foldProposal.validCounts}
           squashAvailable={foldProposal.squashAvailable}
           petalAvailable={foldProposal.petalAvailable}
+          insideReverseAvailable={foldProposal.insideReverseAvailable}
           onConfirm={confirmFold}
           onCancel={cancelFold}
         />

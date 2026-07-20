@@ -198,6 +198,30 @@ describe("exportProcedureV2", () => {
     expect(petalHistory.viewFront).toBe(true);
   });
 
+  it("仕上げ角度の折りはtargetAngleと履歴のangleに書き出される", () => {
+    const angle = (150 * Math.PI) / 180;
+    const steps: OrigamiStep[] = [
+      {
+        kind: "fold",
+        foldLine: { start: v(0, -20), end: v(0, 20) },
+        dragVertex: v(-20, -20),
+        foldCount: 1,
+        viewFront: true,
+        angle,
+      },
+    ];
+
+    const procedure = exportProcedureV2({ size: 40, steps });
+    expect(procedure).not.toBeNull();
+    if (!procedure) return;
+
+    expect(procedure.steps[0].targetAngle).toBeCloseTo(angle);
+    const history = procedure.history[0];
+    expect(history.kind).toBe("fold");
+    if (history.kind !== "fold") return;
+    expect(history.angle).toBeCloseTo(angle);
+  });
+
   it("履歴が空の場合は初期状態の正方形だけを持つ", () => {
     const procedure = exportProcedureV2({ size: 40, steps: [] });
 

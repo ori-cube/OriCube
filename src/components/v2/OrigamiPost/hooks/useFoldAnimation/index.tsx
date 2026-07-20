@@ -91,11 +91,17 @@ export const useFoldAnimation: UseFoldAnimation = ({
     let animationFrameId = 0;
     let startTime: number | null = null;
 
+    // 仕上げ角度（180度未満の折り）はその角度で回転を止める
+    const targetAngle =
+      pendingFold.kind === "fold"
+        ? (pendingFold.step.angle ?? Math.PI)
+        : Math.PI;
+
     const animate = (time: number) => {
       if (startTime === null) startTime = time;
 
       const progress = Math.min((time - startTime) / FOLD_DURATION_MS, 1);
-      const angle = easeInOutCubic(progress) * Math.PI;
+      const angle = easeInOutCubic(progress) * targetAngle;
       applyAngle(angle);
 
       if (progress < 1) {
@@ -123,6 +129,7 @@ const createAngleApplier = (
 ): ((angle: number) => void) | null => {
   switch (pendingFold.kind) {
     case "fold":
+    case "insideReverse":
       return createFoldAngleApplier(scene, pendingFold);
     case "squash":
       return createSquashAngleApplier(scene, pendingFold);
@@ -132,14 +139,19 @@ const createAngleApplier = (
 };
 
 /**
- * 通常の折りの回転適用関数を作成する
+ * 通常の折り・中割り折りの回転適用関数を作成する
  *
  * @returns 回転角を受け取ってピボットGroupを回転させる関数。
  *          構成できない場合はnull
+ *
+ * @description
+ * どちらの操作も全ての動く片が折り線周りの同一回転を受けるため、
+ * 単一のピボットGroupの回転で表現できる（中割り折りの差し込みレイヤーは
+ * 確定後のリプレイ再描画で反映される）
  */
 const createFoldAngleApplier = (
   scene: THREE.Scene,
-  pendingFold: Extract<PendingFold, { kind: "fold" }>
+  pendingFold: Extract<PendingFold, { kind: "fold" | "insideReverse" }>
 ): ((angle: number) => void) | null => {
   const pivotGroup = scene.getObjectByName("board_moving_pivot");
   if (!pivotGroup) return null;

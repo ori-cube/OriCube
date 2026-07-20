@@ -11,35 +11,52 @@ interface Props {
   squashAvailable: boolean;
   /** 花弁折りが選択できるか */
   petalAvailable: boolean;
-  /** 選択した操作（枚数・開いて畳む・花弁折り）で折りを確定する */
-  onConfirm: (choice: FoldChoice) => void;
+  /** 中割り折りが選択できるか */
+  insideReverseAvailable: boolean;
+  /**
+   * 選択した操作（枚数・開いて畳む・花弁折り・中割り折り）で折りを確定する
+   *
+   * @param choice - 選択した操作
+   * @param angle - 折り角（ラジアン。枚数選択時のみ意味を持ち、それ以外はπ）
+   */
+  onConfirm: (choice: FoldChoice, angle: number) => void;
   /** 折りを取りやめる */
   onCancel: () => void;
 }
 
 /**
- * 折り方（折る枚数・開いて畳む・花弁折り）を選択するフローティングカード
+ * 折り方（折る枚数・開いて畳む・花弁折り・中割り折り）を選択する
+ * フローティングカード
  *
  * @description
  * - 折りで頂点が重なり、複数の操作から選べる場合にキャンバス下部へ表示する
  * - 折りが成立しない枚数は選択できない
- * - 開いて畳む・花弁折りが成立する場合は枚数の選択肢に加えて表示する
- * - デフォルトは選択できる最小の枚数（枚数が選べない場合は開いて畳む、
- *   それもない場合は花弁折り）
+ * - 開いて畳む・花弁折り・中割り折りが成立する場合は枚数の選択肢に加えて
+ *   表示する
+ * - デフォルトは選択できる最小の枚数（枚数が選べない場合は開いて畳む →
+ *   花弁折り → 中割り折りの順）
  */
 export function FoldCountSelector({
   maxFoldCount,
   validCounts,
   squashAvailable,
   petalAvailable,
+  insideReverseAvailable,
   onConfirm,
   onCancel,
 }: Props) {
   const [selectedChoice, setSelectedChoice] = useState<FoldChoice>(
-    validCounts[0] ?? (squashAvailable ? "squash" : "petal")
+    validCounts[0] ??
+      (squashAvailable ? "squash" : petalAvailable ? "petal" : "insideReverse")
   );
+  // 折り角（度）。180度未満は仕上げ角度（枚数選択時のみ有効）
+  const [angleDeg, setAngleDeg] = useState(180);
 
   const counts = Array.from({ length: maxFoldCount }, (_, index) => index + 1);
+  const isCountSelected = typeof selectedChoice === "number";
+  const confirmAngle = isCountSelected
+    ? (angleDeg * Math.PI) / 180
+    : Math.PI;
 
   return (
     <div className={styles.card} role="dialog" aria-label="折り方の選択">
@@ -87,6 +104,33 @@ export function FoldCountSelector({
           花弁折り
         </button>
       )}
+      {insideReverseAvailable && (
+        <button
+          type="button"
+          className={
+            selectedChoice === "insideReverse"
+              ? styles.squash_button_selected
+              : styles.squash_button
+          }
+          onClick={() => setSelectedChoice("insideReverse")}
+        >
+          中割り折り
+        </button>
+      )}
+      {isCountSelected && (
+        <label className={styles.angle}>
+          <span className={styles.label}>折り角度 {angleDeg}°</span>
+          <input
+            type="range"
+            min={90}
+            max={180}
+            step={5}
+            value={angleDeg}
+            onChange={(event) => setAngleDeg(Number(event.target.value))}
+            aria-label="折り角度"
+          />
+        </label>
+      )}
       <div className={styles.actions}>
         <button type="button" className={styles.cancel_button} onClick={onCancel}>
           キャンセル
@@ -94,7 +138,7 @@ export function FoldCountSelector({
         <button
           type="button"
           className={styles.confirm_button}
-          onClick={() => onConfirm(selectedChoice)}
+          onClick={() => onConfirm(selectedChoice, confirmAngle)}
         >
           折る
         </button>

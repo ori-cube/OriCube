@@ -34,6 +34,7 @@ export const Default: Story = {
     validCounts: [1, 2],
     squashAvailable: false,
     petalAvailable: false,
+    insideReverseAvailable: false,
   },
 };
 
@@ -43,6 +44,7 @@ export const WithInvalidCount: Story = {
     validCounts: [1, 3],
     squashAvailable: false,
     petalAvailable: false,
+    insideReverseAvailable: false,
   },
 };
 
@@ -52,6 +54,7 @@ export const WithSquash: Story = {
     validCounts: [2, 4],
     squashAvailable: true,
     petalAvailable: false,
+    insideReverseAvailable: false,
   },
 };
 
@@ -61,5 +64,16 @@ export const WithPetal: Story = {
     validCounts: [2, 4],
     squashAvailable: true,
     petalAvailable: true,
+    insideReverseAvailable: false,
+  },
+};
+
+export const WithInsideReverse: Story = {
+  args: {
+    maxFoldCount: 16,
+    validCounts: [16],
+    squashAvailable: false,
+    petalAvailable: false,
+    insideReverseAvailable: true,
   },
 };

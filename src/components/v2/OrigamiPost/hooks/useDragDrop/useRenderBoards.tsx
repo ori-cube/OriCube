@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Point } from "@/types/model";
 import { FoldPhase } from "../../index";
 import { LayeredBoard } from "../../types";
+import { FinishingRotation } from "../../utils/replayFoldSteps";
 import { BOARD_LAYER_OFFSET } from "../../constants";
 import { SnapPoint } from "../../utils/collectSnapPoints";
 import { createBoardMesh } from "../../utils/createBoardMesh";
@@ -15,6 +16,7 @@ type UseRenderBoards = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   origamiColor: string;
   currentBoards: LayeredBoard[];
+  finishingRotations: Map<LayeredBoard, FinishingRotation>;
   snapPoints: SnapPoint[];
   draggedPoint: Point | null;
   foldPhase: FoldPhase;
@@ -27,8 +29,9 @@ type UseRenderBoards = (props: {
  * - 既存の板とスナップポイントをクリアしてから描画する
  * - 各板は重なり順（layer）に応じて z = layer * BOARD_LAYER_OFFSET へ浮かせる
  * - スナップポイントは集約済みの頂点位置に配置（ドラッグ中の点は除外）
- * - idle以外のフェーズでは折りアニメーション用のシーンが表示されているため
- *   描画しない
+ * - viewingフェーズ（ビューモード）ではスナップポイントを表示しない
+ * - selecting / foldingフェーズでは折りアニメーション用のシーンが
+ *   表示されているため描画しない
  *
  * @param props.sceneRef - THREE.Sceneのref
  * @param props.rendererRef - THREE.WebGLRendererのref
@@ -45,6 +48,7 @@ export const useRenderBoards: UseRenderBoards = ({
   cameraRef,
   origamiColor,
   currentBoards,
+  finishingRotations,
   snapPoints,
   draggedPoint,
   foldPhase,
@@ -56,21 +60,44 @@ export const useRenderBoards: UseRenderBoards = ({
 
     if (!scene || !renderer || !camera) return;
 
-    // idle以外のフェーズでは折りアニメーション用のシーンが表示されている
-    if (foldPhase !== "idle") return;
+    // selecting / foldingフェーズでは折りアニメーション用のシーンが表示されている
+    if (foldPhase !== "idle" && foldPhase !== "viewing") return;
+
+    const isViewing = foldPhase === "viewing";
 
     removeBoardObjects(scene);
 
-    // 板を重なり順に応じたZオフセットで描画
+    // 板を重なり順に応じたZオフセットで描画。仕上げ角度の板は
+    // 平面プロキシの位置から折り線周りに(angle - π)回転した姿勢で表示する
     currentBoards.forEach((board, index) => {
       const boardMesh = createBoardMesh(board.polygon, origamiColor, {
         name: `board_${index}`,
       });
-      boardMesh.position.z = board.layer * BOARD_LAYER_OFFSET;
-      scene.add(boardMesh);
+      const rotation = finishingRotations.get(board);
+      if (!rotation) {
+        boardMesh.position.z = board.layer * BOARD_LAYER_OFFSET;
+        scene.add(boardMesh);
+        return;
+      }
+
+      const pivotGroup = new THREE.Group();
+      pivotGroup.name = `board_finishing_${index}`;
+      pivotGroup.position.copy(rotation.origin);
+      pivotGroup.setRotationFromAxisAngle(
+        rotation.axis,
+        rotation.angle - Math.PI
+      );
+      boardMesh.position.copy(rotation.origin.clone().negate());
+      boardMesh.position.z += board.layer * BOARD_LAYER_OFFSET;
+      pivotGroup.add(boardMesh);
+      scene.add(pivotGroup);
     });
 
-    // スナップポイントを描画（ドラッグ中の点は除外）
+    // スナップポイントを描画（ドラッグ中の点は除外。ビューモードでは非表示）
+    if (isViewing) {
+      renderer.render(scene, camera);
+      return;
+    }
     snapPoints.forEach((snapPoint, index) => {
       const point: Point = [
         snapPoint.position.x,
@@ -96,6 +123,7 @@ export const useRenderBoards: UseRenderBoards = ({
     cameraRef,
     origamiColor,
     currentBoards,
+    finishingRotations,
     snapPoints,
     draggedPoint,
     foldPhase,
