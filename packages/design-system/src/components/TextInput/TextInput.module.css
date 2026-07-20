@@ -1,0 +1,72 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.label {
+  color: var(--text-default);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.requiredText {
+  color: var(--text-required);
+  font-weight: 400;
+}
+
+.input {
+  border: var(--border-width-md) solid var(--border-default);
+  border-radius: var(--border-radius-md);
+  background-color: var(--background-default);
+  color: var(--text-default);
+
+  /* a11y: line-height 28px + padding 8px でタッチターゲット44px以上を担保 */
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.75rem;
+}
+
+/* 入力値(--text-default)と区別しつつ白背景と4.5:1以上のコントラストを保つ */
+.input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.input[data-hovered] {
+  border-color: var(--border-bold);
+}
+
+.input[data-focused] {
+  border-color: var(--border-bold);
+  outline: var(--border-width-lg) solid var(--border-bold);
+  outline-offset: 1px;
+}
+
+.input[data-invalid] {
+  border-color: var(--border-danger);
+}
+
+.input[data-disabled] {
+  background-color: var(--background-subtle);
+  border-color: var(--border-default);
+  color: var(--text-subtle);
+  cursor: not-allowed;
+}
+
+.description {
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+  color: var(--text-danger);
+  font-size: 0.875rem;
+}
+
+.errorIcon {
+  flex-shrink: 0;
+}

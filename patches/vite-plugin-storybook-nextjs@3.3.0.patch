@@ -1,0 +1,22 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index c31da10233cac09d3b56635b7d82380557675c3d..3d202046b2ef7606f34dccfa8d4ad0f9643cdb45 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -3928,11 +3928,15 @@ async function vitePluginNextEnv(rootDir, nextConfigResolver) {
+   let getDefineEnv;
+   let isNext1540 = false;
+   try {
+-    getDefineEnv = (await import('next/dist/build/define-env.js')).getDefineEnv;
++    // Use require() instead of import() so the CJS named export resolves to the
++    // real function. Under Storybook + Vite the ESM interop of this CJS module
++    // yields an undefined `getDefineEnv` binding (Next 15.5), which then throws
++    // "getDefineEnv is not a function".
++    getDefineEnv = require('next/dist/build/define-env.js').getDefineEnv;
+     isNext1540 = true;
+   } catch (error) {
+     getDefineEnv = // @ts-expect-error - TODO: Ignoring because types are for >= 15.4.0
+-    (await import('next/dist/build/webpack/plugins/define-env-plugin.js')).getDefineEnv;
++    require('next/dist/build/webpack/plugins/define-env-plugin.js').getDefineEnv;
+   }
+   return {
+     name: "vite-plugin-storybook-nextjs-env",

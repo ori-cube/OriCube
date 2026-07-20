@@ -18,6 +18,8 @@
 
   --text-default: var(--neutral-5);
   --text-subtle: var(--neutral-20);
+  --text-placeholder: var(--neutral-40);
+  --text-required: var(--danger-40);
   --text-primary: var(--primary-30);
   --text-primary-action: var(--neutral-100);
   --text-danger: var(--danger-40);
