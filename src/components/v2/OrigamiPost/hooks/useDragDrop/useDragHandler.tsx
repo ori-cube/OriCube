@@ -6,7 +6,9 @@ import { LayeredBoard } from "../../types";
 import { SnapPoint } from "../../utils/collectSnapPoints";
 import { snapToNearestSnapPoint } from "../../utils/snapToNearestSnapPoint";
 import { collectAlignmentSnapPoints } from "../../utils/collectAlignmentSnapPoints";
+import { computeFoldPreview } from "../../utils/computeFoldPreview";
 import { renderDraggedPoint } from "./renderPoint";
+import { renderFoldPreview, removeFoldPreview } from "./renderFoldPreview";
 
 type UseDragHandler = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -14,6 +16,7 @@ type UseDragHandler = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
+  origamiColor: string;
   currentBoards: LayeredBoard[];
   snapPoints: SnapPoint[];
   setDraggedPoint: (point: Point | null) => void;
@@ -31,7 +34,9 @@ type UseDragHandler = (props: {
  * - マウス移動時にドラッグ中の点の位置を更新。近くの吸着先（頂点の
  *   スナップポイント + 辺の折り込み先=アライメント候補）があれば
  *   その座標へ吸着させる
- * - マウスアップ時にドラッグ状態をリセット
+ * - ドラッグ中は折りのプレビュー（折り線と鏡映後の動く片）を毎フレーム
+ *   計算して表示し、ドロップ前にどんな形になるかを視覚的に示す
+ * - マウスアップ時にプレビューを消してドラッグ状態をリセット
  *
  * @param props.canvasRef - HTMLCanvasElementのref
  * @param props.sceneRef - THREE.Sceneのref
@@ -48,6 +53,7 @@ export const useDragHandler: UseDragHandler = ({
   cameraRef,
   rendererRef,
   raycasterRef,
+  origamiColor,
   currentBoards,
   snapPoints,
   setDraggedPoint,
@@ -150,6 +156,25 @@ export const useDragHandler: UseDragHandler = ({
         const draggedPointMesh = scene.getObjectByName("draggedPoint");
         if (draggedPointMesh) {
           draggedPointMesh.position.copy(snappedPosition);
+
+          // ドロップ時にどう折れるかのプレビュー（折り線と動く片）を表示する。
+          // どちら側から見ているかはドロップ時と同じくカメラ位置で判定する
+          const preview = computeFoldPreview({
+            boards: currentBoards,
+            dragVertex: new THREE.Vector3(
+              draggedPoint[0],
+              draggedPoint[1],
+              0
+            ),
+            draggedPosition: snappedPosition,
+            viewFront: camera.position.z > 0,
+          });
+          if (preview) {
+            renderFoldPreview({ scene, preview, origamiColor });
+          } else {
+            removeFoldPreview(scene);
+          }
+
           renderer.render(scene, camera);
         }
       }
@@ -159,7 +184,8 @@ export const useDragHandler: UseDragHandler = ({
       if (isDragging) {
         setIsDragging(false);
         isDragging = false;
-        // ドラッグ終了時の処理はuseDropHandlerで行う
+        // プレビューを消す。ドラッグ終了時の折り処理はuseDropHandlerで行う
+        removeFoldPreview(scene);
       }
     };
 
@@ -171,6 +197,8 @@ export const useDragHandler: UseDragHandler = ({
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
+      // ドラッグ途中で依存が変わった場合に備えてプレビューを消しておく
+      removeFoldPreview(scene);
     };
   }, [
     canvasRef,
@@ -178,6 +206,7 @@ export const useDragHandler: UseDragHandler = ({
     cameraRef,
     rendererRef,
     raycasterRef,
+    origamiColor,
     currentBoards,
     snapPoints,
     setDraggedPoint,

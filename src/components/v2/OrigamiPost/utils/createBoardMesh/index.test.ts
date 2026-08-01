@@ -44,6 +44,21 @@ describe("createBoardMesh", () => {
     expect(material.polygonOffset).toBe(false);
   });
 
+  it("opacity指定時は不透明度が上書きされる", () => {
+    const group = createBoardMesh(createTriangleBoard(), "#4A90E2", {
+      opacity: 0.45,
+    });
+    const mesh = group.children[0];
+
+    if (!(mesh instanceof THREE.Mesh)) throw new Error("Mesh not found");
+    const material = mesh.material;
+    if (!(material instanceof THREE.MeshLambertMaterial)) {
+      throw new Error("MeshLambertMaterial not found");
+    }
+
+    expect(material.opacity).toBe(0.45);
+  });
+
   it("enablePolygonOffset指定時はpolygonOffsetが有効になる", () => {
     const group = createBoardMesh(createTriangleBoard(), "#4A90E2", {
       enablePolygonOffset: true,
