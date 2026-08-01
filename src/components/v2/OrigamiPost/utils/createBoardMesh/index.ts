@@ -9,6 +9,8 @@ import { Board } from "../../types";
  * @param options.name - Groupに設定する名前
  * @param options.enablePolygonOffset - 深度値をずらして同一平面での
  *        ちらつき（z-fighting）を防ぐ。折りで動く板に指定する
+ * @param options.opacity - 板の不透明度（デフォルト: 0.9。
+ *        ドラッグ中のプレビューのようなゴースト表示では下げる）
  * @returns 板メッシュと枠線をまとめたGroup
  *
  * @description
@@ -20,7 +22,11 @@ import { Board } from "../../types";
 export const createBoardMesh = (
   board: Board,
   color: string,
-  options: { name?: string; enablePolygonOffset?: boolean } = {}
+  options: {
+    name?: string;
+    enablePolygonOffset?: boolean;
+    opacity?: number;
+  } = {}
 ): THREE.Group => {
   const shape = new THREE.Shape();
   shape.moveTo(board[0].x, board[0].y);
@@ -34,7 +40,7 @@ export const createBoardMesh = (
     color,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.9,
+    opacity: options.opacity ?? 0.9,
     ...(options.enablePolygonOffset
       ? { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }
       : {}),

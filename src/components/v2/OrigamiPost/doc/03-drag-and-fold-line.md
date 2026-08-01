@@ -35,6 +35,15 @@
 - D の位置と一致する候補（辺を自分自身に沿わせる無意味な折り）は除外し、同一位置の候補は集約する
 - 候補はドラッグ頂点に依存するため mousedown 時に計算し、mousemove では頂点スナップポイントと合わせて最も近いものへ吸着する（候補の描画はしない。吸着によるドラッグ中の点の移動がフィードバックになる）
 
+### 折りのプレビュー — computeFoldPreview / renderFoldPreview
+
+ドロップ前にどんな形に折れるかを視覚的に示すため、mousemove ごとに折りのプレビューを計算・描画する:
+
+- `computeFoldPreview` がドラッグ頂点と現在位置（吸着後）から折り線のスパンと、最前面の候補板を折り線で鏡映した「動く片」を返す
+- 毎フレーム呼ばれる前提の軽量な計算に限定し、折り操作の成立検証（枚数ごとの破れ判定や特殊折りの判定）はドロップ時にのみ行う。プレビューはあくまで「最前面の 1 枚がどんな形に折れるか」の目安
+- `renderFoldPreview` が動く片を半透明のゴースト（元の板と同じ高さ、polygonOffset 付き）で、折り線をドロップ後の確定表示（赤）と区別できるオレンジで描画する
+- 折り線が引けない位置（ドラッグ開始点への吸着など）ではプレビューを消し、mouseup でも必ず消す
+
 ### スナップまわりの既知の課題（未着手）
 
 折りが進むとスナップポイントが増え、操作性が下がる問題が確認されている:
@@ -86,6 +95,8 @@
 | `hooks/useDragDrop/useDragHandler.tsx` | mousedown / mousemove。レイキャストと点の移動 |
 | `hooks/useDragDrop/useDropHandler.tsx` | mouseup。折り線計算から分岐までの起点 |
 | `hooks/useDragDrop/renderPoint.tsx` | スナップポイント・ドラッグ中の点の描画 |
+| `hooks/useDragDrop/renderFoldPreview.ts` | ドラッグ中の折りプレビュー（折り線と動く片）の描画 |
+| `utils/computeFoldPreview/index.ts` | プレビュー形状（折り線スパンと鏡映後の動く片）の計算 |
 | `utils/snapToNearestSnapPoint/index.ts` | 吸着先への吸着と `SNAP_ATTRACTION_RADIUS` の定義 |
 | `utils/collectAlignmentSnapPoints/index.ts` | 辺の折り込み先（アライメント候補）の列挙 |
 | `utils/calculateFoldLine/index.ts` | 垂直二等分線としての折り線の導出 |
