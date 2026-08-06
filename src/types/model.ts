@@ -51,3 +51,5 @@ export type Model = {
   searchKeyword?: string[];
   procedure: Procedure;
 };
+
+export type CameraView = "up" | "down" | "left" | "right" | "back" | "default";
