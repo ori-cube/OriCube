@@ -20,7 +20,8 @@ type UseFlipView = (props: {
  * 折り紙を裏返す視点回転を管理するカスタムフック
  *
  * @description
- * - カメラをY軸周りに180度、rAF + easeInOutCubicで回転させる
+ * - カメラを回転中心（OrbitControlsのtarget）を通る垂直軸周りに
+ *   180度、rAF + easeInOutCubicで回転させる
  *   （描画はuseInitSceneのアニメーションループが毎フレーム行う）
  * - 折り紙のデータは変更しない。裏返した状態での折りは、ドロップ時の
  *   カメラ位置（zの符号）から視点を判定して処理する
@@ -49,7 +50,11 @@ export const useFlipView: UseFlipView = ({ cameraRef, controlsRef }) => {
     if (controls) controls.enabled = false;
     setIsFlipping(true);
 
-    const startPosition = camera.position.clone();
+    // 回転中心は紙の中心に追従しているOrbitControlsのtarget
+    const pivot = controls
+      ? controls.target.clone()
+      : new THREE.Vector3(0, 0, 0);
+    const startOffset = camera.position.clone().sub(pivot);
     const yAxis = new THREE.Vector3(0, 1, 0);
     let startTime: number | null = null;
 
@@ -60,9 +65,9 @@ export const useFlipView: UseFlipView = ({ cameraRef, controlsRef }) => {
       const angle = easeInOutCubic(progress) * Math.PI;
 
       camera.position.copy(
-        startPosition.clone().applyAxisAngle(yAxis, angle)
+        pivot.clone().add(startOffset.clone().applyAxisAngle(yAxis, angle))
       );
-      camera.lookAt(0, 0, 0);
+      camera.lookAt(pivot);
 
       if (progress < 1) {
         animationFrameIdRef.current = requestAnimationFrame(animate);

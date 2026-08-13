@@ -73,9 +73,15 @@ Group の position を折り線上の点に置き、中の板メッシュを逆�
 
 開いて畳むの動く片は途中経過で厳密な平面でなくなるため、`ShapeGeometry` の作り直しではなく `BufferGeometry` の position 属性書き換えで動かす。三角形分割（`ShapeUtils.triangulateShape`）は頂点数が変わらない前提で作成時に一度だけ行い、面と枠線（LineLoop）は position 属性を共有するため1回の書き換えで両方動く。頂点が毎フレーム動くのでフラスタムカリングは無効化する。
 
+## 視点の中心追従 — useCameraFocus
+
+折るたびに紙の占める領域は移動するが、回転の中心（OrbitControls の `target`）が原点のままだと、ビューモードや裏返しの回転が紙の中心からずれて違和感が出る。板群が変わったら（折りの確定・Undo・Redo）、板群のバウンディングボックス中心（`computeBoardsCenter`、XY 平面上）へ `target` を移し、カメラも同じ差分だけ rAF + easeInOutCubic（400ms）で平行移動させる。純粋な平行移動なのでカメラの向きは変わらず、紙が画面中央へ滑らかにスライドする。
+
+中心はバウンディングボックスで決める（頂点の平均だと折りによる頂点の細分に引きずられるため）。カメラは XY 方向にしか動かないので z の符号は変わらず、`viewFront` 判定（[05](./05-multi-board-folding.md)）には影響しない。
+
 ## 裏返し — useFlipView
 
-カメラを Y 軸周りに 180 度、rAF + easeInOutCubic（600ms）で回転させる。**折り紙のデータは一切変更しない**。裏側から見た状態での折りはドロップ時のカメラ位置から判定する（[05](./05-multi-board-folding.md)）。アニメーション中は OrbitControls とツールバーの各ボタンを無効化する。
+カメラを回転中心（OrbitControls の `target`）を通る垂直軸周りに 180 度、rAF + easeInOutCubic（600ms）で回転させる。**折り紙のデータは一切変更しない**。裏側から見た状態での折りはドロップ時のカメラ位置から判定する（[05](./05-multi-board-folding.md)）。アニメーション中は OrbitControls とツールバーの各ボタンを無効化する。
 
 ## 折り線の可視化 — visualizeFoldLine
 
@@ -98,6 +104,8 @@ Group の position を折り線上の点に置き、中の板メッシュを逆�
 | `hooks/useFoldAnimation/index.tsx` | 180 度折りアニメーション（fold / squash の分岐） |
 | `utils/createMorphBoardMesh/index.ts` | モーフ板の生成と頂点書き換え |
 | `utils/computeSquashAnimationPositions/index.ts` | 開いて畳むの途中経過座標（[09](./09-squash-fold.md)） |
+| `hooks/useCameraFocus/index.tsx` | 折り紙の中心への視点追従 |
+| `utils/computeBoardsCenter/index.ts` | 板群のバウンディングボックス中心 |
 | `hooks/useFlipView/index.tsx` | 視点の裏返し |
 | `utils/easeInOutCubic/index.ts` | イージング関数（折り・裏返しで共用） |
 | `utils/visualizeFoldLine/index.ts` | 折り線シリンダーの描画・削除 |

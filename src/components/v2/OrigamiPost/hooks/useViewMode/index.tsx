@@ -55,7 +55,7 @@ export const useViewMode: UseViewMode = ({
       const savedPosition = savedCameraPositionRef.current;
       if (savedPosition) {
         camera.position.copy(savedPosition);
-        camera.lookAt(0, 0, 0);
+        camera.lookAt(controls.target);
         controls.update();
       }
       savedCameraPositionRef.current = null;

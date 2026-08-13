@@ -9,6 +9,7 @@ import {
   useFoldAnimation,
   useFlipView,
   useViewMode,
+  useCameraFocus,
 } from "./hooks";
 import {
   FoldStep,
@@ -228,6 +229,13 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     width,
     height,
     cameraPosition,
+  });
+
+  // 折り紙の中心への視点追従（回転の中心を紙の中心に保つ）
+  useCameraFocus({
+    cameraRef,
+    controlsRef,
+    currentBoards,
   });
 
   // ドラッグ&ドロップ機能（板の描画とスナップポイントの管理を含む）

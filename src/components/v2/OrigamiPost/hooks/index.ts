@@ -7,6 +7,7 @@
  * - useFoldAnimation: 折り線を軸とした180度折りアニメーション
  * - useFlipView: 折り紙を裏返す視点回転
  * - useViewMode: 確認用の回転視点（ビューモード）
+ * - useCameraFocus: 折り紙の中心への視点追従
  */
 export { useInitScene } from "./useInitScene";
 export { useDragDrop } from "./useDragDrop";
@@ -14,3 +15,4 @@ export type { FoldChoice } from "./useDragDrop";
 export { useFoldAnimation } from "./useFoldAnimation";
 export { useFlipView } from "./useFlipView";
 export { useViewMode } from "./useViewMode";
+export { useCameraFocus } from "./useCameraFocus";
