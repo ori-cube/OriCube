@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { useFlipView } from "./index";
 
 // requestAnimationFrameを手動で進められるようにフェイク化する
@@ -57,6 +58,33 @@ describe("useFlipView", () => {
     expect(camera.position.y).toBeCloseTo(0);
     expect(camera.position.z).toBeCloseTo(-150);
     expect(result.current.isFlipping).toBe(false);
+  });
+
+  it("回転の中心が移動していても、その中心を通る軸周りに裏返る", () => {
+    const camera = createCamera();
+    camera.position.set(30, 0, 150);
+    const controls = new OrbitControls(
+      camera,
+      document.createElement("canvas")
+    );
+    controls.target.set(30, 0, 0);
+
+    const { result } = renderHook(() =>
+      useFlipView({
+        cameraRef: { current: camera },
+        controlsRef: { current: controls },
+      })
+    );
+
+    act(() => result.current.flipView());
+    act(() => {
+      flushAnimationFrame(0);
+      flushAnimationFrame(600);
+    });
+
+    expect(camera.position.x).toBeCloseTo(30);
+    expect(camera.position.y).toBeCloseTo(0);
+    expect(camera.position.z).toBeCloseTo(-150);
   });
 
   it("もう一度裏返すと表側へ戻る", () => {

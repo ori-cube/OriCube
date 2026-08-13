@@ -17,7 +17,8 @@ OrigamiPostV2 (index.tsx)
 │   └── commenceSquashFold 開いて畳むの確定処理（→ 09）
 ├── useFoldAnimation    foldingフェーズの180度折りアニメーション
 │                       （通常: ピボットGroup回転 / 開いて畳む: モーフ板の頂点書き換え）
-├── useFlipView         視点をY軸周りに180度回す「裏返し」
+├── useFlipView         視点を垂直軸周りに180度回す「裏返し」
+├── useCameraFocus      折るたびに移動する紙の中心へ回転の中心とカメラを追従
 ├── Toolbar/            Undo・Redo・裏返しボタン
 └── FoldCountSelector/  折り方（枚数・開いて畳む）の選択カード（selectingフェーズのみ表示）
 ```
@@ -89,5 +90,6 @@ scene                                scene
 | `hooks/useDragDrop/index.tsx` | ドラッグ&ドロップの統合フック |
 | `hooks/useFoldAnimation/index.tsx` | 折りアニメーション |
 | `hooks/useFlipView/index.tsx` | 視点の裏返し |
+| `hooks/useCameraFocus/index.tsx` | 折り紙の中心への視点追従 |
 | `Toolbar/index.tsx` | Undo / Redo / 裏返しボタン |
 | `FoldCountSelector/index.tsx` | 折り方（枚数・開いて畳む）の選択カード |
