@@ -1,11 +1,12 @@
 import * as THREE from "three";
 import { Board } from "../../types";
+import { createFaceMeshes } from "../createBoardMesh";
 
 /**
  * 頂点を毎フレーム動かせる板メッシュ（モーフ板）を作成する
  *
  * @param board - 板の頂点列（初期位置）
- * @param color - 板の色（CSS色文字列）
+ * @param frontColor - 紙の表面の色（CSS色文字列）。裏面はBOARD_BACK_COLOR固定
  * @param options.name - Groupに設定する名前
  * @returns 板メッシュと枠線をまとめたGroup
  *
@@ -14,14 +15,16 @@ import { Board } from "../../types";
  *   ShapeGeometryの作り直しではなくposition属性の書き換えで動かす
  *   （updateMorphBoardMeshPositionsを使う）
  * - 三角形分割は頂点数が変わらない前提で作成時に一度だけ行う
- * - 面と枠線（LineLoop）はposition属性を共有し、1回の書き換えで両方動く
+ *   （面は巻き順によらず+Z向きになる）
+ * - 表裏で色を分けるためcreateFaceMeshesの2メッシュ構成で描画し、
+ *   両メッシュと枠線（LineLoop）はposition属性を共有して1回の書き換えで動く
  * - 動く板はpolygonOffsetを有効にしてz-fightingを防ぐ（createBoardMeshの
  *   動く片と同じ設定）
  * - 頂点が毎フレーム動くためフラスタムカリングは無効化する
  */
 export const createMorphBoardMesh = (
   board: Board,
-  color: string,
+  frontColor: string,
   options: { name?: string } = {}
 ): THREE.Group => {
   const contour = board.map((vertex) => new THREE.Vector2(vertex.x, vertex.y));
@@ -38,17 +41,16 @@ export const createMorphBoardMesh = (
   meshGeometry.setIndex(triangles.flat());
   meshGeometry.computeVertexNormals();
 
-  const material = new THREE.MeshLambertMaterial({
-    color,
-    side: THREE.DoubleSide,
+  const faceMeshes = createFaceMeshes(board, meshGeometry, frontColor, {
     transparent: true,
     opacity: 0.9,
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
   });
-  const mesh = new THREE.Mesh(meshGeometry, material);
-  mesh.frustumCulled = false;
+  faceMeshes.forEach((mesh) => {
+    mesh.frustumCulled = false;
+  });
 
   const outlineGeometry = new THREE.BufferGeometry();
   outlineGeometry.setAttribute("position", positionAttribute);
@@ -64,7 +66,7 @@ export const createMorphBoardMesh = (
   if (options.name) {
     group.name = options.name;
   }
-  group.add(mesh);
+  faceMeshes.forEach((mesh) => group.add(mesh));
   group.add(outline);
 
   return group;

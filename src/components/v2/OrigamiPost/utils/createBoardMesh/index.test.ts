@@ -2,21 +2,46 @@ import { describe, it, expect } from "vitest";
 import * as THREE from "three";
 import { createBoardMesh } from "./index";
 import { Board } from "../../types";
+import { BOARD_BACK_COLOR } from "../../constants";
 
+// 反時計回り（表が+Z向き）の三角形
 const createTriangleBoard = (): Board => [
   new THREE.Vector3(-50, -50, 0),
   new THREE.Vector3(50, -50, 0),
   new THREE.Vector3(0, 50, 0),
 ];
 
+const findFaceMaterials = (
+  group: THREE.Group
+): { front: THREE.MeshLambertMaterial; back: THREE.MeshLambertMaterial } => {
+  const materials = group.children
+    .filter((child): child is THREE.Mesh => child instanceof THREE.Mesh)
+    .map((mesh) => mesh.material);
+
+  const isLambert = (
+    material: THREE.Material | THREE.Material[]
+  ): material is THREE.MeshLambertMaterial =>
+    material instanceof THREE.MeshLambertMaterial;
+
+  const front = materials
+    .filter(isLambert)
+    .find((material) => material.side === THREE.FrontSide);
+  const back = materials
+    .filter(isLambert)
+    .find((material) => material.side === THREE.BackSide);
+  if (!front || !back) throw new Error("表裏のマテリアルが見つかりません");
+  return { front, back };
+};
+
 describe("createBoardMesh", () => {
-  it("板メッシュと枠線を含むGroupを返す", () => {
+  it("表裏の板メッシュと枠線を含むGroupを返す", () => {
     const group = createBoardMesh(createTriangleBoard(), "#4A90E2");
 
     expect(group).toBeInstanceOf(THREE.Group);
-    expect(group.children).toHaveLength(2);
+    expect(group.children).toHaveLength(3);
     expect(group.children[0]).toBeInstanceOf(THREE.Mesh);
-    expect(group.children[1]).toBeInstanceOf(THREE.LineSegments);
+    expect(group.children[1]).toBeInstanceOf(THREE.Mesh);
+    expect(group.children[2]).toBeInstanceOf(THREE.LineSegments);
   });
 
   it("指定した名前がGroupに設定される", () => {
@@ -27,52 +52,50 @@ describe("createBoardMesh", () => {
     expect(group.name).toBe("board_static");
   });
 
-  it("マテリアルは半透明・両面描画で指定色になる", () => {
+  it("反時計回りの板は+Z側が指定色、-Z側が裏面色になる", () => {
     const group = createBoardMesh(createTriangleBoard(), "#ff0000");
-    const mesh = group.children[0];
+    const { front, back } = findFaceMaterials(group);
 
-    if (!(mesh instanceof THREE.Mesh)) throw new Error("Mesh not found");
-    const material = mesh.material;
-    if (!(material instanceof THREE.MeshLambertMaterial)) {
-      throw new Error("MeshLambertMaterial not found");
-    }
-
-    expect(material.color.getHexString()).toBe("ff0000");
-    expect(material.side).toBe(THREE.DoubleSide);
-    expect(material.transparent).toBe(true);
-    expect(material.opacity).toBe(0.9);
-    expect(material.polygonOffset).toBe(false);
+    expect(front.color.getHexString()).toBe("ff0000");
+    expect(back.color.getHexString()).toBe(
+      BOARD_BACK_COLOR.replace("#", "").toLowerCase()
+    );
+    expect(front.transparent).toBe(true);
+    expect(front.opacity).toBe(0.9);
+    expect(front.polygonOffset).toBe(false);
   });
 
-  it("opacity指定時は不透明度が上書きされる", () => {
+  it("時計回り（裏返った）の板は+Z側が裏面色、-Z側が指定色になる", () => {
+    // 折りはXY平面上の鏡映なので、裏返った板は頂点列が時計回りになる
+    const mirroredBoard = createTriangleBoard().reverse();
+    const group = createBoardMesh(mirroredBoard, "#ff0000");
+    const { front, back } = findFaceMaterials(group);
+
+    expect(front.color.getHexString()).toBe(
+      BOARD_BACK_COLOR.replace("#", "").toLowerCase()
+    );
+    expect(back.color.getHexString()).toBe("ff0000");
+  });
+
+  it("opacity指定時は表裏両方の不透明度が上書きされる", () => {
     const group = createBoardMesh(createTriangleBoard(), "#4A90E2", {
       opacity: 0.45,
     });
-    const mesh = group.children[0];
+    const { front, back } = findFaceMaterials(group);
 
-    if (!(mesh instanceof THREE.Mesh)) throw new Error("Mesh not found");
-    const material = mesh.material;
-    if (!(material instanceof THREE.MeshLambertMaterial)) {
-      throw new Error("MeshLambertMaterial not found");
-    }
-
-    expect(material.opacity).toBe(0.45);
+    expect(front.opacity).toBe(0.45);
+    expect(back.opacity).toBe(0.45);
   });
 
   it("enablePolygonOffset指定時はpolygonOffsetが有効になる", () => {
     const group = createBoardMesh(createTriangleBoard(), "#4A90E2", {
       enablePolygonOffset: true,
     });
-    const mesh = group.children[0];
+    const { front, back } = findFaceMaterials(group);
 
-    if (!(mesh instanceof THREE.Mesh)) throw new Error("Mesh not found");
-    const material = mesh.material;
-    if (!(material instanceof THREE.MeshLambertMaterial)) {
-      throw new Error("MeshLambertMaterial not found");
-    }
-
-    expect(material.polygonOffset).toBe(true);
-    expect(material.polygonOffsetFactor).toBe(-1);
+    expect(front.polygonOffset).toBe(true);
+    expect(front.polygonOffsetFactor).toBe(-1);
+    expect(back.polygonOffset).toBe(true);
   });
 
   it("多角形の頂点数に応じた三角形分割が行われる", () => {
