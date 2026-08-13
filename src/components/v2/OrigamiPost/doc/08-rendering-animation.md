@@ -10,7 +10,8 @@
 
 `Board`（頂点列）から `THREE.Shape` → `ShapeGeometry` で任意多角形をメッシュ化する。ShapeGeometry は内部で earcut による三角形分割を行うため、折りで生じる凹多角形もそのまま描画できる。
 
-- マテリアルは半透明（opacity 0.9）の Lambert・両面描画
+- マテリアルは不透明の Lambert。紙の表裏で色を分けるため、FrontSide（+Z側）と BackSide（−Z側）の2メッシュでジオメトリを共有して描画する（`createFaceMeshes`）。表面はユーザーが選択した色、裏面は固定色（`BOARD_BACK_COLOR`）。折りは XY 平面上の鏡映として板データへ反映されるため、頂点列の巻き順（反時計回り＝表が +Z 向き）で表裏を判定する
+- ドラッグ中のプレビューなどゴースト表示では `opacity` 指定で半透明にできる
 - `EdgesGeometry` による黒い枠線を重ね、メッシュと枠線を1つの Group で返す
 - `enablePolygonOffset` オプションで深度値をずらし、折り重なった板同士の z-fighting を防ぐ（folding 時の動く片に指定）
 

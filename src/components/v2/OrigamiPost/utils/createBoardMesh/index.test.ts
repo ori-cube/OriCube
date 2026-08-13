@@ -60,8 +60,8 @@ describe("createBoardMesh", () => {
     expect(back.color.getHexString()).toBe(
       BOARD_BACK_COLOR.replace("#", "").toLowerCase()
     );
-    expect(front.transparent).toBe(true);
-    expect(front.opacity).toBe(0.9);
+    expect(front.transparent).toBe(false);
+    expect(front.opacity).toBe(1);
     expect(front.polygonOffset).toBe(false);
   });
 
@@ -77,13 +77,15 @@ describe("createBoardMesh", () => {
     expect(back.color.getHexString()).toBe("ff0000");
   });
 
-  it("opacity指定時は表裏両方の不透明度が上書きされる", () => {
+  it("opacity指定時は表裏両方が半透明になる", () => {
     const group = createBoardMesh(createTriangleBoard(), "#4A90E2", {
       opacity: 0.45,
     });
     const { front, back } = findFaceMaterials(group);
 
+    expect(front.transparent).toBe(true);
     expect(front.opacity).toBe(0.45);
+    expect(back.transparent).toBe(true);
     expect(back.opacity).toBe(0.45);
   });
 

@@ -42,8 +42,6 @@ export const createMorphBoardMesh = (
   meshGeometry.computeVertexNormals();
 
   const faceMeshes = createFaceMeshes(board, meshGeometry, frontColor, {
-    transparent: true,
-    opacity: 0.9,
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,

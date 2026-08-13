@@ -56,15 +56,15 @@ export const createFaceMeshes = (
  * @param options.name - Groupに設定する名前
  * @param options.enablePolygonOffset - 深度値をずらして同一平面での
  *        ちらつき（z-fighting）を防ぐ。折りで動く板に指定する
- * @param options.opacity - 板の不透明度（デフォルト: 0.9。
+ * @param options.opacity - 板の不透明度（デフォルト: 1。
  *        ドラッグ中のプレビューのようなゴースト表示では下げる）
  * @returns 板メッシュと枠線をまとめたGroup
  *
  * @description
  * - THREE.Shape → ShapeGeometryで任意多角形を三角形分割して描画
  *   （earcut内蔵のため凹多角形にも対応。面は巻き順によらず+Z向きになる）
- * - マテリアルは半透明Lambert。表裏で色を分けるためcreateFaceMeshesの
- *   2メッシュ構成で描画する
+ * - マテリアルは不透明Lambert（opacity指定時のみ半透明）。表裏で色を
+ *   分けるためcreateFaceMeshesの2メッシュ構成で描画する
  * - EdgesGeometryで黒い枠線を追加
  */
 export const createBoardMesh = (
@@ -84,9 +84,10 @@ export const createBoardMesh = (
   shape.closePath();
 
   const geometry = new THREE.ShapeGeometry(shape);
+  const opacity = options.opacity ?? 1;
   const [frontMesh, backMesh] = createFaceMeshes(board, geometry, frontColor, {
-    transparent: true,
-    opacity: options.opacity ?? 0.9,
+    transparent: opacity < 1,
+    opacity,
     ...(options.enablePolygonOffset
       ? { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }
       : {}),
