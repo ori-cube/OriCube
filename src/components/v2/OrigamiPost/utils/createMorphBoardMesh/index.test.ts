@@ -44,7 +44,7 @@ describe("createMorphBoardMesh", () => {
     );
     // createTriangleは反時計回り（表が+Z向き）
     expect(front?.color.getHexString()).toBe("ff0000");
-    expect(back?.color.getHexString()).toBe("dfdfdf");
+    expect(back?.color.getHexString()).toBe("ffffff");
   });
 
   it("作成時に三角形分割され、頂点は初期位置になる", () => {

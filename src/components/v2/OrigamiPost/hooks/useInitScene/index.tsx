@@ -80,15 +80,26 @@ export const useInitScene: UseInitScene = ({
     raycasterRef.current = raycaster;
 
     // ライティングの設定
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    //
+    // Lambert材質の描画色は 放射照度/π なので、正面向き（±Z）の面で
+    // 環境光 + 平行光×cos(入射角) = π になるよう調整し、選択した色が
+    // ほぼそのまま表示されるようにする。平行光の方向(±10,±10,±5)は
+    // 法線±Zとのcosが1/3のため、3π/4 + (3π/4)(1/3) = π となる。
+    // アニメーション中に傾いた面だけが陰影で暗くなる
+    const LIGHT_INTENSITY = (3 * Math.PI) / 4;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, LIGHT_INTENSITY);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight(
+      0xffffff,
+      LIGHT_INTENSITY
+    );
     directionalLight.position.set(10, 10, 5);
     scene.add(directionalLight);
 
-    // 裏返して見たときに極端に暗くならないよう、背面側からも弱く照らす
-    const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    // 裏返して見たときも同じ明るさになるよう、背面側からも同強度で照らす
+    const backLight = new THREE.DirectionalLight(0xffffff, LIGHT_INTENSITY);
     backLight.position.set(-10, -10, -5);
     scene.add(backLight);
 
