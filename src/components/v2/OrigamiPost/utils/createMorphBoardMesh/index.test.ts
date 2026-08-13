@@ -10,19 +10,41 @@ const createTriangle = (): Board => [
 ];
 
 describe("createMorphBoardMesh", () => {
-  it("面メッシュと枠線をまとめたGroupを作成する", () => {
+  it("表裏の面メッシュと枠線をまとめたGroupを作成する", () => {
     const group = createMorphBoardMesh(createTriangle(), "#4A90E2", {
       name: "board_squash_moving_0",
     });
 
     expect(group.name).toBe("board_squash_moving_0");
-    expect(group.children).toHaveLength(2);
-    expect(group.children.some((child) => child instanceof THREE.Mesh)).toBe(
-      true
-    );
+    expect(group.children).toHaveLength(3);
+    expect(
+      group.children.filter((child) => child instanceof THREE.Mesh)
+    ).toHaveLength(2);
     expect(
       group.children.some((child) => child instanceof THREE.LineLoop)
     ).toBe(true);
+  });
+
+  it("表裏のメッシュに表色・裏色が割り当てられる", () => {
+    const group = createMorphBoardMesh(createTriangle(), "#ff0000");
+
+    const materials = group.children
+      .filter((child): child is THREE.Mesh => child instanceof THREE.Mesh)
+      .map((mesh) => mesh.material)
+      .filter(
+        (material): material is THREE.MeshLambertMaterial =>
+          material instanceof THREE.MeshLambertMaterial
+      );
+
+    const front = materials.find(
+      (material) => material.side === THREE.FrontSide
+    );
+    const back = materials.find(
+      (material) => material.side === THREE.BackSide
+    );
+    // createTriangleは反時計回り（表が+Z向き）
+    expect(front?.color.getHexString()).toBe("ff0000");
+    expect(back?.color.getHexString()).toBe("ffffff");
   });
 
   it("作成時に三角形分割され、頂点は初期位置になる", () => {

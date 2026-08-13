@@ -38,6 +38,7 @@ import {
 } from "./utils/serializeOrigamiState";
 import { FoldCountSelector } from "./FoldCountSelector";
 import { Toolbar } from "./Toolbar";
+import { ColorPicker } from "./ColorPicker";
 import styles from "./index.module.scss";
 
 /**
@@ -115,8 +116,8 @@ export type PendingFold =
     };
 
 export interface OrigamiPostV2Props {
-  /** 折り紙の色 */
-  origamiColor?: string;
+  /** 折り紙の表面の初期色（裏面はBOARD_BACK_COLORの固定色） */
+  defaultOrigamiColor?: string;
   /** 折り紙のサイズ */
   size?: number;
   /** カメラの初期位置 */
@@ -137,14 +138,14 @@ export interface OrigamiPostV2Props {
  *   リプレイ（replayFoldSteps）で導出する
  * - カメラの回転・ズーム機能
  *
- * @param props.origamiColor - 折り紙の色（デフォルト: "#4A90E2"）
+ * @param props.defaultOrigamiColor - 折り紙の表面の初期色（デフォルト: "#4A90E2"）
  * @param props.size - 折り紙のサイズ（デフォルト: 100）
  * @param props.cameraPosition - カメラの初期位置（デフォルト: {x: 0, y: 0, z: 150}）
  * @param props.width - カンバスの幅（デフォルト: window.innerWidth - 320）
  * @param props.height - カンバスの高さ（デフォルト: window.innerHeight）
  */
 export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
-  origamiColor = "#4A90E2",
+  defaultOrigamiColor = "#4A90E2",
   size = 100,
   cameraPosition = { x: 0, y: 0, z: 150 },
   width = window.innerWidth - 320,
@@ -159,6 +160,15 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
 
   // 折り操作のフェーズ（idle以外ではドラッグ&ドロップを無効化）
   const [foldPhase, setFoldPhase] = useState<FoldPhase>("idle");
+
+  // 折り紙の表面の色（ユーザーがカラーピッカーで変更できる）
+  const [origamiColor, setOrigamiColor] = useState(defaultOrigamiColor);
+
+  const handleOrigamiColorChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setOrigamiColor(e.target.value);
+  };
 
   // 折り手順の履歴（唯一の状態源。Undo/Redoは適用済みステップ数の操作）
   const [foldHistory, setFoldHistory] =
@@ -297,6 +307,10 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
         onRedo={handleRedo}
         onFlip={flipView}
         onToggleViewMode={toggleViewMode}
+      />
+      <ColorPicker
+        color={origamiColor}
+        onColorChange={handleOrigamiColorChange}
       />
       {foldPhase === "selecting" && foldProposal && (
         <FoldCountSelector

@@ -14,9 +14,9 @@ const meta: Meta<typeof OrigamiPostV2> = {
     },
   },
   argTypes: {
-    origamiColor: {
+    defaultOrigamiColor: {
       control: { type: "color" },
-      description: "折り紙の色",
+      description: "折り紙の表面の初期色（裏面は固定色）",
     },
     size: {
       control: { type: "range", min: 50, max: 200, step: 10 },
@@ -42,7 +42,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    origamiColor: "#4A90E2",
+    defaultOrigamiColor: "#4A90E2",
     size: 100,
     cameraPosition: { x: 0, y: 0, z: 150 },
     width: 800,
