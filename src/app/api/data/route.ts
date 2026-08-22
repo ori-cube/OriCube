@@ -2,12 +2,29 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { getAllModels, getModelFromId, createModel } from "@/actions/model";
 import { getUserFromEmail } from "@/actions/user";
-import { Model, Procedure } from "@/types/model";
+import { Step, Model, Procedure } from "@/types/model";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// フロント側でprocedureの各stepにfoldingAngleが必ず存在する形に正規化する（初期値は180度）
+const normalizeProcedure = (
+  procedure: Procedure | null | undefined
+): Procedure => {
+  if (!procedure) return {};
+
+  return Object.entries(procedure).reduce((acc, [key, step]) => {
+    if (!step) return acc;
+    if (step.foldingAngle === undefined) {
+      acc[key] = { ...step, foldingAngle: 180 } as Step;
+    } else {
+      acc[key] = step;
+    }
+    return acc;
+  }, {} as Procedure);
 };
 
 export async function GET(req: NextRequest) {
@@ -30,7 +47,7 @@ export async function GET(req: NextRequest) {
         color: model.color,
         imageUrl: model.imageUrl,
         searchKeyword: model.searchKeyword,
-        procedure: model.procedure as Procedure,
+        procedure: normalizeProcedure(model.procedure as Procedure),
       };
       return new Response(JSON.stringify(viewModel ?? null), {
         headers: corsHeaders,
@@ -52,7 +69,7 @@ export async function GET(req: NextRequest) {
           color: model.color,
           imageUrl: model.imageUrl,
           searchKeyword: model.searchKeyword,
-          procedure: model.procedure as Procedure,
+          procedure: normalizeProcedure(model.procedure as Procedure),
         };
         return viewModel;
       });

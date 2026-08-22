@@ -185,10 +185,10 @@ export const Three: React.FC<Props> = ({
       boards.push({ points: b, isMove: false })
     );
     const holds_line = [];
-    const theta = THREE.MathUtils.degToRad(foldAngle);
-
+    let theta = THREE.MathUtils.degToRad(foldAngle);
     switch (stepObject.type) {
       case "Base":
+      case "crease":
         if (!stepObject.rotateAxis.length) return;
         // 通常の折り方の場合
         holds_line.push(
@@ -197,6 +197,12 @@ export const Three: React.FC<Props> = ({
             ...stepObject.rotateAxis[1],
           ])
         );
+
+        // 折り目をつける動作の場合、設定角度の半分を超えたら反対方向に折る
+        const maxAngle = stepObject.foldingAngle * (Math.PI / 180);
+        if (stepObject.type === "crease" && theta > maxAngle / 2) {
+          theta = 2 * Math.PI - theta;
+        }
         const rotateAxis = new THREE.Vector3(...stepObject.rotateAxis[0])
           .sub(new THREE.Vector3(...stepObject.rotateAxis[1]))
           .normalize();

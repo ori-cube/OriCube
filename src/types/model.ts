@@ -29,8 +29,28 @@ export type ConvolutionStep = {
   moveNodesIdx: number[];
   rotateAxes: number[][][];
   fixBoards: Board[];
+  foldingAngle: number;
 };
-export type Step = BaseStep | ConvolutionStep;
+
+// 折り目をつけるやつ用
+export type CreaseStep = {
+  type: "crease";
+  description: string;
+  fixBoards: Board[];
+  moveBoards: Board[];
+  rotateAxis: RotateAxis;
+  initialBoards: Board[];
+  selectedPoints: Point[];
+  rightBoards: Board[];
+  leftBoards: Board[];
+  isMoveBoardsRight: boolean;
+  numberOfMoveBoards: number;
+  maxNumberOfMoveBoards: number;
+  isFoldingDirectionFront: boolean;
+  foldingAngle: number;
+};
+
+export type Step = BaseStep | ConvolutionStep | CreaseStep;
 
 /*
 1: Step,
