@@ -55,6 +55,12 @@ const containsPoint = (board: Board, x: number, y: number): boolean =>
     (vertex) => Math.abs(vertex.x - x) < 1e-6 && Math.abs(vertex.y - y) < 1e-6
   );
 
+const signedArea = (board: Board): number =>
+  board.reduce((area, vertex, index) => {
+    const next = board[(index + 1) % board.length];
+    return area + vertex.x * next.y - next.x * vertex.y;
+  }, 0) / 2;
+
 /** 指定レイヤーの板を取り出す */
 const findBoardAtLayer = (
   boards: LayeredBoard[],
@@ -73,39 +79,39 @@ describe("applySquashFoldStep", () => {
 
     expect(result.boards).toHaveLength(6);
 
-    // 手前フラップのドラッグ頂点側は折り線(y=0)で鏡映されて最前面へ
+    // 手前フラップのドラッグ頂点側はポケットを開いて左半分の最前面へ
     const frontUpper = findBoardAtLayer(result.boards, 6);
     expect(frontUpper).toBeDefined();
     if (!frontUpper) return;
     expect(containsPoint(frontUpper.polygon, 20, -20)).toBe(true);
-    expect(containsPoint(frontUpper.polygon, 20, 0)).toBe(true);
+    expect(containsPoint(frontUpper.polygon, 0, -20)).toBe(true);
     expect(containsPoint(frontUpper.polygon, 0, 0)).toBe(true);
 
-    // 奥フラップのドラッグ頂点側（開く部分）はその下へ
+    // 奥フラップのドラッグ頂点側は折り線で鏡映されて右半分へ
     const backUpper = findBoardAtLayer(result.boards, 5);
     expect(backUpper).toBeDefined();
     if (!backUpper) return;
     expect(containsPoint(backUpper.polygon, 20, -20)).toBe(true);
-    expect(containsPoint(backUpper.polygon, 0, -20)).toBe(true);
+    expect(containsPoint(backUpper.polygon, 20, 0)).toBe(true);
     expect(containsPoint(backUpper.polygon, 0, 0)).toBe(true);
 
-    // 奥フラップの反対側はヒンジ(y=-x)で鏡映されてさらにその下へ
-    const backLower = findBoardAtLayer(result.boards, 4);
-    expect(backLower).toBeDefined();
-    if (!backLower) return;
-    expect(containsPoint(backLower.polygon, 0, 0)).toBe(true);
-    expect(containsPoint(backLower.polygon, 20, -20)).toBe(true);
-    expect(containsPoint(backLower.polygon, 0, -20)).toBe(true);
-
-    // 手前フラップの固定片は元のレイヤーのまま
-    const frontLower = findBoardAtLayer(result.boards, 3);
+    // 手前フラップの反対側はヒンジ(y=-x)で鏡映されてさらにその下へ
+    const frontLower = findBoardAtLayer(result.boards, 4);
     expect(frontLower).toBeDefined();
     if (!frontLower) return;
-    expect(containsPoint(frontLower.polygon, 20, 0)).toBe(true);
+    expect(containsPoint(frontLower.polygon, 0, 0)).toBe(true);
     expect(containsPoint(frontLower.polygon, 20, -20)).toBe(true);
+    expect(containsPoint(frontLower.polygon, 0, -20)).toBe(true);
 
-    // 奥フラップ（レイヤー2）は分割されて消える
-    expect(findBoardAtLayer(result.boards, 2)).toBeUndefined();
+    // 奥フラップの固定片は元のレイヤーのまま
+    const backLower = findBoardAtLayer(result.boards, 2);
+    expect(backLower).toBeDefined();
+    if (!backLower) return;
+    expect(containsPoint(backLower.polygon, 20, 0)).toBe(true);
+    expect(containsPoint(backLower.polygon, 20, -20)).toBe(true);
+
+    // 手前フラップ（レイヤー3）は分割されて消える
+    expect(findBoardAtLayer(result.boards, 3)).toBeUndefined();
 
     // 対象外の板（レイヤー0, 1）は動かない
     const untouched0 = findBoardAtLayer(result.boards, 0);
@@ -117,7 +123,7 @@ describe("applySquashFoldStep", () => {
     expect(containsPoint(untouched1.polygon, 20, 20)).toBe(true);
 
     // 動いた片はドラッグ元の頂点(20,20)を含まない（先端は畳まれている）
-    for (const layer of [3, 4, 5, 6]) {
+    for (const layer of [2, 4, 5, 6]) {
       const board = findBoardAtLayer(result.boards, layer);
       if (!board) continue;
       expect(containsPoint(board.polygon, 20, 20)).toBe(false);
@@ -148,11 +154,11 @@ describe("applySquashFoldStep", () => {
     expect(containsPoint(frontUpper.sourcePolygon, 0, -20)).toBe(true);
     expect(containsPoint(frontUpper.sourcePolygon, 0, 0)).toBe(true);
 
-    // ヒンジで鏡映される片の展開図は正方形の左上領域
-    const backLower = findBoardAtLayer(result.boards, 4);
-    expect(backLower).toBeDefined();
-    if (!backLower) return;
-    expect(containsPoint(backLower.sourcePolygon, -20, 20)).toBe(true);
+    // ヒンジで鏡映される片の展開図は正方形の右下領域
+    const frontLower = findBoardAtLayer(result.boards, 4);
+    expect(frontLower).toBeDefined();
+    if (!frontLower) return;
+    expect(containsPoint(frontLower.sourcePolygon, 20, -20)).toBe(true);
   });
 
   it("アニメーション用に動く3片・動かない板・ヒンジ・スパイン端点を返す", () => {
@@ -172,7 +178,7 @@ describe("applySquashFoldStep", () => {
       "openRotate",
     ]);
 
-    // 動く片は回転前の座標を持つ（折り線で鏡映される片はドラッグ頂点を含む）
+    // 動く片は回転前の座標を持つ（奥フラップの折り線で鏡映される片）
     const mirrorFoldLine = result.movingPieces.find(
       (piece) => piece.motion === "mirrorFoldLine"
     );
@@ -182,10 +188,10 @@ describe("applySquashFoldStep", () => {
     expect(containsPoint(mirrorFoldLine.finalPiece.polygon, 20, -20)).toBe(
       true
     );
-    expect(mirrorFoldLine.layer).toBe(3);
-    expect(mirrorFoldLine.finalLayer).toBe(6);
+    expect(mirrorFoldLine.layer).toBe(2);
+    expect(mirrorFoldLine.finalLayer).toBe(5);
 
-    // 動かない板は対象外の2枚 + 手前フラップの固定片
+    // 動かない板は対象外の2枚 + 奥フラップの固定片
     expect(result.staticBoards).toHaveLength(3);
 
     // ヒンジは折り線とスパイン端点で交わる対角線(y=-x)のスパン
@@ -216,6 +222,26 @@ describe("applySquashFoldStep", () => {
     expect(first?.boards).toEqual(second?.boards);
   });
 
+  it("開いた最前面の2片は手前フラップと同じ裏面を向く", () => {
+    const boards = createTwiceFoldedBoards();
+    const result = applySquashFoldStep(boards, createSquashStep());
+
+    expect(result).not.toBeNull();
+    if (!result) return;
+
+    const frontFlap = findBoardAtLayer(boards, 3);
+    const leftTop = findBoardAtLayer(result.boards, 6);
+    const rightTop = findBoardAtLayer(result.boards, 5);
+    expect(frontFlap).toBeDefined();
+    expect(leftTop).toBeDefined();
+    expect(rightTop).toBeDefined();
+    if (!frontFlap || !leftTop || !rightTop) return;
+
+    expect(signedArea(frontFlap.polygon)).toBeLessThan(0);
+    expect(signedArea(leftTop.polygon)).toBeLessThan(0);
+    expect(signedArea(rightTop.polygon)).toBeLessThan(0);
+  });
+
   it("裏側から見て開いて畳むと、動く片は下（-Z側）に積まれる", () => {
     const result = applySquashFoldStep(
       createTwiceFoldedBoards(),
@@ -232,9 +258,9 @@ describe("applySquashFoldStep", () => {
     expect(findBoardAtLayer(result.boards, -2)).toBeDefined();
     expect(findBoardAtLayer(result.boards, -3)).toBeDefined();
 
-    // 奥フラップ（レイヤー1）は分割されて消え、手前フラップの固定片は残る
-    expect(findBoardAtLayer(result.boards, 1)).toBeUndefined();
-    expect(findBoardAtLayer(result.boards, 0)).toBeDefined();
+    // 手前フラップ（レイヤー0）は分割されて消え、奥フラップの固定片は残る
+    expect(findBoardAtLayer(result.boards, 0)).toBeUndefined();
+    expect(findBoardAtLayer(result.boards, 1)).toBeDefined();
 
     // 表側の2枚（レイヤー2, 3）は動かない
     expect(findBoardAtLayer(result.boards, 2)).toBeDefined();
