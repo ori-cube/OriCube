@@ -87,6 +87,12 @@ const containsPoint = (board: Board, x: number, y: number): boolean =>
     (vertex) => Math.abs(vertex.x - x) < 1e-6 && Math.abs(vertex.y - y) < 1e-6
   );
 
+const signedArea = (board: Board): number =>
+  board.reduce((area, vertex, index) => {
+    const next = board[(index + 1) % board.length];
+    return area + vertex.x * next.y - next.x * vertex.y;
+  }, 0) / 2;
+
 /** 指定レイヤーの板を取り出す */
 const findBoardAtLayer = (
   boards: LayeredBoard[],
@@ -105,46 +111,46 @@ describe("applyPetalFoldStep", () => {
 
     expect(result.boards).toHaveLength(14);
 
-    // 前面フラップの中央片は折り線で鏡映され、先端がスパイン延長上へ最前面に
-    const centralLeft = findBoardAtLayer(result.boards, 12);
-    expect(centralLeft).toBeDefined();
-    if (!centralLeft) return;
-    expect(containsPoint(centralLeft.polygon, TIP_FINAL.x, TIP_FINAL.y)).toBe(
-      true
-    );
-    expect(containsPoint(centralLeft.polygon, P_LEFT.x, P_LEFT.y)).toBe(
-      true
-    );
-    expect(
-      containsPoint(centralLeft.polygon, FOLD_CENTER.x, FOLD_CENTER.y)
-    ).toBe(true);
-
-    const centralRight = findBoardAtLayer(result.boards, 11);
-    expect(centralRight).toBeDefined();
-    if (!centralRight) return;
-    expect(containsPoint(centralRight.polygon, TIP_FINAL.x, TIP_FINAL.y)).toBe(
-      true
-    );
-    expect(containsPoint(centralRight.polygon, P_RIGHT.x, P_RIGHT.y)).toBe(
-      true
-    );
-
-    // サイド片はかぶせ折りで内側へ畳まれた後持ち上がり、中央片の真裏に重なる
-    const sideLeft = findBoardAtLayer(result.boards, 10);
+    // サイド片はかぶせ折りで内側へ畳まれた後持ち上がり、最前面に重なる
+    const sideLeft = findBoardAtLayer(result.boards, 12);
     expect(sideLeft).toBeDefined();
     if (!sideLeft) return;
     expect(containsPoint(sideLeft.polygon, TIP_FINAL.x, TIP_FINAL.y)).toBe(
       true
     );
-    expect(containsPoint(sideLeft.polygon, P_LEFT.x, P_LEFT.y)).toBe(true);
+    expect(containsPoint(sideLeft.polygon, P_LEFT.x, P_LEFT.y)).toBe(
+      true
+    );
     expect(
       containsPoint(sideLeft.polygon, FOLD_CENTER.x, FOLD_CENTER.y)
     ).toBe(true);
 
-    const sideRight = findBoardAtLayer(result.boards, 9);
+    const sideRight = findBoardAtLayer(result.boards, 11);
     expect(sideRight).toBeDefined();
     if (!sideRight) return;
-    expect(containsPoint(sideRight.polygon, P_RIGHT.x, P_RIGHT.y)).toBe(true);
+    expect(containsPoint(sideRight.polygon, TIP_FINAL.x, TIP_FINAL.y)).toBe(
+      true
+    );
+    expect(containsPoint(sideRight.polygon, P_RIGHT.x, P_RIGHT.y)).toBe(
+      true
+    );
+
+    // 中央片は折り線で鏡映され、サイド片の真裏に重なる
+    const centralLeft = findBoardAtLayer(result.boards, 10);
+    expect(centralLeft).toBeDefined();
+    if (!centralLeft) return;
+    expect(containsPoint(centralLeft.polygon, TIP_FINAL.x, TIP_FINAL.y)).toBe(
+      true
+    );
+    expect(containsPoint(centralLeft.polygon, P_LEFT.x, P_LEFT.y)).toBe(true);
+    expect(
+      containsPoint(centralLeft.polygon, FOLD_CENTER.x, FOLD_CENTER.y)
+    ).toBe(true);
+
+    const centralRight = findBoardAtLayer(result.boards, 9);
+    expect(centralRight).toBeDefined();
+    if (!centralRight) return;
+    expect(containsPoint(centralRight.polygon, P_RIGHT.x, P_RIGHT.y)).toBe(true);
 
     // 相方の耳片はかぶせ折り線で内側へ畳まれる（先端Vは動かない）
     const earLeft = findBoardAtLayer(result.boards, 8);
@@ -205,11 +211,11 @@ describe("applyPetalFoldStep", () => {
     if (!earLeft) return;
     expect(containsPoint(earLeft.sourcePolygon, 0, -20)).toBe(true);
 
-    // 左の中央片は前面フラップ（レイヤー6、展開図は左下領域）から分割される
-    const centralLeft = findBoardAtLayer(result.boards, 12);
-    expect(centralLeft).toBeDefined();
-    if (!centralLeft) return;
-    expect(containsPoint(centralLeft.sourcePolygon, -20, -20)).toBe(true);
+    // 左のサイド片は前面フラップ（レイヤー6、展開図は左下領域）から分割される
+    const sideLeft = findBoardAtLayer(result.boards, 12);
+    expect(sideLeft).toBeDefined();
+    if (!sideLeft) return;
+    expect(containsPoint(sideLeft.sourcePolygon, -20, -20)).toBe(true);
   });
 
   it("アニメーション用に動く6片と正準化された折り線・かぶせ折り線を返す", () => {
@@ -271,6 +277,34 @@ describe("applyPetalFoldStep", () => {
     expect(first?.boards).toEqual(second?.boards);
   });
 
+  it("持ち上げた最前面の2片は折る前と同じ裏面を向く", () => {
+    const boards = createSquareBaseBoards();
+    const result = applyPetalFoldStep(boards, createPetalStep());
+
+    expect(result).not.toBeNull();
+    if (!result) return;
+
+    const frontLeft = findBoardAtLayer(boards, 6);
+    const frontRight = findBoardAtLayer(boards, 5);
+    const liftedLeft = findBoardAtLayer(result.boards, 12);
+    const liftedRight = findBoardAtLayer(result.boards, 11);
+    expect(frontLeft).toBeDefined();
+    expect(frontRight).toBeDefined();
+    expect(liftedLeft).toBeDefined();
+    expect(liftedRight).toBeDefined();
+    if (!frontLeft || !frontRight || !liftedLeft || !liftedRight) return;
+
+    expect(signedArea(frontLeft.polygon)).toBeLessThan(0);
+    expect(signedArea(frontRight.polygon)).toBeLessThan(0);
+    expect(signedArea(liftedLeft.polygon)).toBeLessThan(0);
+    expect(signedArea(liftedRight.polygon)).toBeLessThan(0);
+
+    const outerMotions = result.movingPieces
+      .filter((piece) => piece.finalLayer === 12 || piece.finalLayer === 11)
+      .map((piece) => piece.motion);
+    expect(outerMotions).toEqual(["kiteThenFoldLine", "kiteThenFoldLine"]);
+  });
+
   it("裏側から見て花弁折りすると、動く片は下（-Z側）に積まれる", () => {
     const result = applyPetalFoldStep(
       createSquareBaseBoards(),
@@ -290,6 +324,14 @@ describe("applyPetalFoldStep", () => {
     // 表側の前面（レイヤー6, 5）は動かない
     expect(findBoardAtLayer(result.boards, 6)).toBeDefined();
     expect(findBoardAtLayer(result.boards, 5)).toBeDefined();
+
+    const liftedLeft = findBoardAtLayer(result.boards, -9);
+    const liftedRight = findBoardAtLayer(result.boards, -8);
+    expect(liftedLeft).toBeDefined();
+    expect(liftedRight).toBeDefined();
+    if (!liftedLeft || !liftedRight) return;
+    expect(signedArea(liftedLeft.polygon)).toBeGreaterThan(0);
+    expect(signedArea(liftedRight.polygon)).toBeGreaterThan(0);
   });
 
   it("リプレイの履歴として花弁折りを適用できる", () => {

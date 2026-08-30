@@ -117,7 +117,7 @@ interface PetalStructure {
  * 5. 最終状態の全ての片のペアについて、展開図上で共有する折り目が
  *    折り畳み空間でも一致すること（紙が破れないこと）を数値検証する。
  *    かぶせ折りの成立条件（cornerの鏡映がh上に載る）もここで検証される
- * 6. 動く片は耳→サイド→中央の順に視点側の外側へ積む
+ * 6. 動く片は耳→中央→サイドの順に視点側の外側へ積む
  */
 export const applyPetalFoldStep = (
   boards: LayeredBoard[],
@@ -196,7 +196,7 @@ export const applyPetalFoldStep = (
       sourcePolygon: earPiece.sourcePolygon,
     };
 
-    // 耳 → サイド → 中央の順に外側へ。左右では奥側（sides[1]）が内側
+    // 耳 → 中央 → サイドの順に外側へ。左右では奥側（sides[1]）が内側
     const stackOffset = sideIndex === 0 ? 2 : 1;
     movingPieces.push(
       {
@@ -212,7 +212,7 @@ export const applyPetalFoldStep = (
         piece: sidePiece,
         finalPiece: sideFinal,
         layer: side.flap.layer,
-        finalLayer: outwardLayer(2 + stackOffset),
+        finalLayer: outwardLayer(4 + stackOffset),
         axes: [kiteLine, structure.foldLine],
         motion: "kiteThenFoldLine",
         sideIndex,
@@ -221,7 +221,7 @@ export const applyPetalFoldStep = (
         piece: centralPiece,
         finalPiece: centralFinal,
         layer: side.flap.layer,
-        finalLayer: outwardLayer(4 + stackOffset),
+        finalLayer: outwardLayer(2 + stackOffset),
         axes: [structure.foldLine],
         motion: "mirrorFoldLine",
         sideIndex,
