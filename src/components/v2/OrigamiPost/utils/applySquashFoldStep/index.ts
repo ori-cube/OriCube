@@ -20,10 +20,10 @@ import {
 /**
  * 開いて畳むで動く片の動き方
  *
- * - mirrorFoldLine: 折り線で鏡映される片（手前フラップのドラッグ頂点側）
+ * - mirrorFoldLine: 折り線で鏡映される片（奥フラップのドラッグ頂点側）
  * - openRotate: 折り線で鏡映された後ヒンジで鏡映される片
- *   （奥フラップのドラッグ頂点側。ポケットが開く部分）
- * - mirrorHinge: ヒンジで鏡映される片（奥フラップの反対側）
+ *   （手前フラップのドラッグ頂点側。ポケットが開く部分）
+ * - mirrorHinge: ヒンジで鏡映される片（手前フラップの反対側）
  */
 export type SquashMotion = "mirrorFoldLine" | "openRotate" | "mirrorHinge";
 
@@ -49,7 +49,7 @@ export interface SquashPiece {
 export interface SquashFoldStepResult {
   /** 折り後の全ての板（リプレイの次の入力になる確定状態） */
   boards: LayeredBoard[];
-  /** アニメーション中も動かない板（手前フラップの固定片 + 対象外の板） */
+  /** アニメーション中も動かない板（奥フラップの固定片 + 対象外の板） */
   staticBoards: LayeredBoard[];
   /** 動く3片（回転前の座標と確定後の座標の組） */
   movingPieces: SquashPiece[];
@@ -74,9 +74,9 @@ export interface SquashFoldStepResult {
  * 3. Yと固定側の板の折り目（ヒンジ）が、Aを通る1本の直線h上に
  *    あることを要求する（基本ケースの条件）
  * 4. X・Yそれぞれを折り線で分割し、3つの動く片が別々の変換を受ける:
- *    - Xのドラッグ頂点側: 折り線で鏡映
- *    - Yの反対側: ヒンジhで鏡映（ヒンジ周りに180度回転）
- *    - Yのドラッグ頂点側: 折り線で鏡映した後ヒンジhで鏡映（開く部分）
+ *    - Yのドラッグ頂点側: 折り線で鏡映
+ *    - Xの反対側: ヒンジhで鏡映（ヒンジ周りに180度回転）
+ *    - Xのドラッグ頂点側: 折り線で鏡映した後ヒンジhで鏡映（開く部分）
  * 5. 最終状態の全ての片のペアについて、展開図上で共有する折り目が
  *    折り畳み空間でも一致すること（紙が破れないこと）を数値検証する
  * 6. 動く片はヒンジ側の片から順に視点側の外側へ積む
@@ -107,19 +107,19 @@ export const applySquashFoldStep = (
   if (!frontSplit || !backSplit) return null;
 
   // 3つの動く片の確定後の座標を計算する
+  const frontLowerFinal: BoardPiece = {
+    polygon: mirrorBoardAcrossLine(frontSplit.staticPiece.polygon, hinge),
+    sourcePolygon: frontSplit.staticPiece.sourcePolygon,
+  };
   const frontUpperFinal: BoardPiece = {
-    polygon: mirrorBoardAcrossLine(frontSplit.movingPiece.polygon, foldLine),
-    sourcePolygon: frontSplit.movingPiece.sourcePolygon,
-  };
-  const backLowerFinal: BoardPiece = {
-    polygon: mirrorBoardAcrossLine(backSplit.staticPiece.polygon, hinge),
-    sourcePolygon: backSplit.staticPiece.sourcePolygon,
-  };
-  const backUpperFinal: BoardPiece = {
     polygon: mirrorBoardAcrossLine(
-      mirrorBoardAcrossLine(backSplit.movingPiece.polygon, foldLine),
+      mirrorBoardAcrossLine(frontSplit.movingPiece.polygon, foldLine),
       hinge
     ),
+    sourcePolygon: frontSplit.movingPiece.sourcePolygon,
+  };
+  const backUpperFinal: BoardPiece = {
+    polygon: mirrorBoardAcrossLine(backSplit.movingPiece.polygon, foldLine),
     sourcePolygon: backSplit.movingPiece.sourcePolygon,
   };
 
@@ -132,31 +132,31 @@ export const applySquashFoldStep = (
 
   const movingPieces: SquashPiece[] = [
     {
-      piece: backSplit.staticPiece,
-      finalPiece: backLowerFinal,
-      layer: backFlap.layer,
+      piece: frontSplit.staticPiece,
+      finalPiece: frontLowerFinal,
+      layer: frontFlap.layer,
       finalLayer: outwardLayer(1),
       motion: "mirrorHinge",
-    },
-    {
-      piece: backSplit.movingPiece,
-      finalPiece: backUpperFinal,
-      layer: backFlap.layer,
-      finalLayer: outwardLayer(2),
-      motion: "openRotate",
     },
     {
       piece: frontSplit.movingPiece,
       finalPiece: frontUpperFinal,
       layer: frontFlap.layer,
       finalLayer: outwardLayer(3),
+      motion: "openRotate",
+    },
+    {
+      piece: backSplit.movingPiece,
+      finalPiece: backUpperFinal,
+      layer: backFlap.layer,
+      finalLayer: outwardLayer(2),
       motion: "mirrorFoldLine",
     },
   ];
 
   const staticBoards: LayeredBoard[] = [
     ...otherBoards,
-    { ...frontSplit.staticPiece, layer: frontFlap.layer },
+    { ...backSplit.staticPiece, layer: backFlap.layer },
   ];
 
   // 紙が破れる（折り目でつながった片同士が確定後に離れる）場合は不成立
