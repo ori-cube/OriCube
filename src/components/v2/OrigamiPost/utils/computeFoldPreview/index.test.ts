@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { computeFoldPreview } from ".";
 import { LayeredBoard } from "../../types";
-import { findFoldCandidates } from "../applyFoldStep";
+import { applyFoldStep } from "../applyFoldStep";
 import { createSquareBoard } from "../createSquareBoard";
 import { replayFoldSteps } from "../replayFoldSteps";
 import { craneNarrowedLegsSteps } from "../replayFoldSteps/craneFixture";
@@ -20,13 +20,48 @@ const squareBoards = (): LayeredBoard[] => [
 const containsVertexNear = (
   polygon: THREE.Vector3[],
   point: THREE.Vector3
-): boolean =>
-  polygon.some(
-    (vertex) =>
-      Math.abs(vertex.x - point.x) < 1e-6 && Math.abs(vertex.y - point.y) < 1e-6
-  );
+): boolean => polygon.some((vertex) => vertex.distanceTo(point) < 1e-6);
+
+const area = (polygon: THREE.Vector3[]): number =>
+  Math.abs(polygon.reduce((sum, point, index) => {
+    const next = polygon[(index + 1) % polygon.length];
+    return sum + point.x * next.y - point.y * next.x;
+  }, 0)) / 2;
 
 describe("computeFoldPreview", () => {
+  it.each([true, false])("開いて畳んだ角をめくると左右両方を予告する（表視点=%s）", (viewFront) => {
+    const boards = replayFoldSteps(createSquareBoard(100), [
+      ...craneNarrowedLegsSteps.slice(0, 2),
+      { ...craneNarrowedLegsSteps[2], viewFront },
+    ]);
+    const before = JSON.stringify(boards);
+    const dragVertex = v(50, 50);
+    const foldLine = { start: v(25, 50), end: v(50, 25) };
+    expect(applyFoldStep(boards, {
+      kind: "fold", foldLine, dragVertex, foldCount: 1, viewFront,
+    })).toBeNull();
+    const result = applyFoldStep(boards, {
+      kind: "fold", foldLine, dragVertex, foldCount: 2, viewFront,
+    });
+    expect(result?.movingBoards).toHaveLength(2);
+
+    const preview = computeFoldPreview({
+      boards, dragVertex, draggedPosition: v(25, 25), viewFront,
+    });
+    expect(preview).not.toBeNull();
+    if (!preview || !result) return;
+    expect(preview.movingBoards).toHaveLength(2);
+    const vertices = preview.movingBoards.flatMap((board) => board.polygon);
+    expect(containsVertexNear(vertices, v(25, 50))).toBe(true);
+    expect(containsVertexNear(vertices, v(50, 25))).toBe(true);
+    expect(containsVertexNear(vertices, v(25, 25))).toBe(true);
+    expect(preview.movingBoards.reduce((sum, board) => sum + area(board.polygon), 0))
+      .toBeCloseTo(312.5);
+    expect(preview.movingBoards.map((board) => board.layer))
+      .toEqual(result.movingBoards.map((board) => board.layer));
+    expect(JSON.stringify(boards)).toBe(before);
+  });
+
   it("正方形の角のドラッグで、動く片がドラッグ先の位置へ鏡映される", () => {
     const preview = computeFoldPreview({
       boards: squareBoards(),
@@ -36,84 +71,73 @@ describe("computeFoldPreview", () => {
     });
     expect(preview).not.toBeNull();
     if (!preview) return;
-
-    // 折り線は垂直二等分線 x=0（正方形を縦に横切るスパン）
     expect(preview.foldLine.start.x).toBeCloseTo(0);
     expect(preview.foldLine.end.x).toBeCloseTo(0);
-
-    // ドラッグした頂点は鏡映によりドラッグ先の位置へ写る
-    expect(containsVertexNear(preview.movingPolygon, v(-50, -50))).toBe(true);
-    // 動く片は右半分の鏡映なので、元の右端の頂点は含まれない
-    expect(containsVertexNear(preview.movingPolygon, v(50, -50))).toBe(false);
-    expect(preview.layer).toBe(0);
+    expect(preview.movingBoards).toHaveLength(1);
+    expect(containsVertexNear(preview.movingBoards[0].polygon, v(-50, -50))).toBe(true);
+    expect(containsVertexNear(preview.movingBoards[0].polygon, v(50, -50))).toBe(false);
+    expect(preview.movingBoards[0].layer).toBe(0);
   });
 
   it("ドラッグ位置が元位置と同じ場合はnull", () => {
-    expect(
-      computeFoldPreview({
-        boards: squareBoards(),
-        dragVertex: v(50, -50),
-        draggedPosition: v(50, -50),
-        viewFront: true,
-      })
-    ).toBeNull();
+    expect(computeFoldPreview({
+      boards: squareBoards(),
+      dragVertex: v(50, -50),
+      draggedPosition: v(50, -50),
+      viewFront: true,
+    })).toBeNull();
   });
 
-  it("折り線が最前面の板を横切らない場合は板全体を鏡映する", () => {
-    // 最前面: 小さい三角形、背面: 大きい正方形（どちらも原点に頂点を持つ）
-    const triangle = [v(0, 0), v(10, 0), v(0, 10)];
-    const square = [v(0, 0), v(40, 0), v(40, 40), v(0, 40)];
-    const boards: LayeredBoard[] = [
-      { polygon: square, sourcePolygon: square, layer: 0 },
-      { polygon: triangle, sourcePolygon: triangle, layer: 1 },
+  it("既存の折り目を使ってめくると、分割されない板全体を予告する", () => {
+    const boards = replayFoldSteps(createSquareBoard(100), craneNarrowedLegsSteps.slice(0, 1));
+    const preview = computeFoldPreview({
+      boards, dragVertex: v(50, 50), draggedPosition: v(-50, -50), viewFront: true,
+    });
+    expect(preview?.movingBoards).toHaveLength(1);
+    if (!preview) return;
+    expect(preview.movingBoards[0].polygon).toHaveLength(3);
+    expect(containsVertexNear(preview.movingBoards[0].polygon, v(-50, -50))).toBe(true);
+    expect(area(preview.movingBoards[0].polygon)).toBeCloseTo(5000);
+  });
+
+  it("重なった面を独立して折れる場合は、最少枚数を視点側から選ぶ", () => {
+    const boards = replayFoldSteps(createSquareBoard(100), craneNarrowedLegsSteps.slice(0, 1));
+    for (const viewFront of [true, false]) {
+      const preview = computeFoldPreview({
+        boards, dragVertex: v(50, 50), draggedPosition: v(25, 25), viewFront,
+      });
+      expect(preview?.movingBoards).toHaveLength(1);
+      expect(preview?.movingBoards[0].layer).toBe(viewFront ? 1 : 0);
+    }
+  });
+
+  it("鶴の先端でも、ドラッグ先に移る面をすべて予告する", () => {
+    const boards = replayFoldSteps(createSquareBoard(100), craneNarrowedLegsSteps);
+    const preview = computeFoldPreview({
+      boards, dragVertex: v(50, 50), draggedPosition: v(0, 40), viewFront: true,
+    });
+    expect(preview).not.toBeNull();
+    if (!preview) return;
+    expect(preview.movingBoards.length).toBeGreaterThan(1);
+    for (const board of preview.movingBoards) {
+      expect(containsVertexNear(board.polygon, v(0, 40))).toBe(true);
+    }
+  });
+
+  it("ドラッグ頂点のない隣の面を引き裂く折りは予告しない", () => {
+    const polygons = [
+      [v(-50, -50), v(50, -50), v(-50, 50)],
+      [v(50, -50), v(50, 50), v(-50, 50)],
     ];
-
-    // 折り線 x+y=30 は三角形（x+y<=10）を横切らず、正方形だけを横切る
-    const preview = computeFoldPreview({
-      boards,
-      dragVertex: v(0, 0),
-      draggedPosition: v(30, 30),
-      viewFront: true,
-    });
-    expect(preview).not.toBeNull();
-    if (!preview) return;
-
-    expect(preview.movingPolygon.length).toBe(3);
-    expect(containsVertexNear(preview.movingPolygon, v(30, 30))).toBe(true);
-    expect(containsVertexNear(preview.movingPolygon, v(30, 20))).toBe(true);
-    expect(containsVertexNear(preview.movingPolygon, v(20, 30))).toBe(true);
-    expect(preview.layer).toBe(1);
-  });
-
-  it("鶴の先端のドラッグでも最前面の1枚のプレビューを返す", () => {
-    const boards = replayFoldSteps(
-      createSquareBoard(100),
-      craneNarrowedLegsSteps
-    );
-    const preview = computeFoldPreview({
-      boards,
-      dragVertex: v(50, 50),
-      draggedPosition: v(0, 40),
-      viewFront: true,
-    });
-    expect(preview).not.toBeNull();
-    if (!preview) return;
-
-    // ドラッグした先端はドラッグ先の位置へ写る
-    expect(containsVertexNear(preview.movingPolygon, v(0, 40))).toBe(true);
-    // 表示高さは最前面（視点側の先頭候補板）のレイヤー
-    const candidates = findFoldCandidates(boards, v(50, 50), true);
-    expect(preview.layer).toBe(candidates[0].layer);
+    expect(computeFoldPreview({
+      boards: polygons.map((polygon, layer) => ({ polygon, sourcePolygon: polygon, layer })),
+      dragVertex: v(-50, -50), draggedPosition: v(50, -50), viewFront: true,
+    })).toBeNull();
   });
 
   it("候補板がない位置のドラッグはnull", () => {
-    expect(
-      computeFoldPreview({
-        boards: squareBoards(),
-        dragVertex: v(10, 10),
-        draggedPosition: v(0, 0),
-        viewFront: true,
-      })
-    ).toBeNull();
+    expect(computeFoldPreview({
+      boards: squareBoards(), dragVertex: v(10, 10), draggedPosition: v(0, 0), viewFront: true,
+    })).toBeNull();
   });
 });

@@ -36,13 +36,17 @@ export const renderFoldPreview = (props: {
 
   removePreviewBoard(scene);
 
-  const boardMesh = createBoardMesh(preview.movingPolygon, origamiColor, {
-    name: PREVIEW_BOARD_NAME,
-    enablePolygonOffset: true,
-    opacity: PREVIEW_BOARD_OPACITY,
-  });
-  boardMesh.position.z = preview.layer * BOARD_LAYER_OFFSET;
-  scene.add(boardMesh);
+  const previewGroup = new THREE.Group();
+  previewGroup.name = PREVIEW_BOARD_NAME;
+  for (const board of preview.movingBoards) {
+    const boardMesh = createBoardMesh(board.polygon, origamiColor, {
+      enablePolygonOffset: true,
+      opacity: PREVIEW_BOARD_OPACITY,
+    });
+    boardMesh.position.z = board.layer * BOARD_LAYER_OFFSET;
+    previewGroup.add(boardMesh);
+  }
+  scene.add(previewGroup);
 
   visualizeFoldLine(scene, preview.foldLine.start, preview.foldLine.end, {
     name: PREVIEW_LINE_NAME,
