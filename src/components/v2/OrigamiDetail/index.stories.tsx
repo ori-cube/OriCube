@@ -102,37 +102,53 @@ type AutoFoldStoryProps = React.ComponentProps<typeof OrigamiDetailV2> & {
   autoFoldSpeed?: number;
 };
 
-const AutoFoldStory: React.FC<AutoFoldStoryProps> = ({
-  autoFoldSpeed = 0.01,
-  ...rest
-}) => {
+function AutoFoldStory({ autoFoldSpeed = 0.01, ...rest }: AutoFoldStoryProps) {
   const [progress, setProgress] = useState(0);
-  const directionRef = useRef(1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const phaseRef = useRef(0);
 
   useEffect(() => {
-    let frameId = 0;
+    if (!isPlaying) return;
+    let frameId: number | null = null;
+    let previousTime: number | null = null;
 
-    const loop = () => {
-      setProgress((prev) => {
-        let next = prev + directionRef.current * autoFoldSpeed;
-        if (next >= 1) {
-          next = 1;
-          directionRef.current = -1;
-        } else if (next <= 0) {
-          next = 0;
-          directionRef.current = 1;
-        }
-        return next;
-      });
+    const loop = (time: number) => {
+      if (previousTime !== null) {
+        phaseRef.current += ((time - previousTime) / (1000 / 60)) * autoFoldSpeed;
+      }
+      previousTime = time;
+      const phase = phaseRef.current % 2;
+      setProgress(phase <= 1 ? phase : 2 - phase);
       frameId = requestAnimationFrame(loop);
     };
 
-    frameId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(frameId);
-  }, [autoFoldSpeed]);
+    const handleVisibility = () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      frameId = null;
+      previousTime = null;
+      if (!document.hidden) frameId = requestAnimationFrame(loop);
+    };
+    handleVisibility();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [autoFoldSpeed, isPlaying]);
 
-  return <OrigamiDetailV2 {...rest} foldProgress={progress} />;
-};
+  return (
+    <>
+      <button
+        type="button"
+        style={{ position: "fixed", top: 16, left: 16, zIndex: 1 }}
+        onClick={() => setIsPlaying((playing) => !playing)}
+      >
+        {isPlaying ? "一時停止" : "再生"}
+      </button>
+      <OrigamiDetailV2 {...rest} foldProgress={progress} />
+    </>
+  );
+}
 
 export const FrontShadowVertical: Story = {
   args: {

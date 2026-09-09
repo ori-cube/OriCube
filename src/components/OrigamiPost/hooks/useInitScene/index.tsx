@@ -5,8 +5,11 @@ canvas要素、scene、camera、renderer、controls、raycasterを初期化す�
 **/
 
 import * as THREE from "three";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
+
+import { createDemandRenderer } from "@/utils/three/demandRenderer";
+import { removeObjects } from "@/utils/three/removeObjects";
 
 type UseInitScene = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -15,7 +18,7 @@ type UseInitScene = (props: {
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   controlsRef: React.MutableRefObject<OrbitControls | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
-}) => void;
+}) => () => void;
 
 export const useInitScene: UseInitScene = ({
   canvasRef,
@@ -25,6 +28,9 @@ export const useInitScene: UseInitScene = ({
   controlsRef,
   raycasterRef,
 }) => {
+  const renderRef = useRef<(() => void) | null>(null);
+  const requestRender = useCallback(() => renderRef.current?.(), []);
+
   useEffect(() => {
     const sizes = {
       width: window.innerWidth - 320,
@@ -46,7 +52,7 @@ export const useInitScene: UseInitScene = ({
         alpha: true,
       });
       renderer.setSize(sizes.width, sizes.height);
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       rendererRef.current = renderer;
     }
 
@@ -68,18 +74,17 @@ export const useInitScene: UseInitScene = ({
       controlsRef.current = controls;
     }
 
-    const render = () => {
-      controls.update();
+    const rendering = createDemandRenderer(controls, () => {
       renderer.render(scene, camera);
-      requestAnimationFrame(render);
-    };
+    });
+    renderRef.current = rendering.requestRender;
 
     if (!raycaster) {
       raycaster = new THREE.Raycaster();
       raycasterRef.current = raycaster;
     }
 
-    render();
+    requestRender();
 
     const resizeListener = () => {
       sizes.width = window.innerWidth - 320;
@@ -87,13 +92,25 @@ export const useInitScene: UseInitScene = ({
       camera.aspect = sizes.width / sizes.height;
       camera.updateProjectionMatrix();
       renderer.setSize(sizes.width, sizes.height);
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      requestRender();
     };
 
     window.addEventListener("resize", resizeListener);
 
     return () => {
       window.removeEventListener("resize", resizeListener);
+      rendering.dispose();
+      renderRef.current = null;
+      controls.dispose();
+      removeObjects(scene);
+      renderer.dispose();
+      sceneRef.current = null;
+      rendererRef.current = null;
+      cameraRef.current = null;
+      controlsRef.current = null;
+      raycasterRef.current = null;
     };
-  }, [cameraRef, canvasRef, controlsRef, raycasterRef, rendererRef, sceneRef]);
+  }, [cameraRef, canvasRef, controlsRef, raycasterRef, rendererRef, sceneRef, requestRender]);
+  return requestRender;
 };

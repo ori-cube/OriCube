@@ -255,9 +255,11 @@ describe("useFoldAnimation", () => {
   it("foldingフェーズでアニメーションが開始され、時間経過で回転が進む", () => {
     const { scene, pivotGroup } = createScene();
     const completeFold = vi.fn();
+    const requestRender = vi.fn();
 
     renderHook(() =>
       useFoldAnimation({
+        requestRender,
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
@@ -274,6 +276,7 @@ describe("useFoldAnimation", () => {
     flushAnimationFrame(400);
     expect(getRotationAngle(pivotGroup)).toBeCloseTo(Math.PI / 2);
     expect(completeFold).not.toHaveBeenCalled();
+    expect(requestRender).toHaveBeenCalledTimes(2);
   });
 
   it("アニメーション完了時に180度回転し、折り操作が確定される", () => {
@@ -282,6 +285,7 @@ describe("useFoldAnimation", () => {
 
     renderHook(() =>
       useFoldAnimation({
+        requestRender: vi.fn(),
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
@@ -303,6 +307,7 @@ describe("useFoldAnimation", () => {
 
     renderHook(() =>
       useFoldAnimation({
+        requestRender: vi.fn(),
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
@@ -323,6 +328,7 @@ describe("useFoldAnimation", () => {
 
     renderHook(() =>
       useFoldAnimation({
+        requestRender: vi.fn(),
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "idle",
@@ -340,6 +346,7 @@ describe("useFoldAnimation", () => {
 
     const { unmount } = renderHook(() =>
       useFoldAnimation({
+        requestRender: vi.fn(),
         sceneRef: { current: scene },
         controlsRef: { current: null },
         foldPhase: "folding",
@@ -360,6 +367,7 @@ describe("useFoldAnimation", () => {
 
       renderHook(() =>
         useFoldAnimation({
+        requestRender: vi.fn(),
           sceneRef: { current: scene },
           controlsRef: { current: null },
           foldPhase: "folding",
@@ -398,6 +406,7 @@ describe("useFoldAnimation", () => {
 
       renderHook(() =>
         useFoldAnimation({
+        requestRender: vi.fn(),
           sceneRef: { current: scene },
           controlsRef: { current: null },
           foldPhase: "folding",
@@ -421,6 +430,7 @@ describe("useFoldAnimation", () => {
 
       renderHook(() =>
         useFoldAnimation({
+        requestRender: vi.fn(),
           sceneRef: { current: scene },
           controlsRef: { current: null },
           foldPhase: "folding",
@@ -459,6 +469,7 @@ describe("useFoldAnimation", () => {
 
       renderHook(() =>
         useFoldAnimation({
+        requestRender: vi.fn(),
           sceneRef: { current: scene },
           controlsRef: { current: null },
           foldPhase: "folding",

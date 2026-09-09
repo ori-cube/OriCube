@@ -1,3 +1,4 @@
+import { removeObjects } from "@/utils/three/removeObjects";
 /* 
 右左どちらの板を折るかを決定するための処理をまとめたカスタムフック
 isMoveBoardsRightを決定する。
@@ -20,6 +21,7 @@ type UseDecideTargetBoard = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
   origamiColor: string;
+  requestRender: () => void;
 }) => {
   handleDecideFoldTarget: () => void;
 };
@@ -30,6 +32,7 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
   cameraRef,
   raycasterRef,
   origamiColor,
+  requestRender,
 }) => {
   const [currentStep, setCurrentStep] = useAtom(currentStepAtom);
   const [inputStepObject, setInputStepObject] = useAtom(inputStepObjectAtom);
@@ -50,7 +53,7 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
     // sceneの初期化
     const scene = sceneRef.current;
     if (!scene) return;
-    scene.children = [];
+    removeObjects(scene);
 
     // 折り線を描画
     const lineGeometry = new LineGeometry();
@@ -76,7 +79,9 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
     rightBoards.forEach((board) =>
       renderBoard({ scene, board, color: origamiColor })
     );
+    requestRender();
   }, [
+    requestRender,
     step.type,
     inputStep,
     sceneRef,
@@ -106,6 +111,8 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
     if (!canvas || !scene || !camera) return;
 
     const hoverListener = (event: MouseEvent) => {
+      removeObjects(scene, (child) => child.name === "Border");
+      requestRender();
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / sizes.width) * 2 - 1;
       mouse.y = -(event.clientY / sizes.height) * 2 + 1;
@@ -128,21 +135,14 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
           const line = new Line2(lineGeometry, lineMaterial);
           line.name = "Border";
           scene.add(line);
-        } else {
-          scene.children = scene.children.filter(
-            (child) => child.name !== "Border"
-          );
         }
-      } else {
-        scene.children = scene.children.filter(
-          (child) => child.name !== "Border"
-        );
       }
     };
 
     canvas.addEventListener("mousemove", hoverListener);
 
     const clickListener = (event: MouseEvent) => {
+      requestRender();
       // クリックしたオブジェクトを取得
       // そいつが軸の右か左かを判定 isOnLeftSideを使う
       // isMoveBoardsRightを変更する
@@ -169,9 +169,7 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
           },
         }));
 
-        scene.children = scene.children.filter(
-          (child) => child.name !== "SelectedBorder"
-        );
+        removeObjects(scene, (child) => child.name === "SelectedBorder");
 
         if (isTargetLeft) {
           // leftBoardsのそれぞれの板にBoarderを描画
@@ -215,6 +213,7 @@ export const useDecideTargetBoard: UseDecideTargetBoard = ({
       canvas.removeEventListener("click", clickListener);
     };
   }, [
+    requestRender,
     step.type,
     inputStep,
     cameraRef,
