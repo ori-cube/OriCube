@@ -9,10 +9,11 @@ export interface PaginationProps {
   totalPages: number;
   onChange: (page: number) => void;
   label?: string;
+  currentType?: "page" | "step";
   getPageLabel?: (page: number) => string;
 }
 
-export function Pagination({ page, totalPages, onChange, label = "ページ切り替え", getPageLabel = (value) => `${value}ページ目` }: PaginationProps) {
+export function Pagination({ page, totalPages, onChange, label = "ページ切り替え", currentType = "page", getPageLabel = (value) => `${value}ページ目` }: PaginationProps) {
   if (totalPages < 1) return null;
   const first = Math.max(1, Math.min(page - 1, totalPages - 2));
   const pages = Array.from({ length: Math.min(3, totalPages) }, (_, index) => first + index);
@@ -24,7 +25,7 @@ export function Pagination({ page, totalPages, onChange, label = "ページ切�
       <div className={styles.pages}>
         {items.map((value, index) => <div className={styles.item} key={value}>
           {index > 0 && value - items[index - 1] > 1 && <span className={styles.gap} aria-hidden>…</span>}
-          <Button className={styles.page} aria-current={page === value ? "step" : undefined} aria-label={getPageLabel(value)} onPress={() => onChange(value)}>{value}</Button>
+          <Button className={styles.page} aria-current={page === value ? currentType : undefined} aria-label={getPageLabel(value)} onPress={() => onChange(value)}>{value}</Button>
         </div>)}
       </div>
       <IconButton icon="NextIcon" label="次へ" isDisabled={page >= totalPages} onPress={() => onChange(page + 1)} />
