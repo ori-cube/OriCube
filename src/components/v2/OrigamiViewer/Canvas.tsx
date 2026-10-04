@@ -47,7 +47,11 @@ export function OrigamiCanvas({ size, color, step, progress, finalBoards, finalV
   useEffect(() => { sceneRef.current?.setZoom(zoom); }, [zoom, step, size, resetKey]);
   useEffect(() => { sceneRef.current?.setProgress(progress); }, [progress, step, color, finalBoards, finalViewFront, size, resetKey]);
   return <div ref={containerRef} className={styles.container}>
-    <canvas ref={canvasRef} className={styles.canvas} role="img" aria-label={label} />
+    <canvas key={`${size}-${resetKey}`} ref={canvasRef} className={styles.canvas} role="img" aria-label={label} tabIndex={0} onKeyDown={(event) => {
+      const movement: Record<string, [number, number]> = { ArrowLeft: [-Math.PI / 12, 0], ArrowRight: [Math.PI / 12, 0], ArrowUp: [0, -Math.PI / 12], ArrowDown: [0, Math.PI / 12] };
+      const delta = movement[event.key];
+      if (delta) { event.preventDefault(); sceneRef.current?.rotateCamera(...delta); }
+    }} />
     {failed && <p className={styles.error} role="alert">3D表示を読み込めませんでした。「視点を戻す」で再試行してください。</p>}
   </div>;
 }

@@ -29,7 +29,7 @@ describe("V2閲覧用タイムライン", () => {
     for (const step of createViewerTimeline(procedure).steps) {
       if (step.kind !== "fold") continue;
       const expected = replayFoldSteps(createSquareBoard(100), craneNarrowedLegsSteps.slice(0, step.sourceIndex + 1));
-      const actual = getStepBoards(step, 1);
+      const actual = getStepBoards(step, 1 - 1e-10);
       expect(actual).toHaveLength(expected.length);
       for (const board of actual) {
         expect(expected.some((candidate) => candidate.polygon.length === board.polygon.length && candidate.polygon.every((point, index) => point.distanceTo({ x: board.polygon[index][0], y: board.polygon[index][1], z: board.polygon[index][2] }) < 1e-6))).toBe(true);
@@ -49,9 +49,21 @@ describe("V2閲覧用タイムライン", () => {
     procedure.steps[index].targetAngle = Math.PI * 5 / 6;
     const timeline = createViewerTimeline(procedure);
     const last = timeline.steps[timeline.steps.length - 1];
-    const moved = getStepBoards(last, 1).slice(procedure.steps[index].fixBoards.length);
+    const moved = getStepBoards(last, 1);
     expect(moved.some((board) => board.polygon.some((point) => Math.abs(point[2]) > 1))).toBe(true);
     expect(timeline.finalBoards.some((board) => board.polygon.some((point) => Math.abs(point[2]) > 1))).toBe(true);
+  });
+  it("100%では次の手順の開始状態と同じ重なり順に確定する", () => {
+    const timeline = createViewerTimeline(crane());
+    for (let index = 0; index < timeline.steps.length - 1; index++) {
+      const end = getStepBoards(timeline.steps[index], 1);
+      const start = getStepBoards(timeline.steps[index + 1], 0);
+      expect(end).toHaveLength(start.length);
+      end.forEach((board, boardIndex) => {
+        expect(board.layer).toBe(start[boardIndex].layer);
+        board.polygon.forEach((point, vertexIndex) => point.forEach((value, axis) => expect(value).toBeCloseTo(start[boardIndex].polygon[vertexIndex][axis], 6)));
+      });
+    }
   });
   it("手順のない作品には完成形だけを返す", () => {
     const procedure = crane();

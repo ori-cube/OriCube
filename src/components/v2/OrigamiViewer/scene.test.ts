@@ -21,7 +21,7 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 const step: ViewerStep = {
-  kind: "fold", sourceIndex: 0, viewFront: true, label: "折る", fixedBoards: [],
+  kind: "fold", sourceIndex: 0, viewFront: true, label: "折る", fixedBoards: [], settledBoards: [],
   data: {
     kind: "fold", fixBoards: [], foldLines: [],
     moveBoards: [{ polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]], layer: 0, vertexAxes: [[], [{ origin: [0, 0, 0], direction: [0, 1, 0] }], []] }],

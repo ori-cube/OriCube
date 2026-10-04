@@ -25,6 +25,8 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   let disposed = false;
   let meshes: THREE.Group[] = [];
   let foldLines: THREE.Line[] = [];
+  let settled = false;
+  let currentColor = "#ed7070";
   let step: ViewerStep | undefined;
   let finalBoards: FixBoardV2[] = [];
   let finalViewFront = true;
@@ -74,12 +76,14 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
     foldLines = [];
   };
 
-  const setContent = (nextStep: ViewerStep | undefined, boards: FixBoardV2[], color: string, viewFront: boolean) => {
+  const setContent = (nextStep: ViewerStep | undefined, boards: FixBoardV2[], color: string, viewFront: boolean, nextSettled = false, reset = true) => {
     clear();
     step = nextStep;
+    settled = nextSettled;
+    currentColor = color;
     finalBoards = boards;
     finalViewFront = viewFront;
-    const initialBoards = nextStep ? getStepBoards(nextStep, 0) : boards;
+    const initialBoards = nextStep ? getStepBoards(nextStep, settled ? 1 : 0) : boards;
     meshes = initialBoards.map((board) => {
       const mesh = createMorphBoardMesh(board.polygon.map(toVector), color);
       mesh.position.z = board.layer * BOARD_LAYER_OFFSET;
@@ -97,18 +101,30 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
         return mesh;
       });
     }
-    resetCamera();
+    if (reset) resetCamera();
   };
   const setProgress = (progress: number) => {
+    if (step && settled !== (progress >= 1)) setContent(step, finalBoards, currentColor, finalViewFront, progress >= 1, false);
     const boards = step ? getStepBoards(step, progress) : finalBoards;
     boards.forEach((board, index) => updateMorphBoardMeshPositions(meshes[index], board.polygon.map(toVector)));
+    const center = new THREE.Box3().setFromPoints(boards.flatMap((board) => board.polygon.map(toVector))).getCenter(new THREE.Vector3());
     root.rotation.y = -(step ? getViewAngle(step, progress) : finalViewFront ? 0 : Math.PI);
+    root.position.copy(center).applyAxisAngle(new THREE.Vector3(0, 1, 0), root.rotation.y).negate();
     foldLines.forEach((line) => { line.visible = progress < 1; });
     render();
   };
 
   return {
     setContent, setProgress,
+    rotateCamera: (horizontal: number, vertical: number) => {
+      const offset = camera.position.clone().sub(controls.target);
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+      spherical.theta += horizontal;
+      spherical.phi = THREE.MathUtils.clamp(spherical.phi + vertical, 0.05, Math.PI - 0.05);
+      camera.position.copy(new THREE.Vector3().setFromSpherical(spherical).add(controls.target));
+      controls.update();
+      render();
+    },
     setCamera: (nextPreset: CameraPreset) => { preset = nextPreset; resetCamera(); },
     setZoom: (nextZoom: number) => { zoom = nextZoom; camera.zoom = zoom; camera.updateProjectionMatrix(); render(); },
     resetCamera,
