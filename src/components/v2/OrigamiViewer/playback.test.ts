@@ -1,0 +1,63 @@
+import { describe, expect, it } from "vitest";
+import { exportProcedureV2 } from "../OrigamiPost/utils/exportProcedureV2";
+import { craneNarrowedLegsSteps } from "../OrigamiPost/utils/replayFoldSteps/craneFixture";
+import { replayFoldSteps } from "../OrigamiPost/utils/replayFoldSteps";
+import { createSquareBoard } from "../OrigamiPost/utils/createSquareBoard";
+import { createViewerTimeline, getStepBoards, getViewAngle } from "./playback";
+
+const crane = () => {
+  const procedure = exportProcedureV2({ size: 100, steps: craneNarrowedLegsSteps });
+  if (!procedure) throw new Error("鶴のフィクスチャをエクスポートできません");
+  return procedure;
+};
+
+describe("V2閲覧用タイムライン", () => {
+  it("表裏の切り替えを独立したステップにし、元データを変更しない", () => {
+    const procedure = crane();
+    const saved = JSON.stringify(procedure);
+    const timeline = createViewerTimeline(procedure);
+    expect(timeline.steps.filter((step) => step.kind === "flip")).toHaveLength(3);
+    expect(timeline.steps).toHaveLength(13);
+    expect(timeline.steps[3].kind).toBe("flip");
+    expect(JSON.stringify(procedure)).toBe(saved);
+    const flip = timeline.steps[3];
+    expect(getStepBoards(flip, 0)).toEqual(getStepBoards(flip, 1));
+    expect(getViewAngle(flip, 1) - getViewAngle(flip, 0)).toBeCloseTo(Math.PI);
+  });
+  it("全種類の折りを保存済みの回転軸だけで再生すると投稿側の完成座標と一致する", () => {
+    const procedure = crane();
+    for (const step of createViewerTimeline(procedure).steps) {
+      if (step.kind !== "fold") continue;
+      const expected = replayFoldSteps(createSquareBoard(100), craneNarrowedLegsSteps.slice(0, step.sourceIndex + 1));
+      const actual = getStepBoards(step, 1);
+      expect(actual).toHaveLength(expected.length);
+      for (const board of actual) {
+        expect(expected.some((candidate) => candidate.polygon.length === board.polygon.length && candidate.polygon.every((point, index) => point.distanceTo({ x: board.polygon[index][0], y: board.polygon[index][1], z: board.polygon[index][2] }) < 1e-6))).toBe(true);
+      }
+    }
+  });
+  it("最初から裏面を見る手順にも裏返しを表示し、履歴が空でも折りは再生できる", () => {
+    const procedure = crane();
+    procedure.history[0].viewFront = false;
+    expect(createViewerTimeline(procedure).steps[0].kind).toBe("flip");
+    procedure.history = [];
+    expect(createViewerTimeline(procedure).steps).toHaveLength(procedure.steps.length);
+  });
+  it("180度未満の仕上げ角度を、次の固定板と完成形にも保持する", () => {
+    const procedure = crane();
+    const index = procedure.steps.length - 1;
+    procedure.steps[index].targetAngle = Math.PI * 5 / 6;
+    const timeline = createViewerTimeline(procedure);
+    const last = timeline.steps[timeline.steps.length - 1];
+    const moved = getStepBoards(last, 1).slice(procedure.steps[index].fixBoards.length);
+    expect(moved.some((board) => board.polygon.some((point) => Math.abs(point[2]) > 1))).toBe(true);
+    expect(timeline.finalBoards.some((board) => board.polygon.some((point) => Math.abs(point[2]) > 1))).toBe(true);
+  });
+  it("手順のない作品には完成形だけを返す", () => {
+    const procedure = crane();
+    procedure.steps = [];
+    procedure.history = [];
+    expect(createViewerTimeline(procedure).steps).toEqual([]);
+    expect(createViewerTimeline(procedure).finalBoards).toEqual(procedure.finalBoards);
+  });
+});
