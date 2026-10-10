@@ -13,9 +13,10 @@ import styles from "./Viewer.module.css";
 export interface OrigamiViewerProps {
   model: OrigamiModelV2;
   completed?: boolean;
+  showNavigation?: boolean;
 }
 
-export function OrigamiViewer({ model, completed = false }: OrigamiViewerProps) {
+export function OrigamiViewer({ model, completed = false, showNavigation = true }: OrigamiViewerProps) {
   const timeline = useMemo(() => createViewerTimeline(model.procedure), [model.procedure]);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>("front");
   const [resetKey, setResetKey] = useState(0);
@@ -28,7 +29,7 @@ export function OrigamiViewer({ model, completed = false }: OrigamiViewerProps) 
 
   return <main className={styles.viewer} id="origami-viewer">
     <div className={styles.title}>
-      <div className={styles.titleRow}><h1>{model.name}</h1><Link className={styles.link} href={`/v2/${completed ? "view" : "detail"}/${model.id}`}>{completed ? "折り方を見る" : "完成形を見る"}</Link></div>
+      <div className={styles.titleRow}><h1>{model.name}</h1>{showNavigation && <Link className={styles.link} href={`/v2/${completed ? "view" : "detail"}/${model.id}`}>{completed ? "折り方を見る" : "完成形を見る"}</Link>}</div>
       <p className={styles.step} role="status" aria-label="現在のステップ">{stepName}</p>
       <p className={styles.description}>{description}</p>
     </div>
