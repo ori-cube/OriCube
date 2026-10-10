@@ -7,3 +7,4 @@ export * from "./components/Pagination";
 export * from "./components/Slider";
 export * from "./components/SearchField";
 export * from "./components/TextArea";
+export * from "./components/FileButton";

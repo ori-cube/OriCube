@@ -12,6 +12,7 @@ type UseInitScene = (props: {
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   controlsRef: React.MutableRefObject<OrbitControls | null>;
   raycasterRef: React.MutableRefObject<THREE.Raycaster | null>;
+  autoResize?: boolean;
   width: number;
   height: number;
   cameraPosition: { x: number; y: number; z: number };
@@ -46,6 +47,7 @@ export const useInitScene: UseInitScene = ({
   width,
   height,
   cameraPosition,
+  autoResize = true,
 }) => {
   const renderRef = useRef<(() => void) | null>(null);
   const requestRender = useCallback(() => renderRef.current?.(), []);
@@ -157,9 +159,9 @@ export const useInitScene: UseInitScene = ({
     };
     resize(width, height);
     const handleResize = () => resize(window.innerWidth - 320, window.innerHeight);
-    window.addEventListener("resize", handleResize);
+    if (autoResize) window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [cameraRef, rendererRef, width, height, requestRender]);
+  }, [cameraRef, rendererRef, width, height, requestRender, autoResize]);
 
   return requestRender;
 };

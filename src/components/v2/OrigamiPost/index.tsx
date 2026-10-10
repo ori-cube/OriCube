@@ -15,6 +15,7 @@ import {
   FoldStep,
   InsideReverseFoldStep,
   LayeredBoard,
+  OrigamiStep,
   PetalFoldStep,
   SquashFoldStep,
 } from "./types";
@@ -115,7 +116,17 @@ export type PendingFold =
       movingBoards: LayeredBoard[];
     };
 
+export interface OrigamiEditorState {
+  steps: OrigamiStep[];
+  color: string;
+  busy: boolean;
+  viewFront: boolean;
+}
+
 export interface OrigamiPostV2Props {
+  initialSteps?: OrigamiStep[];
+  autoResize?: boolean;
+  onStateChange?: (state: OrigamiEditorState) => void;
   /** 折り紙の表面の初期色（裏面はBOARD_BACK_COLORの固定色） */
   defaultOrigamiColor?: string;
   /** 折り紙のサイズ */
@@ -144,13 +155,16 @@ export interface OrigamiPostV2Props {
  * @param props.width - カンバスの幅（デフォルト: window.innerWidth - 320）
  * @param props.height - カンバスの高さ（デフォルト: window.innerHeight）
  */
-export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
+export function OrigamiPostV2({
+  initialSteps = [],
+  autoResize = true,
+  onStateChange,
   defaultOrigamiColor = "#4A90E2",
   size = 100,
   cameraPosition = { x: 0, y: 0, z: 150 },
   width = window.innerWidth - 320,
   height = window.innerHeight,
-}) => {
+}: OrigamiPostV2Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -172,7 +186,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
 
   // 折り手順の履歴（唯一の状態源。Undo/Redoは適用済みステップ数の操作）
   const [foldHistory, setFoldHistory] =
-    useState<FoldHistory>(EMPTY_FOLD_HISTORY);
+    useState<FoldHistory>(() => initialSteps.length ? { steps: initialSteps, index: initialSteps.length } : EMPTY_FOLD_HISTORY);
 
   // 折る枚数の選択を待っている折り操作
   const [foldProposal, setFoldProposal] = useState<FoldProposal | null>(null);
@@ -185,11 +199,13 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     null
   );
 
+  const currentSteps = useMemo(() => appliedFoldSteps(foldHistory), [foldHistory]);
+
   // 現在の板群（適用済みの折り手順のリプレイで導出する）
   const initialBoard = useMemo(() => createSquareBoard(size), [size]);
   const replayResult = useMemo(
-    () => replayFoldStepsDetailed(initialBoard, appliedFoldSteps(foldHistory)),
-    [initialBoard, foldHistory]
+    () => replayFoldStepsDetailed(initialBoard, currentSteps),
+    [initialBoard, currentSteps]
   );
   const currentBoards = replayResult.boards;
   const finishingRotations = replayResult.finishingRotations;
@@ -239,6 +255,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     width,
     height,
     cameraPosition,
+    autoResize,
   });
 
   // 折り紙の中心への視点追従（回転の中心を紙の中心に保つ）
@@ -288,6 +305,10 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     setFoldPhase,
   });
 
+  useEffect(() => {
+    onStateChange?.({ steps: currentSteps, color: origamiColor, busy: foldPhase !== "idle" || isFlipping, viewFront: (cameraRef.current?.position.z ?? 1) >= 0 });
+  }, [onStateChange, currentSteps, origamiColor, foldPhase, isFlipping]);
+
   return (
     <div className={styles.container}>
       <canvas
@@ -326,4 +347,4 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
       )}
     </div>
   );
-};
+}
