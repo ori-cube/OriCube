@@ -1,28 +1,7 @@
-// import styles from "./index.module.scss";
-import { SegmentedControl } from "@radix-ui/themes";
+import { Pagination } from "@oricube/design-system";
 
-type Props = {
-  procedureLength: number;
-  currentStep: number;
-  handleChangeStep: (step: number) => void;
-};
+type Props = { procedureLength: number; currentStep: number; handleChangeStep: (step: number) => void };
 
-export const FoldStepSegmentedControl: React.FC<Props> = ({
-  procedureLength,
-  currentStep,
-  handleChangeStep,
-}) => {
-  return (
-    <SegmentedControl.Root
-      defaultValue="1"
-      value={currentStep !== undefined ? currentStep.toString() : "1"}
-      onValueChange={(value) => handleChangeStep(Number(value))}
-    >
-      {Array.from({ length: procedureLength }).map((_, index) => (
-        <SegmentedControl.Item key={index} value={String(index + 1)}>
-          {index + 1}
-        </SegmentedControl.Item>
-      ))}
-    </SegmentedControl.Root>
-  );
-};
+export function FoldStepSegmentedControl({ procedureLength, currentStep, handleChangeStep }: Props) {
+  return <Pagination label="入力済みの折り手順" currentType="step" page={currentStep} totalPages={procedureLength} onChange={handleChangeStep} getPageLabel={(step) => `ステップ ${step}`} />;
+}

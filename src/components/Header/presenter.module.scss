@@ -47,3 +47,6 @@
     display: none;
   }
 }
+
+.container { display: flex; align-items: center; justify-content: space-between; min-height: 46px; gap: 8px; }
+.navigation { display: flex; align-items: center; min-width: 0; }

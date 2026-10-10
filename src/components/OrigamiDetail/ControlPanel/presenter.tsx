@@ -2,7 +2,7 @@
 
 import React from "react";
 import style from "./presenter.module.scss";
-import { Slider, Flex } from "@radix-ui/themes";
+import { Slider } from "@oricube/design-system";
 import {
   HiMiniPlay,
   HiMiniPause,
@@ -30,20 +30,11 @@ interface ControlPanelPresenterProps {
   isLoopStandby: boolean;
 }
 
-export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
-  props: ControlPanelPresenterProps
-) => {
+export function ControlPanelPresenter(props: ControlPanelPresenterProps) {
   return (
     <>
       <div className={style.control_panel}>
-        <Flex
-          align="center"
-          width="100%"
-          height="46px"
-          justify="between"
-          gap="4"
-          className={style.controller}
-        >
+        <div className={style.controller}>
           <PlayButton
             handleClick={props.switchPlaying}
             Icon={props.isPlaying ? HiMiniPause : HiMiniPlay}
@@ -51,24 +42,14 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
             disable={false}
             isLoopStandby={props.isLoopStandby}
           />
-          <Slider
-            value={[props.value]}
-            onValueChange={(value) => {
-              props.sliderValueChanged(value[0]);
-            }}
-            defaultValue={[0]}
-            size="2"
-            min={0}
-            max={props.maxArg}
-            className={style.slider}
-          />
+          <Slider label="折りの進み具合" value={props.value} onChange={props.sliderValueChanged} minValue={0} maxValue={props.maxArg} />
           <LoopButton
             handleClick={props.onLoopClick}
             Icon={HiArrowPathRoundedSquare}
             color={props.isLoop ? "#ffffff" : "#000000"}
             active={props.isLoop}
           />
-        </Flex>
+        </div>
         <Pagination
           currentPage={props.procedureIndex}
           limit={5}
@@ -78,24 +59,9 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
       </div>
 
       <div className={style.control_panel_sp}>
-        <Slider
-          value={[props.value]}
-          onValueChange={(value) => {
-            props.sliderValueChanged(value[0]);
-          }}
-          defaultValue={[0]}
-          size="1"
-          min={0}
-          max={props.maxArg}
-        />
+        <Slider label="折りの進み具合" value={props.value} onChange={props.sliderValueChanged} minValue={0} maxValue={props.maxArg} />
         <div className={style.controller_container_sp}>
-          <Flex
-            align="center"
-            display="flex"
-            height="46px"
-            justify="center"
-            className={style.controller_sp}
-          >
+          <div className={style.controller_sp}>
             <PlayButton
               handleClick={props.switchPlaying}
               Icon={props.isPlaying ? HiMiniPause : HiMiniPlay}
@@ -109,14 +75,8 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
               color={props.isLoop ? "#ffffff" : "#000000"}
               active={props.isLoop}
             />
-          </Flex>
-          <Flex
-            align="center"
-            display="flex"
-            height="46px"
-            justify="center"
-            className={style.controller_sp}
-          >
+          </div>
+          <div className={style.controller_sp}>
             <IconButton
               handleClick={() => {
                 if (props.procedureIndex != 1) {
@@ -140,9 +100,9 @@ export const ControlPanelPresenter: React.FC<ControlPanelPresenterProps> = (
               color="#000"
               disable={false}
             />
-          </Flex>
+          </div>
         </div>
       </div>
     </>
   );
-};
+}
