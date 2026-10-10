@@ -2,8 +2,8 @@ import * as THREE from "three";
 import type { FixBoardV2, MoveBoardV2, PointV2, ProcedureV2, StepV2 } from "@/types/model-v2";
 
 export type ViewerStep =
-  | { kind: "fold"; data: StepV2; fixedBoards: FixBoardV2[]; settledBoards: FixBoardV2[]; sourceIndex: number; viewFront: boolean; label: string }
-  | { kind: "flip"; boards: FixBoardV2[]; viewFront: boolean; label: string };
+  | { kind: "fold"; data: StepV2; fixedBoards: FixBoardV2[]; settledBoards: FixBoardV2[]; settledFlatBoards: FixBoardV2[]; sourceIndex: number; viewFront: boolean; label: string }
+  | { kind: "flip"; boards: FixBoardV2[]; flatBoards: FixBoardV2[]; viewFront: boolean; label: string };
 
 const labels: Record<StepV2["kind"], string> = {
   fold: "折る", squash: "開いて畳む", petal: "花弁折り", insideReverse: "中割り折り",
@@ -19,7 +19,7 @@ export const rotateMovingBoard = (board: MoveBoardV2, angle: number): PointV2[] 
     return [vertex.x, vertex.y, vertex.z];
   });
 
-type BoardPose = { flat: PointV2[]; displayed: PointV2[] };
+type BoardPose = { flat: FixBoardV2; displayed: PointV2[] };
 const samePolygon = (left: PointV2[], right: PointV2[]) =>
   left.length === right.length && left.every((point, index) => point.every((value, axis) => Math.abs(value - right[index][axis]) < 1e-6));
 
@@ -28,24 +28,30 @@ export const createViewerTimeline = (procedure: ProcedureV2) => {
   let viewFront = true;
   let poses: BoardPose[] = [];
   const posedBoard = (board: FixBoardV2): FixBoardV2 => ({
-    layer: board.layer, polygon: poses.find((pose) => samePolygon(pose.flat, board.polygon))?.displayed ?? board.polygon,
+    layer: board.layer, polygon: poses.find((pose) => pose.flat.layer === board.layer && samePolygon(pose.flat.polygon, board.polygon))?.displayed ?? board.polygon,
   });
 
   procedure.steps.forEach((data, sourceIndex) => {
     const nextFront = procedure.history[sourceIndex]?.viewFront ?? viewFront;
     const fixedBoards = data.fixBoards.map(posedBoard);
     if (nextFront !== viewFront) {
-      steps.push({ kind: "flip", boards: [...fixedBoards, ...data.moveBoards.map(posedBoard)], viewFront, label: nextFront ? "裏返して表側を向ける" : "裏返して裏側を向ける" });
+      steps.push({ kind: "flip", flatBoards: [...data.fixBoards, ...data.moveBoards], boards: [...fixedBoards, ...data.moveBoards.map(posedBoard)], viewFront, label: nextFront ? "裏返して表側を向ける" : "裏返して裏側を向ける" });
     }
     viewFront = nextFront;
-    // finalBoardsは平面プロキシなので、仕上げ角度の表示座標を別に引き継ぐ。
-    poses = [
-      ...data.fixBoards.map((board, index) => ({ flat: board.polygon, displayed: fixedBoards[index].polygon })),
-      ...data.moveBoards.map((board) => ({ flat: rotateMovingBoard(board, Math.PI), displayed: rotateMovingBoard(board, data.targetAngle ?? Math.PI) })),
-    ];
+    const movedPoses = data.moveBoards.map((board) => ({
+      flat: rotateMovingBoard(board, Math.PI), displayed: rotateMovingBoard(board, data.targetAngle ?? Math.PI),
+    }));
     const next = procedure.steps[sourceIndex + 1];
-    const settledBoards = (next ? [...next.fixBoards, ...next.moveBoards] : procedure.finalBoards).map(posedBoard);
-    steps.push({ kind: "fold", data, fixedBoards, settledBoards, sourceIndex, viewFront, label: labels[data.kind] });
+    const flatBoards = next ? [...next.fixBoards, ...next.moveBoards] : procedure.finalBoards;
+    // 同じ平面座標に重なる表裏の羽を、固定板のレイヤーで区別して引き継ぐ。
+    const settledBoards = flatBoards.map((board): FixBoardV2 => {
+      const fixedIndex = data.fixBoards.findIndex((fixed) => fixed.layer === board.layer && samePolygon(fixed.polygon, board.polygon));
+      const polygon = fixedIndex >= 0 ? fixedBoards[fixedIndex].polygon
+        : movedPoses.find((pose) => samePolygon(pose.flat, board.polygon))?.displayed ?? board.polygon;
+      return { layer: board.layer, polygon };
+    });
+    poses = flatBoards.map((flat, index) => ({ flat, displayed: settledBoards[index].polygon }));
+    steps.push({ kind: "fold", data, fixedBoards, settledBoards, settledFlatBoards: flatBoards, sourceIndex, viewFront, label: labels[data.kind] });
   });
   return { steps, finalBoards: procedure.finalBoards.map(posedBoard), finalViewFront: viewFront };
 };
@@ -59,3 +65,6 @@ export const getStepBoards = (step: ViewerStep, progress: number): FixBoardV2[] 
 
 export const getViewAngle = (step: ViewerStep, progress: number) =>
   (step.viewFront ? 0 : Math.PI) + (step.kind === "flip" ? Math.PI * Math.max(0, Math.min(progress, 1)) : 0);
+
+export const getFlatStepBoards = (step: ViewerStep, settled: boolean): FixBoardV2[] =>
+  step.kind === "flip" ? step.flatBoards : settled ? step.settledFlatBoards : [...step.data.fixBoards, ...step.data.moveBoards];

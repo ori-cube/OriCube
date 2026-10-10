@@ -4,10 +4,17 @@ import type { FixBoardV2, PointV2 } from "@/types/model-v2";
 import { createMorphBoardMesh, updateMorphBoardMeshPositions } from "../OrigamiPost/utils/createMorphBoardMesh";
 import { disposeObject3D } from "../OrigamiPost/utils/disposeObject3D";
 import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
-import { getStepBoards, getViewAngle, type ViewerStep } from "./playback";
+import { getFlatStepBoards, getStepBoards, getViewAngle, type ViewerStep } from "./playback";
 
 export type CameraPreset = "front" | "angled";
 const toVector = (point: PointV2) => new THREE.Vector3(...point);
+const polygonNormal = (points: THREE.Vector3[]) => {
+  for (let index = 1; index < points.length - 1; index++) {
+    const normal = new THREE.Vector3().crossVectors(points[index].clone().sub(points[0]), points[index + 1].clone().sub(points[0]));
+    if (normal.lengthSq() > 1e-12) return normal.normalize();
+  }
+  return new THREE.Vector3(0, 0, 1);
+};
 
 export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElement, size: number) => {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -29,6 +36,8 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   let currentColor = "#ed7070";
   let step: ViewerStep | undefined;
   let finalBoards: FixBoardV2[] = [];
+  let flatFinalBoards: FixBoardV2[] = [];
+  let meshFlatBoards: FixBoardV2[] = [];
   let finalViewFront = true;
   let preset: CameraPreset = "front";
   let zoom = 1;
@@ -37,7 +46,7 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   const render = () => { if (!disposed && !document.hidden) renderer.render(scene, camera); };
   const resetCamera = () => {
     controls.target.set(0, 0, 0);
-    camera.position.set(preset === "angled" ? distance * 0.25 : 0, preset === "angled" ? distance * 0.35 : 0, distance);
+    camera.position.set(preset === "angled" ? -distance * 0.65 : 0, preset === "angled" ? distance * 0.45 : 0, distance);
     camera.zoom = zoom;
     camera.updateProjectionMatrix();
     controls.update();
@@ -76,17 +85,19 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
     foldLines = [];
   };
 
-  const setContent = (nextStep: ViewerStep | undefined, boards: FixBoardV2[], color: string, viewFront: boolean, nextSettled = false, reset = true) => {
+  const setContent = (nextStep: ViewerStep | undefined, boards: FixBoardV2[], color: string, viewFront: boolean, nextSettled = false, reset = true, nextFlatBoards = boards) => {
     clear();
     step = nextStep;
     settled = nextSettled;
     currentColor = color;
     finalBoards = boards;
+    flatFinalBoards = nextFlatBoards;
     finalViewFront = viewFront;
     const initialBoards = nextStep ? getStepBoards(nextStep, settled ? 1 : 0) : boards;
-    meshes = initialBoards.map((board) => {
-      const mesh = createMorphBoardMesh(board.polygon.map(toVector), color);
-      mesh.position.z = board.layer * BOARD_LAYER_OFFSET;
+    meshFlatBoards = nextStep ? getFlatStepBoards(nextStep, settled) : nextFlatBoards;
+    meshes = initialBoards.map((board, index) => {
+      const mesh = createMorphBoardMesh(meshFlatBoards[index].polygon.map(toVector), color);
+      updateMorphBoardMeshPositions(mesh, board.polygon.map(toVector));
       root.add(mesh);
       return mesh;
     });
@@ -104,9 +115,16 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
     if (reset) resetCamera();
   };
   const setProgress = (progress: number) => {
-    if (step && settled !== (progress >= 1)) setContent(step, finalBoards, currentColor, finalViewFront, progress >= 1, false);
+    if (step && settled !== (progress >= 1)) setContent(step, finalBoards, currentColor, finalViewFront, progress >= 1, false, flatFinalBoards);
     const boards = step ? getStepBoards(step, progress) : finalBoards;
-    boards.forEach((board, index) => updateMorphBoardMeshPositions(meshes[index], board.polygon.map(toVector)));
+    boards.forEach((board, index) => {
+      updateMorphBoardMeshPositions(meshes[index], board.polygon.map(toVector));
+      const flat = meshFlatBoards[index].polygon.map(toVector);
+      const posed = board.polygon.map(toVector);
+      const flatNormal = polygonNormal(flat);
+      const posedNormal = polygonNormal(posed);
+      meshes[index].position.copy(posedNormal).multiplyScalar(Math.sign(flatNormal.z) * board.layer * BOARD_LAYER_OFFSET);
+    });
     const center = new THREE.Box3().setFromPoints(boards.flatMap((board) => board.polygon.map(toVector))).getCenter(new THREE.Vector3());
     root.rotation.y = -(step ? getViewAngle(step, progress) : finalViewFront ? 0 : Math.PI);
     root.position.copy(center).applyAxisAngle(new THREE.Vector3(0, 1, 0), root.rotation.y).negate();

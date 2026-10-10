@@ -12,6 +12,7 @@ export interface OrigamiCanvasProps {
   step?: ViewerStep;
   progress: number;
   finalBoards: FixBoardV2[];
+  flatFinalBoards?: FixBoardV2[];
   finalViewFront: boolean;
   cameraPreset?: CameraPreset;
   resetKey?: number;
@@ -19,7 +20,7 @@ export interface OrigamiCanvasProps {
   label: string;
 }
 
-export function OrigamiCanvas({ size, color, step, progress, finalBoards, finalViewFront, cameraPreset = "front", resetKey = 0, zoom = 1, label }: OrigamiCanvasProps) {
+export function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFinalBoards = finalBoards, finalViewFront, cameraPreset = "front", resetKey = 0, zoom = 1, label }: OrigamiCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ReturnType<typeof createViewerScene>>();
@@ -42,7 +43,7 @@ export function OrigamiCanvas({ size, color, step, progress, finalBoards, finalV
       sceneRef.current = undefined;
     };
   }, [size, resetKey]);
-  useEffect(() => { sceneRef.current?.setContent(step, finalBoards, color, finalViewFront); }, [step, finalBoards, color, finalViewFront, size, resetKey]);
+  useEffect(() => { sceneRef.current?.setContent(step, finalBoards, color, finalViewFront, false, true, flatFinalBoards); }, [step, finalBoards, flatFinalBoards, color, finalViewFront, size, resetKey]);
   useEffect(() => { sceneRef.current?.setCamera(cameraPreset); }, [cameraPreset, step, size, resetKey]);
   useEffect(() => { sceneRef.current?.setZoom(zoom); }, [zoom, step, size, resetKey]);
   useEffect(() => { sceneRef.current?.setProgress(progress); }, [progress, step, color, finalBoards, finalViewFront, size, resetKey]);
