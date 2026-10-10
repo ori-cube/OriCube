@@ -3,5 +3,10 @@
 .workshop p { margin-block: var(--spacing-sm); line-height: 1.6; }
 .workshop > div > [data-rac], .workshop > [data-rac] { max-width: 24rem; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-sm); margin-block: var(--spacing-md); }
+.workshop > main { min-height: 40rem; }
 .stage { width: 100%; min-width: 0; margin-top: var(--spacing-md); }
-@media (max-width: 40rem) { .workshop { padding: var(--spacing-md); } }
+@media (max-width: 40rem) {
+  .workshop { padding: var(--spacing-md); }
+  .stage [role="toolbar"] { flex-direction: row; }
+  .stage > div > label { top: 5rem; }
+}

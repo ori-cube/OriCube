@@ -101,7 +101,7 @@ export function MockWorkshop() {
   return <main id="origami-viewer" className={styles.workshop}>
     {heading}
     <div className={styles.stage} ref={stage}>
-      {ready && <Editor key={generation} initialSteps={state.steps} defaultOrigamiColor={state.color} size={size} cameraPosition={{ x: 0, y: 0, z: (state.viewFront ? 1 : -1) * size * 1.8 }} width={width} height={600} autoResize={false} onStateChange={handleStateChange} />}
+      {ready && <Editor key={generation} initialSteps={state.steps} defaultOrigamiColor={state.color} size={size} cameraPosition={{ x: 0, y: 0, z: (state.viewFront ? 1 : -1) * size * 1.8 / Math.min(width / 600, 1) }} width={width} height={600} autoResize={false} onStateChange={handleStateChange} />}
     </div>
   </main>;
 }
