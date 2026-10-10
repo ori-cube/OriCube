@@ -1,0 +1,13 @@
+.pagination, .pages, .item { display: flex; align-items: center; gap: var(--spacing-xxs); }
+.pagination { justify-content: center; flex-wrap: wrap; }
+.page { display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; height: 2.75rem; border-radius: var(--border-radius-md); color: var(--text-default); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.page[data-hovered] { background: var(--background-secondary-action-hover); }
+.page[aria-current] { background: var(--background-primary-action-enabled); color: var(--text-primary-action); }
+.page[data-focus-visible] { outline: var(--border-width-lg) solid var(--border-bold); outline-offset: 2px; }
+.gap { color: var(--text-subtle); }
+.counter { display: none; font-variant-numeric: tabular-nums; }
+@media (max-width: 36rem) { .pages { display: none; } .counter { display: inline; padding: 0 var(--spacing-md); } }
+@media (forced-colors: active) {
+  .page[aria-current] { outline: 2px solid Highlight; }
+  .page[data-focus-visible] { outline-color: Highlight; }
+}
