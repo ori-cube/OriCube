@@ -1,3 +1,4 @@
+import { removeObjects } from "@/utils/three/removeObjects";
 import { Board } from "@/types/model";
 import { useEffect } from "react";
 import { renderBoard } from "../../logics/renderBoard";
@@ -12,6 +13,7 @@ type UseRotateBoards = (props: {
   notFoldBoards: Board[];
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   origamiColor: string;
+  requestRender: () => void;
 }) => void;
 
 export const useRotateBoards: UseRotateBoards = ({
@@ -19,6 +21,7 @@ export const useRotateBoards: UseRotateBoards = ({
   notFoldBoards,
   sceneRef,
   origamiColor,
+  requestRender,
 }) => {
   const currentStep = useAtomValue(currentStepAtom);
   const inputStep = currentStep.inputStep;
@@ -75,14 +78,14 @@ export const useRotateBoards: UseRotateBoards = ({
     ];
 
     // 前の板を削除
-    scene.children = scene.children.filter((child) => {
-      return child.name === "Axis";
-    });
+    removeObjects(scene, (child) => child.name !== "Axis");
     // 板を描画
     boards.forEach((board) => {
       renderBoard({ scene, board, color: origamiColor });
     });
+    requestRender();
   }, [
+    requestRender,
     foldingAngle,
     foldBoards,
     notFoldBoards,

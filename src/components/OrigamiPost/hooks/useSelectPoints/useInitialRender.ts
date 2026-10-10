@@ -1,3 +1,4 @@
+import { removeObjects } from "@/utils/three/removeObjects";
 /* 
 step1で、点の選択を行うための初期描画を行うフック
 - sceneの初期化
@@ -37,7 +38,7 @@ export const useInitialRender: UseInitialRender = ({
     const camera = cameraRef.current!;
 
     // sceneの初期化
-    scene.children = [];
+    removeObjects(scene);
 
     // pointsを描画
     selectedPoints.forEach((point) => {
