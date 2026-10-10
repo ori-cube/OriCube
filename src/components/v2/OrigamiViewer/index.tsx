@@ -35,7 +35,7 @@ export function OrigamiViewer({ model, completed = false }: OrigamiViewerProps) 
     <div className={styles.stage}>
       <OrigamiCanvas
         size={model.procedure.size} color={model.color} step={step} progress={playback.progress}
-        finalBoards={timeline.finalBoards} finalViewFront={timeline.finalViewFront}
+        flatFinalBoards={model.procedure.finalBoards} finalBoards={timeline.finalBoards} finalViewFront={timeline.finalViewFront}
         cameraPreset={cameraPreset} resetKey={resetKey} zoom={zoom}
         label={`${model.name}・${stepName}。矢印キーで視点を回転できます。`}
       />
