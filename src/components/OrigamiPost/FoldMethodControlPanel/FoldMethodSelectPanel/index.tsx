@@ -2,8 +2,7 @@ import styles from "./index.module.scss";
 import { NextStepButton } from "../ui/NextStepButton";
 import { PrevStepButton } from "../ui/PrevStepButton";
 import { FoldButton } from "../ui/FoldButton";
-import { Slider, TextArea, Button } from "@radix-ui/themes";
-import React from "react";
+import { Slider, TextArea, Button } from "@oricube/design-system";
 
 type Props = {
   handlePrevStep: () => void;
@@ -20,7 +19,7 @@ type Props = {
   handleOrigamiDescriptionChange: (description: string) => void;
 };
 
-export const FoldMethodSelectPanel: React.FC<Props> = ({
+export function FoldMethodSelectPanel({
   handlePrevStep,
   handleNextStep,
   handleFoldFrontSide,
@@ -33,7 +32,7 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
   handleRegisterOrigami,
   origamiDescription,
   handleOrigamiDescriptionChange,
-}) => {
+}: Props) {
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
@@ -53,30 +52,15 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
           />
         </div>
         <section className={styles.h3Section}>
-          <h3 className={styles.h3}>折る角度</h3>
-          <div className={styles.sliderWrapper}>
-            0
-            <Slider
-              className={styles.slider}
-              min={0}
-              max={180}
-              size="3"
-              onValueChange={(value) => {
-                handleFoldAngleChange(value[0]);
-              }}
-              defaultValue={[180]}
-              value={[foldAngle]}
-            />
-            180
-          </div>
+          <Slider label="折る角度（度）" minValue={0} maxValue={180} value={foldAngle} onChange={handleFoldAngleChange} />
         </section>
         <section className={styles.h3Section}>
-          <h3 className={styles.h3}>折り方の説明</h3>
           <TextArea
+            label="折り方の説明"
             placeholder="半分に折る"
             className={styles.textArea}
             value={origamiDescription}
-            onChange={(e) => handleOrigamiDescriptionChange(e.target.value)}
+            onChange={handleOrigamiDescriptionChange}
           />
         </section>
         <div className={styles.stepButtons}>
@@ -87,10 +71,8 @@ export const FoldMethodSelectPanel: React.FC<Props> = ({
       <Button
         onClick={handleRegisterOrigami}
         className={styles.registerButton}
-        size="3"
-      >
-        折り紙を登録
-      </Button>
+        text="折り紙を登録"
+      />
     </div>
   );
-};
+}
