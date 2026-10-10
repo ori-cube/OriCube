@@ -8,4 +8,3 @@
 
 各操作対象は44pxを確保し、フォーカス・選択・無効の状態を区別する。Storybook の `Design System/IconButton`, `Slider`, `Pagination` で各状態を確認できる。
 
-色のプリミティブには `--oricube-*` の名前を付け、Radix など他のライブラリの `--gray-5` 等と衝突させない。コンポーネントでは従来どおり `--text-default` などの意味に応じたトークンを参照する。
