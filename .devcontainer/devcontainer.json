@@ -12,5 +12,5 @@
     "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
   ],
   "forwardPorts": [3000, 6006],
-  "postCreateCommand": "corepack enable && corepack prepare --activate && pnpm install"
+  "postCreateCommand": "corepack enable && corepack prepare --activate && pnpm install --frozen-lockfile"
 }
