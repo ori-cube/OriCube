@@ -9,3 +9,4 @@ export * from "./components/SearchField";
 export * from "./components/TextArea";
 export * from "./components/FloatingPanel";
 export * from "./components/Checkbox";
+export * from "./components/FileButton";
