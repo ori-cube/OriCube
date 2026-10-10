@@ -1,0 +1,12 @@
+.field { display: flex; flex-direction: column; gap: var(--spacing-xxs); min-width: 0; color: var(--text-default); }
+.label { font-size: 0.875rem; font-weight: 600; }
+.control { display: flex; align-items: center; gap: var(--spacing-xxs); border: var(--border-width-md) solid var(--border-default); border-radius: var(--border-radius-md); background: var(--background-default); padding-inline-start: var(--spacing-xs); }
+.control:focus-within { outline: var(--border-width-lg) solid var(--border-bold); outline-offset: 2px; }
+.control > svg { flex-shrink: 0; }
+.input { min-width: 0; width: 100%; font: inherit; padding-block: var(--spacing-xs); line-height: 1.75rem; outline: none; }
+.input::placeholder { color: var(--text-placeholder); }
+.input::-webkit-search-cancel-button { appearance: none; }
+.clear { display: grid; place-items: center; flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--border-radius-md); cursor: pointer; }
+.clear[data-focus-visible] { outline: var(--border-width-lg) solid var(--border-bold); outline-offset: -3px; }
+.clear[data-disabled] { visibility: hidden; }
+.field[data-disabled] { opacity: 0.5; }
