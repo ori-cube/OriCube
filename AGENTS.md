@@ -16,8 +16,9 @@
 
 ## 現在のビルド審査
 
-- 許可: Prisma 6.9.0のNode要件チェック・エンジン取得・クライアント生成、esbuild 0.25.12のバイナリ設定。
-- 拒否: Firebaseの環境設定埋め込み、protobufjsの互換性警告、Parcel・sharp・unrs-resolverのネイティブセットアップ。対応プラットフォームの配布済みバイナリを使う。
+- 許可: Prisma 6.9.0のNode要件チェック・エンジン取得・クライアント生成。
+- 拒否: Parcel 2.5.1・unrs-resolver 1.12.2のネイティブセットアップ、esbuild 0.28.1のバイナリ設定とnpmによる取得フォールバック。対応プラットフォームの配布済みバイナリを使う。sharp 0.35.5にはインストールスクリプトがない。
 - バージョン更新時は再審査する。バージョンなしの許可やワイルドカードに広げない。
+- `braces` の監査警告は[パッチと回帰テスト](docs/dependency-security.md)で対処している。監査除外やパッチ削除で解消扱いにしない。公式修正版への置換時も `pnpm test:security` を実行する。
 
 根拠: [pnpm 10のサプライチェーン対策](https://pnpm.io/10.x/supply-chain-security)、[設定仕様](https://pnpm.io/10.x/settings)。
