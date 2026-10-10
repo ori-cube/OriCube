@@ -19,7 +19,7 @@ export function SearchField({ label, placeholder, hideLabel = false, className, 
         <div className={styles.control}>
           <SearchIcon size={20} aria-hidden />
           <Input className={styles.input} placeholder={placeholder} />
-          <Button slot="clear" aria-label="検索をクリア" className={styles.clear} isDisabled={isEmpty}>
+          <Button slot="clear" aria-label="検索をクリア" className={styles.clear} isDisabled={isEmpty || props.isDisabled}>
             <CloseIcon size={20} aria-hidden />
           </Button>
         </div>

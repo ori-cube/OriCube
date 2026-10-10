@@ -16,7 +16,7 @@ describe("入力用デザインシステム", () => {
     expect(input).toHaveFocus();
   });
   it("空の検索はクリアできず、無効な検索には入力できない", () => {
-    render(<SearchField label="折り紙を検索" isDisabled />);
+    render(<SearchField label="折り紙を検索" defaultValue="つる" isDisabled />);
     expect(screen.getByRole("searchbox", { name: "折り紙を検索" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "検索をクリア", hidden: true })).toBeDisabled();
   });
