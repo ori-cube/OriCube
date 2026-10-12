@@ -14,14 +14,14 @@
 .hint { color: var(--text-subtle); font-size: 0.75rem; line-height: 1.6; }
 .bottom { min-width: 0; }
 .controls { display: grid; align-items: center; gap: var(--spacing-xs); padding-block: var(--spacing-xs) 0; border-block-start: var(--border-width-md) solid var(--border-default); }
-.controls > label { justify-self: center; }
+.settings { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; column-gap: var(--spacing-lg); }
 .playback { display: flex; align-items: center; gap: var(--spacing-sm); width: min(100%, 32rem); margin-inline: auto; }
 .empty { text-align: center; padding: var(--spacing-md); line-height: 1.7; }
 @container (min-width: 42rem) {
   .controls { grid-template-columns: minmax(14rem, 1fr) auto; column-gap: var(--spacing-lg); }
   .playback { width: 100%; max-width: 32rem; margin: 0; }
   .controls > nav { width: 23rem; }
-  .controls > label { justify-self: start; }
+  .settings { justify-content: flex-start; }
   .controls > .hint { grid-column: 1 / -1; }
 }
 @media (max-width: 36rem) {

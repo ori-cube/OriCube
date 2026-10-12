@@ -70,6 +70,33 @@ describe("V2閲覧画面", () => {
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0");
   });
+  it("文字付きチェックボックスで繰り返しを選び、解除すると同じ手順の終点で停止する", async () => {
+    const model = await getOrigamiV2("crane");
+    if (!model) throw new Error("モックがありません");
+    render(<OrigamiViewer model={model} />);
+    const checkbox = screen.getByRole("checkbox", { name: "このステップを繰り返す" });
+    expect(checkbox).not.toBeChecked();
+    expect(screen.queryByRole("button", { name: "このステップを繰り返す" })).not.toBeInTheDocument();
+    fireEvent.click(checkbox);
+    expect(checkbox).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "再生" }));
+    advance(0); advance(800); advance(1800);
+    expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0");
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
+    fireEvent.click(checkbox);
+    expect(checkbox).not.toBeChecked();
+    advance(1800); advance(2600); advance(2616);
+    expect(screen.getByRole("img")).toHaveAttribute("data-progress", "1");
+    expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
+  });
+  it("動きを減らす設定では繰り返しチェックボックスを無効にする", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    const model = await getOrigamiV2("crane");
+    if (!model) throw new Error("モックがありません");
+    render(<OrigamiViewer model={model} />);
+    expect(screen.getByRole("checkbox", { name: "このステップを繰り返す" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "ステップ移動時に自動再生" })).not.toBeDisabled();
+  });
   it("拡大率を表示し、文字付きのリセットで視点と倍率を戻す", async () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
