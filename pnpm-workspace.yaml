@@ -1,20 +1,28 @@
 packages:
   - "packages/*"
-minimumReleaseAge: 1440
-trustPolicy: no-downgrade
-blockExoticSubdeps: true
-strictDepBuilds: true
-packageManagerStrictVersion: true
-verifyStoreIntegrity: true
 allowBuilds:
+  "@parcel/watcher@2.5.1": false
   "@prisma/client@6.9.0": true
   "@prisma/engines@6.9.0": true
-  "esbuild@0.25.12": true
+  "esbuild@0.28.1": false
   "prisma@6.9.0": true
-  "@firebase/util@1.12.0": false
-  "@parcel/watcher@2.5.1": false
-  "protobufjs@7.5.3": false
-  "sharp@0.34.5": false
-  "unrs-resolver@1.7.9": false
+  "unrs-resolver@1.12.2": false
+blockExoticSubdeps: true
+minimumReleaseAge: 1440
+overrides:
+  "esbuild@>=0.25.12 <0.28.1": 0.28.1
+  "eslint-config-next>eslint-import-resolver-typescript": 3.10.0
+  "jose@>=4 <5": 5.10.0
+  "next>postcss": 8.5.23
+  "postcss-selector-parser@<7.1.6": 7.1.6
+  "semver@<7": 7.8.5
+  "storybook>@vitest/mocker": 4.1.11
+  "tmp@<0.2.7": 0.2.7
+  "vite@7": 7.3.5
+packageManagerStrictVersion: true
 patchedDependencies:
+  braces@3.0.3: patches/braces@3.0.3.patch
   vite-plugin-storybook-nextjs@3.3.0: patches/vite-plugin-storybook-nextjs@3.3.0.patch
+strictDepBuilds: true
+trustPolicy: no-downgrade
+verifyStoreIntegrity: true
