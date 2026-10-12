@@ -5,13 +5,14 @@ import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
 import type { FixBoardV2 } from "@/types/model-v2";
 import type { ViewerStep } from "./playback";
 
-const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn() }));
+const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn(), setViewport: vi.fn() }));
 vi.mock("three", async (importOriginal) => {
   const actual = await importOriginal<typeof import("three")>();
   return { ...actual, WebGLRenderer: class {
     render = renderer.render;
     dispose = renderer.dispose;
     setSize = renderer.setSize;
+    setViewport = renderer.setViewport;
     setPixelRatio = vi.fn();
   } };
 });
@@ -31,6 +32,25 @@ const step: ViewerStep = {
 };
 
 describe("V2閲覧シーン", () => {
+  it("操作パネルの高さが変わっても紙を上下のパネルの間に描画する", () => {
+    const container = document.createElement("div");
+    Object.defineProperties(container, { clientWidth: { value: 986 }, clientHeight: { value: 881 } });
+    const scene = createViewerScene(document.createElement("canvas"), container, 100);
+    scene.setInsets({ top: 120, bottom: 150 });
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 150, 986, 611);
+    scene.setInsets({ top: 220, bottom: 250 });
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 250, 986, 411);
+    const camera: unknown = renderer.render.mock.calls.at(-1)?.[1];
+    if (!(camera instanceof THREE.PerspectiveCamera)) throw new Error("カメラがありません");
+    expect(camera.aspect).toBeCloseTo(986 / 411);
+    scene.dispose();
+  });
+  it("表示領域が一時的に縮んでも描画範囲を負にしない", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    scene.setInsets({ top: 220, bottom: 250 });
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 1, 1);
+    scene.dispose();
+  });
   it("進捗で同じメッシュを更新し、停止中に描画ループを作らない", () => {
     const raf = vi.spyOn(globalThis, "requestAnimationFrame");
     const canvas = document.createElement("canvas");
