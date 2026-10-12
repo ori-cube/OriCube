@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createViewerScene } from "./scene";
+import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
 import type { FixBoardV2 } from "@/types/model-v2";
 import type { ViewerStep } from "./playback";
 
@@ -51,6 +52,17 @@ describe("V2閲覧シーン", () => {
     expect(raf).not.toHaveBeenCalled();
     scene.dispose();
   });
+  it("再度の中割りで狭くなったレイヤーを24bit深度でも区別できる", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    const camera: unknown = renderer.render.mock.calls.at(-1)?.[1];
+    if (!(camera instanceof THREE.PerspectiveCamera)) throw new Error("カメラがありません");
+    camera.updateMatrixWorld();
+    const first = new THREE.Vector3(0, 0, 0).project(camera).z;
+    const second = new THREE.Vector3(0, 0, BOARD_LAYER_OFFSET / 81).project(camera).z;
+    expect(Math.abs(second - first) / 2).toBeGreaterThan(1 / 2 ** 24);
+    scene.dispose();
+  });
+
   it("離脱時にリサイズ監視と描画資源を解放し、後から描画しない", () => {
     const dispose = vi.spyOn(THREE.BufferGeometry.prototype, "dispose");
     const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
