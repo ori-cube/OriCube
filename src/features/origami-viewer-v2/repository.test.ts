@@ -8,7 +8,7 @@ describe("V2閲覧用モック", () => {
     if (!model) throw new Error("鶴のモックがありません");
     expect(new Set(model.procedure.steps.map((step) => step.kind))).toEqual(new Set(["fold", "squash", "petal", "insideReverse"]));
     const timeline = createViewerTimeline(model.procedure);
-    expect(timeline.steps).toHaveLength(20);
+    expect(timeline.steps).toHaveLength(21);
     expect(timeline.finalBoards.some((board) => board.polygon.some((point) => point[2] > 1))).toBe(true);
     expect(timeline.finalBoards.some((board) => board.polygon.some((point) => point[2] < -1))).toBe(true);
     const saved = JSON.stringify(model);
