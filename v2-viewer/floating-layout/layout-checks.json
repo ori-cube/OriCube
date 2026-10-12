@@ -1,0 +1,93 @@
+[
+  {
+    "condition": "320",
+    "canvasHeight": 897,
+    "headingBottom": 300.78125,
+    "intercepted": [],
+    "minButtonHeight": 44,
+    "panelTop": 721,
+    "paperBottom": 705,
+    "paperHeight": 388,
+    "paperTop": 317,
+    "scroll": 320,
+    "width": 320
+  },
+  {
+    "condition": "767",
+    "canvasHeight": 897,
+    "headingBottom": 171.1875,
+    "intercepted": [],
+    "minButtonHeight": 44,
+    "panelTop": 821,
+    "paperBottom": 805,
+    "paperHeight": 617,
+    "paperTop": 188,
+    "scroll": 767,
+    "width": 767
+  },
+  {
+    "condition": "768",
+    "canvasHeight": 881,
+    "headingBottom": 264.78125,
+    "intercepted": [],
+    "minButtonHeight": 44,
+    "panelTop": 765,
+    "paperBottom": 749,
+    "paperHeight": 468,
+    "paperTop": 281,
+    "scroll": 768,
+    "width": 768
+  },
+  {
+    "condition": "986",
+    "canvasHeight": 881,
+    "headingBottom": 187.1875,
+    "intercepted": [],
+    "minButtonHeight": 44,
+    "panelTop": 821,
+    "paperBottom": 805,
+    "paperHeight": 601,
+    "paperTop": 204,
+    "scroll": 986,
+    "width": 986
+  },
+  {
+    "condition": "1280",
+    "canvasHeight": 881,
+    "headingBottom": 187.1875,
+    "intercepted": [],
+    "minButtonHeight": 44,
+    "panelTop": 821,
+    "paperBottom": 805,
+    "paperHeight": 601,
+    "paperTop": 204,
+    "scroll": 1280,
+    "width": 1280
+  },
+  {
+    "condition": "200% text",
+    "canvasHeight": 1554,
+    "headingBottom": 529.578125,
+    "intercepted": [],
+    "minButtonHeight": 88,
+    "panelTop": 1234,
+    "paperBottom": 1202,
+    "paperHeight": 640,
+    "paperTop": 562,
+    "scroll": 986,
+    "width": 986
+  },
+  {
+    "condition": "RTL",
+    "canvasHeight": 881,
+    "headingBottom": 187.1875,
+    "intercepted": [],
+    "minButtonHeight": 44,
+    "panelTop": 821,
+    "paperBottom": 805,
+    "paperHeight": 601,
+    "paperTop": 204,
+    "scroll": 986,
+    "width": 986
+  }
+]
