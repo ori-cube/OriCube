@@ -9,3 +9,6 @@ Captured from local production build at commit 60274537ace6b2d5684be9f559f571c37
 - viewer-controls.mp4 / .gif: actual browser capture; keyboard selects autoplay, manual navigation plays steps 2–4, autoplay is disabled for step 5, zoom is changed and reset, final step is played to completion. Only the initial idle portion was trimmed.
 
 All models use the user-recorded crane history. No image-generated visuals.
+
+- authoring-editor.png: imported user-recorded crane in the editor.
+- authoring-current.mp4 / .gif: current production UI; import recorded crane, preview final step, keyboard-select autoplay, return to editor, use JSON/TS export controls, reload and resume persisted history.
