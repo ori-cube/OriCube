@@ -60,6 +60,63 @@ describe("V2閲覧の再生操作", () => {
     expect(result.current.playing).toBe(false);
     expect(frames.size).toBe(0);
   });
+  it("選択したときだけ移動先を自動再生し、完了しても次へは進まない", () => {
+    const { result } = renderPlayback();
+    act(() => result.current.setAutoPlay(true));
+    expect(result.current.playing).toBe(false);
+    act(() => result.current.selectStep(1));
+    expect(result.current.playing).toBe(true);
+    advance(0); advance(1000);
+    expect(result.current.progress).toBeCloseTo(0.5);
+    act(() => result.current.selectStep(2));
+    expect(result.current.progress).toBe(0);
+    advance(1000); advance(3000); advance(3016);
+    expect(result.current.progress).toBe(1);
+    expect(result.current.playing).toBe(false);
+    expect(result.current.index).toBe(2);
+    act(() => result.current.selectStep(1));
+    expect(result.current.playing).toBe(true);
+    act(() => result.current.setAutoPlay(false));
+    act(() => result.current.selectStep(0));
+    expect(result.current.playing).toBe(false);
+    expect(frames.size).toBe(0);
+  });
+  it("自動再生中に同じステップを選んでも進捗が飛ばない", () => {
+    const { result } = renderPlayback();
+    act(() => result.current.setAutoPlay(true));
+    act(() => result.current.selectStep(1));
+    advance(0); advance(1000);
+    act(() => result.current.selectStep(1));
+    expect(result.current.progress).toBeCloseTo(0.5);
+    advance(1500);
+    expect(result.current.progress).toBeCloseTo(0.75);
+  });
+  it("自動再生で裏返しを選ぶと800msで再生する", () => {
+    const { result } = renderPlayback();
+    act(() => result.current.setAutoPlay(true));
+    act(() => result.current.selectStep(3));
+    advance(0); advance(400);
+    expect(result.current.progress).toBeCloseTo(0.5);
+  });
+  it("最終ステップの終点から始めても、同じ操作で戻って再生できる", () => {
+    const { result } = renderHook(() => usePlayback(13, () => false, true));
+    expect(result.current.index).toBe(12);
+    expect(result.current.progress).toBe(1);
+    expect(result.current.playing).toBe(false);
+    act(() => result.current.selectStep(11));
+    expect(result.current.progress).toBe(0);
+    act(() => result.current.togglePlaying());
+    expect(result.current.playing).toBe(true);
+  });
+  it("動きを減らす設定では自動再生で移動しても終点へ切り替える", () => {
+    reduced = true;
+    const { result } = renderPlayback();
+    act(() => result.current.setAutoPlay(true));
+    act(() => result.current.selectStep(1));
+    expect(result.current.progress).toBe(1);
+    expect(result.current.playing).toBe(false);
+    expect(frames.size).toBe(0);
+  });
   it("スライダー操作では再生を止めて選んだ位置を保つ", () => {
     const { result } = renderPlayback();
     act(() => result.current.togglePlaying());

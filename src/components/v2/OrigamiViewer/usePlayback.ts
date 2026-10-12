@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export const usePlayback = (stepCount: number, isFlip: (index: number) => boolean) => {
-  const [index, setIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
+export const usePlayback = (stepCount: number, isFlip: (index: number) => boolean, startAtEnd = false) => {
+  const [index, setIndex] = useState(startAtEnd ? Math.max(0, stepCount - 1) : 0);
+  const [progress, setProgress] = useState(startAtEnd && stepCount > 0 ? 1 : 0);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const flip = isFlip(index);
   const progressRef = useRef(progress);
@@ -57,11 +58,14 @@ export const usePlayback = (stepCount: number, isFlip: (index: number) => boolea
   }, [playing, reducedMotion, stepCount, index, flip, loop]);
 
   return {
-    index, progress, playing, loop, reducedMotion,
+    index, progress, playing, loop, reducedMotion, autoPlay, setAutoPlay,
     selectStep: (nextIndex: number) => {
-      setPlaying(false);
-      setProgress(0);
-      setIndex(Math.max(0, Math.min(nextIndex, stepCount - 1)));
+      if (stepCount === 0) return;
+      const selected = Math.max(0, Math.min(nextIndex, stepCount - 1));
+      if (selected === index) return;
+      setPlaying(autoPlay && !reducedMotion);
+      setProgress(autoPlay && reducedMotion ? 1 : 0);
+      setIndex(selected);
     },
     scrub: (value: number) => { setPlaying(false); setProgress(Math.max(0, Math.min(1, value))); },
     togglePlaying: () => {

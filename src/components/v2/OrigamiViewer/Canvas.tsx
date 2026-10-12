@@ -53,6 +53,6 @@ export function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFi
       const delta = movement[event.key];
       if (delta) { event.preventDefault(); sceneRef.current?.rotateCamera(...delta); }
     }} />
-    {failed && <p className={styles.error} role="alert">3D表示を読み込めませんでした。「視点を戻す」で再試行してください。</p>}
+    {failed && <p className={styles.error} role="alert">3D表示を読み込めませんでした。「視点をリセット」で再試行してください。</p>}
   </div>;
 }

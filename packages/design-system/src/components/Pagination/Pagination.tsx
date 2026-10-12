@@ -17,18 +17,15 @@ export function Pagination({ page, totalPages, onChange, label = "ページ切�
   if (totalPages < 1) return null;
   const first = Math.max(1, Math.min(page - 1, totalPages - 2));
   const pages = Array.from({ length: Math.min(3, totalPages) }, (_, index) => first + index);
-  const items = Array.from(new Set([1, ...pages, totalPages])).sort((a, b) => a - b);
   return (
     <nav aria-label={label} className={styles.pagination}>
-      <IconButton icon="PreviousIcon" label="前へ" isDisabled={page <= 1} onPress={() => onChange(page - 1)} />
-      <span className={styles.counter}>{page} / {totalPages}</span>
+      <IconButton className={styles.move} icon="MostPreviousIcon" label="最初へ" isDisabled={page <= 1} onPress={() => onChange(1)} />
+      <IconButton className={styles.move} icon="PreviousIcon" label="前へ" isDisabled={page <= 1} onPress={() => onChange(page - 1)} />
       <div className={styles.pages}>
-        {items.map((value, index) => <div className={styles.item} key={value}>
-          {index > 0 && value - items[index - 1] > 1 && <span className={styles.gap} aria-hidden>…</span>}
-          <Button className={styles.page} aria-current={page === value ? currentType : undefined} aria-label={getPageLabel(value)} onPress={() => onChange(value)}>{value}</Button>
-        </div>)}
+        {pages.map((value) => <Button key={value} className={styles.page} aria-current={page === value ? currentType : undefined} aria-label={getPageLabel(value)} onPress={() => onChange(value)}>{value}</Button>)}
       </div>
-      <IconButton icon="NextIcon" label="次へ" isDisabled={page >= totalPages} onPress={() => onChange(page + 1)} />
+      <IconButton className={styles.move} icon="NextIcon" label="次へ" isDisabled={page >= totalPages} onPress={() => onChange(page + 1)} />
+      <IconButton className={styles.move} icon="MostNextIcon" label="最後へ" isDisabled={page >= totalPages} onPress={() => onChange(totalPages)} />
     </nav>
   );
 }
