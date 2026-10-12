@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo } from "react";
+import { createDemandRenderer } from "@/utils/three/demandRenderer";
+import { removeObjects } from "@/utils/three/removeObjects";
 import * as THREE from "three";
 import { Board, Procedure } from "@/types/model";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
@@ -42,6 +44,7 @@ export const OrigamiDetailV2: React.FC<Props> = ({
   floorColor = "#f5f5f5",
   foldProgress = 1,
 }) => {
+  const requestRenderRef = useRef<(() => void) | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -166,24 +169,34 @@ export const OrigamiDetailV2: React.FC<Props> = ({
     const controls = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controls;
 
-    const render = () => {
-      controls.update();
+    const rendering = createDemandRenderer(controls, () => {
       renderer.render(scene, camera);
-      requestAnimationFrame(render);
-    };
-    render();
+    });
+    requestRenderRef.current = rendering.requestRender;
 
-    window.addEventListener("resize", () => {
+    const handleResize = () => {
       sizes.width = window.innerWidth;
       sizes.height = window.innerHeight;
       camera.aspect = sizes.width / sizes.height;
       camera.updateProjectionMatrix();
       renderer.setSize(sizes.width, sizes.height);
-      renderer.setPixelRatio(window.devicePixelRatio);
-    });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      rendering.requestRender();
+    };
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("resize", () => {});
+      window.removeEventListener("resize", handleResize);
+      rendering.dispose();
+      requestRenderRef.current = null;
+      controls.dispose();
+      removeObjects(scene);
+      renderer.dispose();
+      sceneRef.current = null;
+      rendererRef.current = null;
+      cameraRef.current = null;
+      controlsRef.current = null;
+      contentGroupRef.current = null;
     };
   }, []);
 
@@ -270,32 +283,7 @@ export const OrigamiDetailV2: React.FC<Props> = ({
     });
 
     const contentGroup = contentGroupRef.current;
-    if (contentGroup) {
-      //使用済みのフレームのオブジェクトを破棄してGPUメモリを解放
-      const disposeObject = (object: THREE.Object3D) => {
-        const mesh = object as THREE.Mesh;
-        if (mesh.geometry) {
-          mesh.geometry.dispose();
-        }
-        const material = (mesh as THREE.Mesh).material as
-          | THREE.Material
-          | THREE.Material[]
-          | undefined;
-        if (material) {
-          if (Array.isArray(material)) {
-            material.forEach((mat) => mat.dispose?.());
-          } else {
-            material.dispose?.();
-          }
-        }
-      };
-
-      while (contentGroup.children.length) {
-        const child = contentGroup.children[0];
-        contentGroup.remove(child);
-        child.traverse(disposeObject);
-      }
-    }
+    if (contentGroup) removeObjects(contentGroup);
 
     const boards: { points: Board; isMove: boolean }[] = [];
     stepObject.fixBoards.forEach((b) =>
@@ -431,6 +419,10 @@ export const OrigamiDetailV2: React.FC<Props> = ({
     showShadow,
     foldAngle,
   ]);
+
+  useEffect(() => {
+    requestRenderRef.current?.();
+  });
 
   return (
     <canvas

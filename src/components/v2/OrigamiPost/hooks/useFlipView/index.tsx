@@ -9,6 +9,7 @@ const FLIP_DURATION_MS = 600;
 type UseFlipView = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   controlsRef: React.MutableRefObject<OrbitControls | null>;
+  requestRender: () => void;
 }) => {
   /** 視点をY軸周りに180度回して折り紙を裏返す */
   flipView: () => void;
@@ -22,7 +23,7 @@ type UseFlipView = (props: {
  * @description
  * - カメラを回転中心（OrbitControlsのtarget）を通る垂直軸周りに
  *   180度、rAF + easeInOutCubicで回転させる
- *   （描画はuseInitSceneのアニメーションループが毎フレーム行う）
+ *   （各フレームの変更時に描画を予約する）
  * - 折り紙のデータは変更しない。裏返した状態での折りは、ドロップ時の
  *   カメラ位置（zの符号）から視点を判定して処理する
  * - アニメーション中はOrbitControlsを無効化し、完了時に復帰する
@@ -30,7 +31,11 @@ type UseFlipView = (props: {
  * @param props.cameraRef - THREE.PerspectiveCameraのref
  * @param props.controlsRef - OrbitControlsのref
  */
-export const useFlipView: UseFlipView = ({ cameraRef, controlsRef }) => {
+export const useFlipView: UseFlipView = ({
+  cameraRef,
+  controlsRef,
+  requestRender,
+}) => {
   const [isFlipping, setIsFlipping] = useState(false);
   const animationFrameIdRef = useRef(0);
 
@@ -68,6 +73,7 @@ export const useFlipView: UseFlipView = ({ cameraRef, controlsRef }) => {
         pivot.clone().add(startOffset.clone().applyAxisAngle(yAxis, angle))
       );
       camera.lookAt(pivot);
+      requestRender();
 
       if (progress < 1) {
         animationFrameIdRef.current = requestAnimationFrame(animate);
@@ -81,7 +87,7 @@ export const useFlipView: UseFlipView = ({ cameraRef, controlsRef }) => {
     };
 
     animationFrameIdRef.current = requestAnimationFrame(animate);
-  }, [isFlipping, cameraRef, controlsRef]);
+  }, [isFlipping, cameraRef, controlsRef, requestRender]);
 
   return { flipView, isFlipping };
 };

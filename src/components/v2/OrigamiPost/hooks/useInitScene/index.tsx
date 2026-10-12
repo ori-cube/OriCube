@@ -1,6 +1,9 @@
 import * as THREE from "three";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
+
+import { createDemandRenderer } from "@/utils/three/demandRenderer";
+import { removeObjects } from "@/utils/three/removeObjects";
 
 type UseInitScene = (props: {
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -12,7 +15,7 @@ type UseInitScene = (props: {
   width: number;
   height: number;
   cameraPosition: { x: number; y: number; z: number };
-}) => void;
+}) => () => void;
 
 /**
  * Three.jsシーンの初期化を行うカスタムフック
@@ -20,7 +23,7 @@ type UseInitScene = (props: {
  * @description
  * - Three.jsのシーン、カメラ、レンダラー、コントロール、レイキャスターを初期化
  * - ライティング（環境光・指向性ライト）を設定
- * - アニメーションループを開始
+ * - 変更があるときだけ描画を予約
  * - ウィンドウリサイズ時の対応を設定
  *
  * @param props.canvasRef - HTMLCanvasElementのref
@@ -44,6 +47,9 @@ export const useInitScene: UseInitScene = ({
   height,
   cameraPosition,
 }) => {
+  const renderRef = useRef<(() => void) | null>(null);
+  const requestRender = useCallback(() => renderRef.current?.(), []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -58,13 +64,11 @@ export const useInitScene: UseInitScene = ({
       antialias: true,
       alpha: true,
     });
-    renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     rendererRef.current = renderer;
 
     // カメラの作成
-    const camera = new THREE.PerspectiveCamera(40, width / height, 10, 1000);
-    camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    const camera = new THREE.PerspectiveCamera(40, 1, 10, 1000);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
     cameraRef.current = camera;
 
@@ -103,39 +107,59 @@ export const useInitScene: UseInitScene = ({
     backLight.position.set(-10, -10, -5);
     scene.add(backLight);
 
-    // アニメーションループ
-    const animate = () => {
-      controls.update();
+    const rendering = createDemandRenderer(controls, () => {
       renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    };
-    animate();
-
-    // リサイズハンドラー
-    const handleResize = () => {
-      const newWidth = window.innerWidth - 320;
-      const newHeight = window.innerHeight;
-
-      camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newWidth, newHeight);
-    };
-
-    window.addEventListener("resize", handleResize);
+    });
+    renderRef.current = rendering.requestRender;
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      rendering.dispose();
+      renderRef.current = null;
+      controls.dispose();
+      removeObjects(scene);
       renderer.dispose();
+      sceneRef.current = null;
+      cameraRef.current = null;
+      rendererRef.current = null;
+      controlsRef.current = null;
+      raycasterRef.current = null;
     };
+  }, [canvasRef, sceneRef, cameraRef, rendererRef, controlsRef, raycasterRef]);
+
+  useEffect(() => {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+    camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    camera.lookAt(controls.target);
+    controls.update();
+    requestRender();
   }, [
-    canvasRef,
-    sceneRef,
     cameraRef,
-    rendererRef,
     controlsRef,
-    raycasterRef,
-    width,
-    height,
-    cameraPosition,
+    cameraPosition.x,
+    cameraPosition.y,
+    cameraPosition.z,
+    requestRender,
   ]);
+
+  useEffect(() => {
+    const camera = cameraRef.current;
+    const renderer = rendererRef.current;
+    if (!camera || !renderer) return;
+    const resize = (nextWidth: number, nextHeight: number) => {
+      const safeWidth = Math.max(1, nextWidth);
+      const safeHeight = Math.max(1, nextHeight);
+      camera.aspect = safeWidth / safeHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(safeWidth, safeHeight);
+      requestRender();
+    };
+    resize(width, height);
+    const handleResize = () => resize(window.innerWidth - 320, window.innerHeight);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [cameraRef, rendererRef, width, height, requestRender]);
+
+  return requestRender;
 };

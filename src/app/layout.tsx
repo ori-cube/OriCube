@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "destyle.css";
 import "@oricube/design-system/tokens.css";
-import "@radix-ui/themes/styles.css";
-import { Theme } from "@radix-ui/themes";
 import NextAuthProvider from "./_auth";
 import { ChildrenProvider } from "./_children-provider";
 import { Zen_Maru_Gothic } from "next/font/google";
@@ -26,9 +24,7 @@ export default function RootLayout({
       <body>
         <NextAuthProvider>
           <ChildrenProvider>
-            <Theme>
-              <div className={ZenMaruFont.className}>{children}</div>
-            </Theme>
+            <div className={ZenMaruFont.className}>{children}</div>
           </ChildrenProvider>
         </NextAuthProvider>
       </body>

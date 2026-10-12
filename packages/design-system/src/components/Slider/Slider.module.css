@@ -1,0 +1,15 @@
+.slider { width: 100%; min-width: 0; color: var(--text-default); }
+.heading { display: flex; justify-content: space-between; gap: var(--spacing-xs); font-size: 0.875rem; }
+.heading output { font-variant-numeric: tabular-nums; }
+.track { position: relative; height: 2.75rem; touch-action: none; }
+.rail, .fill { position: absolute; top: 50%; height: var(--spacing-xxs); border-radius: var(--border-radius-infinity); transform: translateY(-50%); }
+.rail { width: 100%; background: var(--border-default); }
+.fill { background: var(--background-primary-action-enabled); }
+.thumb { top: 50%; width: 1.25rem; height: 1.25rem; border-radius: var(--border-radius-infinity); background: var(--background-primary-action-enabled); border: var(--border-width-lg) solid var(--background-default); box-shadow: 0 0 0 1px var(--border-default); }
+.thumb[data-focus-visible] { outline: var(--border-width-lg) solid var(--border-bold); outline-offset: 3px; }
+.slider[data-disabled] { opacity: 0.5; }
+@media (forced-colors: active) {
+  .fill, .thumb { background: Highlight; }
+  .rail { background: GrayText; }
+  .thumb[data-focus-visible] { outline-color: Highlight; }
+}

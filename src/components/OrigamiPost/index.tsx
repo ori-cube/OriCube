@@ -77,7 +77,7 @@ export const OrigamiPost = () => {
   const { handleCancelFoldTarget } = useCancelFoldTarget();
 
   // シーンの初期化
-  useInitScene({
+  const requestRender = useInitScene({
     canvasRef,
     sceneRef,
     cameraRef,
@@ -115,6 +115,7 @@ export const OrigamiPost = () => {
   // step2：板を折る対象を決定
   // 板の描画を行う。左右どちらの板を対象にするかを選択できるようにする。
   const { handleDecideFoldTarget } = useDecideTargetBoard({
+    requestRender,
     canvasRef,
     sceneRef,
     cameraRef,
@@ -143,6 +144,7 @@ export const OrigamiPost = () => {
 
   // 回転に応じて板を描画
   useRotateBoards({
+    requestRender,
     sceneRef,
     origamiColor,
     foldBoards,

@@ -33,7 +33,6 @@
     "@aws-sdk/client-s3": "^3.1148.0",
     "@aws-sdk/s3-request-presigner": "^3.1148.0",
     "@oricube/design-system": "workspace:*",
-    "@radix-ui/themes": "^3.1.4",
     "axios": "^1.20.0",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",

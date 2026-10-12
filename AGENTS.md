@@ -1,4 +1,12 @@
-# プロジェクトの依存関係の安全性
+# AGENTS.md
+
+## UI とデザインシステム
+
+- UI の操作部品は React Aria を基本とし、OriCube のデザインで `@oricube/design-system` に実装してから画面で使用する。
+- 必要な部品が不足している場合は、画面から React Aria を直接使用するのではなく、まず design-system を拡充する。
+- Radix への依存は順次 design-system に置き換えて削除する。不要な依存を維持するための回避策を追加するより、不要な使用箇所と依存自体の削除を優先する。
+
+## プロジェクトの依存関係の安全性
 
 - `package.json` の `packageManager` に指定された pnpm を使用する。npm・npx・yarn に切り替えて回避しない。
 - 通常のインストール・CI は `pnpm install --frozen-lockfile` を使用する。依存更新時のロックファイル変更は差分を確認する。

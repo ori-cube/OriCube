@@ -1,3 +1,4 @@
+import { removeObjects } from "@/utils/three/removeObjects";
 /*
 マウス移動時のスナップ処理を行うフック
 - マウスの監視
@@ -115,9 +116,7 @@ export const useMouseMove: UseMouseMove = ({
       }
 
       // 既存のハイライトを削除
-      scene.children = scene.children.filter(
-        (child) => child.name !== "HighlightPoint"
-      );
+      removeObjects(scene, (child) => child.name === "HighlightPoint");
 
       // 新しいハイライトを描画
       if (closestVertex) {

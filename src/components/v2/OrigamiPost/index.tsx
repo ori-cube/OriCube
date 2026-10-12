@@ -229,7 +229,7 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
   }, [foldPhase]);
 
   // シーンの初期化
-  useInitScene({
+  const requestRender = useInitScene({
     canvasRef,
     sceneRef,
     cameraRef,
@@ -274,10 +274,11 @@ export const OrigamiPostV2: React.FC<OrigamiPostV2Props> = ({
     foldPhase,
     pendingFold,
     completeFold,
+    requestRender,
   });
 
   // 折り紙を裏返す視点回転
-  const { flipView, isFlipping } = useFlipView({ cameraRef, controlsRef });
+  const { flipView, isFlipping } = useFlipView({ cameraRef, controlsRef, requestRender });
 
   // ビューモード（確認用の回転視点）
   const { toggleViewMode } = useViewMode({

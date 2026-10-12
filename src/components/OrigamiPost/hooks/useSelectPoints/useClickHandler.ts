@@ -1,3 +1,4 @@
+import { removeObjects } from "@/utils/three/removeObjects";
 /* 
 点の選択処理を行うフック
 - ハイライトされている点を選択点として追加
@@ -66,7 +67,7 @@ export const useClickHandler: UseClickHandler = ({
       }
 
       // 既存のpointを削除する
-      scene.children = scene.children.filter((child) => child.name !== "Point");
+      removeObjects(scene, (child) => child.name === "Point");
       // pointsを描画し直す
       newPoints.forEach((point) => {
         renderSelectedPoint({ scene, point });

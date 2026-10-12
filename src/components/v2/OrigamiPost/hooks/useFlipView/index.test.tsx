@@ -38,9 +38,11 @@ describe("useFlipView", () => {
 
   it("裏返すとカメラがY軸周りに180度回って反対側へ移動する", () => {
     const camera = createCamera();
+    const requestRender = vi.fn();
 
     const { result } = renderHook(() =>
       useFlipView({
+        requestRender,
         cameraRef: { current: camera },
         controlsRef: { current: null },
       })
@@ -57,6 +59,7 @@ describe("useFlipView", () => {
     expect(camera.position.x).toBeCloseTo(0);
     expect(camera.position.y).toBeCloseTo(0);
     expect(camera.position.z).toBeCloseTo(-150);
+    expect(requestRender).toHaveBeenCalledTimes(2);
     expect(result.current.isFlipping).toBe(false);
   });
 
@@ -71,6 +74,7 @@ describe("useFlipView", () => {
 
     const { result } = renderHook(() =>
       useFlipView({
+        requestRender: vi.fn(),
         cameraRef: { current: camera },
         controlsRef: { current: controls },
       })
@@ -92,6 +96,7 @@ describe("useFlipView", () => {
 
     const { result } = renderHook(() =>
       useFlipView({
+        requestRender: vi.fn(),
         cameraRef: { current: camera },
         controlsRef: { current: null },
       })
@@ -116,6 +121,7 @@ describe("useFlipView", () => {
 
     const { result } = renderHook(() =>
       useFlipView({
+        requestRender: vi.fn(),
         cameraRef: { current: camera },
         controlsRef: { current: null },
       })
@@ -141,6 +147,7 @@ describe("useFlipView", () => {
 
     const { result, unmount } = renderHook(() =>
       useFlipView({
+        requestRender: vi.fn(),
         cameraRef: { current: camera },
         controlsRef: { current: null },
       })

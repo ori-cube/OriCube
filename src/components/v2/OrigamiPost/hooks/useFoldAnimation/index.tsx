@@ -21,6 +21,7 @@ const FOLD_DURATION_MS = 800;
 type UseFoldAnimation = (props: {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   controlsRef: React.MutableRefObject<OrbitControls | null>;
+  requestRender: () => void;
   foldPhase: FoldPhase;
   pendingFold: PendingFold | null;
   completeFold: () => void;
@@ -32,7 +33,7 @@ type UseFoldAnimation = (props: {
  * @description
  * - foldPhaseがfoldingに遷移したらアニメーションを開始する
  * - requestAnimationFrameで回転角を0→180度に進める（easeInOutCubic、
- *   描画はuseInitSceneのアニメーションループが毎フレーム行う）
+ *   各フレームの変更時に描画を予約する）
  * - 回転のさせ方は折り操作の種類で異なる:
  *   - 通常の折り: ピボットGroup（board_moving_pivot）を折り線周りに回転
  *   - 開いて畳む: モーフ板（board_squash_moving_*）の頂点座標を、頂点ごとの
@@ -59,6 +60,7 @@ export const useFoldAnimation: UseFoldAnimation = ({
   foldPhase,
   pendingFold,
   completeFold,
+  requestRender,
 }) => {
   useEffect(() => {
     if (foldPhase !== "folding") return;
@@ -81,6 +83,7 @@ export const useFoldAnimation: UseFoldAnimation = ({
     if (controls) controls.enabled = false;
 
     const finishFold = () => {
+      requestRender();
       // 役目を終えた折り線シリンダー（ヒンジ線を含む）を削除
       removeFoldLine(scene);
 
@@ -103,6 +106,7 @@ export const useFoldAnimation: UseFoldAnimation = ({
       const progress = Math.min((time - startTime) / FOLD_DURATION_MS, 1);
       const angle = easeInOutCubic(progress) * targetAngle;
       applyAngle(angle);
+      requestRender();
 
       if (progress < 1) {
         animationFrameId = requestAnimationFrame(animate);
@@ -117,7 +121,7 @@ export const useFoldAnimation: UseFoldAnimation = ({
       cancelAnimationFrame(animationFrameId);
       if (controls) controls.enabled = true;
     };
-  }, [sceneRef, controlsRef, foldPhase, pendingFold, completeFold]);
+  }, [sceneRef, controlsRef, foldPhase, pendingFold, completeFold, requestRender]);
 };
 
 /**

@@ -2,7 +2,9 @@
 
 ## シーンの初期化と描画ループ — useInitScene
 
-シーン・PerspectiveCamera・WebGLRenderer・OrbitControls（回転無効、damping あり）・レイキャスターを生成し、rAF の描画ループを回す。**毎フレームの `renderer.render` はここが一手に引き受ける**ため、アニメーション側（折り・裏返し）はオブジェクトの変換を更新するだけでよい。
+シーン・PerspectiveCamera・WebGLRenderer・OrbitControls（回転無効、damping あり）・レイキャスターを生成する。`createDemandRenderer` が変更時だけ rAF を予約し、静止中は描画を停止する。折り・裏返しのアニメーションは変換を更新した各フレームで、`useInitScene` の返す `requestRender` を呼ぶ。OrbitControls の変更イベントからも描画を予約するため、視点追従と慣性移動は静止するまで描画される。
+
+非表示タブでは描画予約をキャンセルし、表示に戻った時に最新状態を描画する。アンマウント時は描画予約・操作イベントを解除し、シーン内の geometry/material、renderer を破棄する。サイズ・カメラ座標の変更は個別の Effect で反映し、シーンを再作成しない。
 
 ライトは環境光 + 表側からの平行光源に加え、裏返して見たときも同じ明るさになるよう背面側からの平行光源を置く。強度は正面向きの面で「環境光 + 平行光 × cos(入射角) = π」となるよう調整してあり（Lambert の描画色は放射照度/π）、選択した色がほぼそのまま表示される。アニメーション中に傾いた面だけが陰影で暗くなる。
 
@@ -96,7 +98,7 @@ Group の position を折り線上の点に置き、中の板メッシュを逆�
 
 | パス | 役割 |
 | --- | --- |
-| `hooks/useInitScene/index.tsx` | Three.js 初期化・ライト・描画ループ |
+| `hooks/useInitScene/index.tsx` | Three.js 初期化・ライト・必要時の描画予約 |
 | `utils/createBoardMesh/index.ts` | 多角形メッシュ + 枠線の生成 |
 | `hooks/useDragDrop/useRenderBoards.tsx` | idle 時の板群・スナップポイント描画 |
 | `hooks/useDragDrop/commenceFold.ts` | folding 用のシーン差し替え（ピボット Group 構築） |
