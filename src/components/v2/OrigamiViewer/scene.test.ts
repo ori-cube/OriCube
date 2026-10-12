@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createViewerScene } from "./scene";
+import type { FixBoardV2 } from "@/types/model-v2";
 import type { ViewerStep } from "./playback";
 
 const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn() }));
@@ -21,7 +22,7 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 const step: ViewerStep = {
-  kind: "fold", sourceIndex: 0, viewFront: true, label: "折る", fixedBoards: [], settledBoards: [],
+  kind: "fold", sourceIndex: 0, viewFront: true, label: "折る", fixedBoards: [], settledBoards: [], settledFlatBoards: [],
   data: {
     kind: "fold", fixBoards: [], foldLines: [],
     moveBoards: [{ polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]], layer: 0, vertexAxes: [[], [{ origin: [0, 0, 0], direction: [0, 1, 0] }], []] }],
@@ -63,4 +64,23 @@ describe("V2閲覧シーン", () => {
     document.dispatchEvent(new Event("visibilitychange"));
     expect(renderer.render).toHaveBeenCalledTimes(count);
   });
+  it("垂直な羽を平面データで三角形分割し、面と重なり順を維持する", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    const flat: FixBoardV2[] = [{ layer: 2, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }];
+    const posed: FixBoardV2[] = [{ layer: 2, polygon: [[0, 0, 0], [0, 0, -20], [0, 20, 0]] }];
+    scene.setContent(undefined, posed, "#ed7070", true, false, true, flat);
+    scene.setProgress(0);
+    const rendered: unknown = renderer.render.mock.calls.at(-1)?.[0];
+    if (!(rendered instanceof THREE.Scene)) throw new Error("Sceneがありません");
+    const paper = rendered.children.find((child) => child instanceof THREE.Group);
+    const board = paper?.children[0];
+    const mesh = board?.children[0];
+    if (!(mesh instanceof THREE.Mesh)) throw new Error("羽の面がありません");
+    expect(mesh.geometry.index?.count).toBe(3);
+    expect(mesh.geometry.getAttribute("position").getZ(1)).toBe(-20);
+    expect(board?.position.x).toBeCloseTo(0.1);
+    expect(board?.position.z).toBeCloseTo(0);
+    scene.dispose();
+  });
+
 });
