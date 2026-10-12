@@ -1,0 +1,245 @@
+[
+  {
+    "canvas": [
+      0,
+      0,
+      320,
+      900
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      320,
+      900
+    ],
+    "scrollWidth": 320,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      320,
+      900
+    ],
+    "window": [
+      320,
+      900
+    ],
+    "label": "320x900"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      767,
+      961
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      767,
+      961
+    ],
+    "scrollWidth": 767,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      767,
+      961
+    ],
+    "window": [
+      767,
+      961
+    ],
+    "label": "767x961"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      768,
+      961
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      768,
+      961
+    ],
+    "scrollWidth": 768,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      768,
+      961
+    ],
+    "window": [
+      768,
+      961
+    ],
+    "label": "768x961"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      986,
+      961
+    ],
+    "scrollWidth": 986,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "window": [
+      986,
+      961
+    ],
+    "label": "986x961"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      1280,
+      961
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      1280,
+      961
+    ],
+    "scrollWidth": 1280,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      1280,
+      961
+    ],
+    "window": [
+      1280,
+      961
+    ],
+    "label": "1280x961"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      800,
+      200
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      800,
+      200
+    ],
+    "scrollWidth": 800,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      800,
+      200
+    ],
+    "window": [
+      800,
+      200
+    ],
+    "label": "800x200"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      986,
+      961
+    ],
+    "scrollWidth": 986,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "window": [
+      986,
+      961
+    ],
+    "label": "zoom125"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      986,
+      961
+    ],
+    "scrollWidth": 986,
+    "uiScroll": 81,
+    "viewport": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "window": [
+      986,
+      961
+    ],
+    "label": "text200-scroll"
+  },
+  {
+    "canvas": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "headerBackground": "rgba(0, 0, 0, 0)",
+    "logoClickable": true,
+    "pixels": [
+      986,
+      961
+    ],
+    "scrollWidth": 986,
+    "uiScroll": 0,
+    "viewport": [
+      0,
+      0,
+      986,
+      961
+    ],
+    "window": [
+      986,
+      961
+    ],
+    "label": "rtl"
+  }
+]
