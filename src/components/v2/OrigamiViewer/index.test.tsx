@@ -15,6 +15,7 @@ describe("V2閲覧画面", () => {
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
     expect(screen.getByRole("heading", { name: "鶴" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByText("対角線に沿って半分に折ります。")).toBeInTheDocument();
     const slider = screen.getByRole("slider", { name: "進み具合（%）" });
     fireEvent.keyDown(slider, { key: "End" });
@@ -27,9 +28,7 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    const next = screen.getByRole("button", { name: "次へ" });
-    fireEvent.click(next); fireEvent.click(next); fireEvent.click(next);
-    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 4 / 20・裏返して裏側を向ける");
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21・裏返して裏側を向ける");
     expect(screen.getByText("裏返して裏側を向ける")).toBeInTheDocument();
   });
   it("完成形では再生を始めず、折り方へのリンクを表示する", async () => {
