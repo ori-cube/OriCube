@@ -1,0 +1,14 @@
+.panel {
+  padding: var(--spacing-sm);
+  border-radius: calc(var(--border-radius-md) + var(--spacing-sm));
+  background: var(--background-default);
+  color: var(--text-default);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--text-default) 8%, transparent),
+    0 2px 4px color-mix(in srgb, var(--text-default) 6%, transparent),
+    0 8px 24px color-mix(in srgb, var(--text-default) 8%, transparent);
+}
+
+@media (forced-colors: active) {
+  .panel { outline: 1px solid CanvasText; }
+}
