@@ -24,14 +24,14 @@ export function OrigamiViewer({ model, startAtEnd = false }: OrigamiViewerProps)
   const stepName = step ? `ステップ ${playback.index + 1} / ${timeline.steps.length}` : "完成形";
 
   return <main className={styles.viewer} id="origami-viewer">
-    <div className={styles.title}>
-      <div className={styles.titleRow}>
-        <h1>{model.name}</h1>
-        <p className={styles.step} role="status" aria-label="現在のステップ">{stepName}</p>
+    <div className={styles.heading}>
+      <div className={styles.title}>
+        <div className={styles.titleRow}>
+          <h1>{model.name}</h1>
+          <p className={styles.step} role="status" aria-label="現在のステップ">{stepName}</p>
+        </div>
+        <p className={styles.description}>{description}</p>
       </div>
-      <p className={styles.description}>{description}</p>
-    </div>
-    <div className={styles.stage}>
       <div className={styles.viewTools}>
         <div className={styles.views} role="group" aria-label="視点の操作">
           <Button variant="secondary" text="視点をリセット" size="sm" className={styles.toolButton} onClick={() => { setZoom(1); setResetKey((value) => value + 1); }} />
@@ -43,6 +43,8 @@ export function OrigamiViewer({ model, startAtEnd = false }: OrigamiViewerProps)
         </div>
         <p className={styles.hint}>ドラッグまたは矢印キーで回転できます。</p>
       </div>
+    </div>
+    <div className={styles.stage}>
       <OrigamiCanvas
         size={model.procedure.size} color={model.color} step={step} progress={playback.progress}
         flatFinalBoards={model.procedure.finalBoards} finalBoards={timeline.finalBoards} finalViewFront={timeline.finalViewFront}
