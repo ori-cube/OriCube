@@ -4,8 +4,10 @@ import { test } from "node:test";
 import { encode, decode, getToken } from "next-auth/jwt";
 
 const require = createRequire(import.meta.url);
-const fromTailwind = createRequire(require.resolve("tailwindcss/package.json"));
-const fromMicromatch = createRequire(fromTailwind.resolve("micromatch"));
+const fromCommitizen = createRequire(require.resolve("commitizen"));
+const fromFindNodeModules = createRequire(fromCommitizen.resolve("find-node-modules"));
+const fromFindup = createRequire(fromFindNodeModules.resolve("findup-sync"));
+const fromMicromatch = createRequire(fromFindup.resolve("micromatch"));
 const braces = fromMicromatch("braces");
 const secret = "test-only-secret-for-auth-regression";
 
