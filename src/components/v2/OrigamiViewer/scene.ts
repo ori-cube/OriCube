@@ -6,8 +6,6 @@ import { disposeObject3D } from "../OrigamiPost/utils/disposeObject3D";
 import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
 import { getFlatStepBoards, getStepBoards, getViewAngle, type ViewerStep } from "./playback";
 
-export interface ViewerInsets { top: number; bottom: number; }
-
 export type CameraPreset = "front" | "angled";
 const toVector = (point: PointV2) => new THREE.Vector3(...point);
 const polygonNormal = (points: THREE.Vector3[]) => {
@@ -44,7 +42,6 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   let preset: CameraPreset = "front";
   let zoom = 1;
   let distance = size * 2.2;
-  let insets: ViewerInsets = { top: 0, bottom: 0 };
 
   const render = () => { if (!disposed && !document.hidden) renderer.render(scene, camera); };
   const resetCamera = () => {
@@ -58,15 +55,12 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   const resize = () => {
     const width = Math.max(container.clientWidth, 1);
     const height = Math.max(container.clientHeight, 1);
-    const bottom = Math.min(Math.max(insets.bottom, 0), height - 1);
-    const top = Math.min(Math.max(insets.top, 0), height - bottom - 1);
-    const visibleHeight = height - top - bottom;
-    camera.aspect = width / visibleHeight;
+    camera.aspect = width / height;
     distance = size * 2.2 / Math.min(camera.aspect, 1);
     controls.maxDistance = Math.max(size * 8, distance * 2);
     renderer.setSize(width, height, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setViewport(0, bottom, width, visibleHeight);
+    renderer.setViewport(0, 0, width, height);
     resetCamera();
   };
   controls.addEventListener("change", render);
@@ -141,7 +135,6 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
 
   return {
     setContent, setProgress,
-    setInsets: (next: ViewerInsets) => { insets = next; resize(); },
     rotateCamera: (horizontal: number, vertical: number) => {
       const offset = camera.position.clone().sub(controls.target);
       const spherical = new THREE.Spherical().setFromVector3(offset);

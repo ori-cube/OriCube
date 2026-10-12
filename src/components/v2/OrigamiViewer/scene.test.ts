@@ -32,23 +32,17 @@ const step: ViewerStep = {
 };
 
 describe("V2閲覧シーン", () => {
-  it("操作パネルの高さが変わっても紙を上下のパネルの間に描画する", () => {
+  it("上下を切り取らず、ビュー全体を描画範囲とカメラの縦横比に使う", () => {
     const container = document.createElement("div");
-    Object.defineProperties(container, { clientWidth: { value: 986 }, clientHeight: { value: 881 } });
+    Object.defineProperties(container, { clientWidth: { value: 986 }, clientHeight: { value: 961 } });
     const scene = createViewerScene(document.createElement("canvas"), container, 100);
-    scene.setInsets({ top: 120, bottom: 150 });
-    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 150, 986, 611);
-    scene.setInsets({ top: 220, bottom: 250 });
-    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 250, 986, 411);
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 986, 961);
     const camera: unknown = renderer.render.mock.calls.at(-1)?.[1];
     if (!(camera instanceof THREE.PerspectiveCamera)) throw new Error("カメラがありません");
-    expect(camera.aspect).toBeCloseTo(986 / 411);
-    scene.dispose();
-  });
-  it("表示領域が一時的に縮んでも描画範囲を負にしない", () => {
-    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
-    scene.setInsets({ top: 220, bottom: 250 });
-    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 1, 1);
+    expect(camera.aspect).toBeCloseTo(986 / 961);
+    scene.setZoom(1.25);
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 986, 961);
+    expect(camera.zoom).toBe(1.25);
     scene.dispose();
   });
   it("進捗で同じメッシュを更新し、停止中に描画ループを作らない", () => {

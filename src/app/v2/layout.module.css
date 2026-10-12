@@ -2,3 +2,6 @@
 .skip { position: fixed; top: var(--spacing-xs); left: var(--spacing-xs); z-index: 200; transform: translateY(-200%); padding: var(--spacing-xs) var(--spacing-md); background: var(--background-default); color: var(--text-default); }
 .skip:focus { transform: translateY(0); }
 @media (max-width: 767px) { .content { padding-top: 4rem; } }
+
+.shell:has([data-fullscreen]) > :global(header) { background: transparent; box-shadow: none; pointer-events: none; }
+.shell:has([data-fullscreen]) > :global(header) a { pointer-events: auto; }

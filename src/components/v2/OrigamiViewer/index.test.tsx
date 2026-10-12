@@ -15,13 +15,20 @@ const advance = (time: number) => act(() => {
 });
 beforeEach(() => {
   frames.clear(); nextId = 0;
-  vi.stubGlobal("ResizeObserver", class { observe = vi.fn(); disconnect = vi.fn(); });
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++nextId, callback); return nextId; });
   vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
   vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })); });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("V2閲覧画面", () => {
+  it("単独の閲覧はウィンドウ全体、埋め込みはページ内で表示する", async () => {
+    const model = await getOrigamiV2("crane");
+    if (!model) throw new Error("モックがありません");
+    const { rerender } = render(<OrigamiViewer model={model} fullscreen />);
+    expect(screen.getByRole("main")).toHaveAttribute("data-fullscreen");
+    rerender(<OrigamiViewer model={model} />);
+    expect(screen.getByRole("main")).not.toHaveAttribute("data-fullscreen");
+  });
   it("折り方を表示し、ページ送りとスライダーで操作できる", async () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");

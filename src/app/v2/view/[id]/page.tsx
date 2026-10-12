@@ -7,5 +7,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const model = await getOrigamiV2(id);
   if (!model) notFound();
   const startAtEnd = (await searchParams).step === "last";
-  return <OrigamiViewer key={`${model.id}-${startAtEnd}`} model={model} startAtEnd={startAtEnd} />;
+  return <OrigamiViewer key={`${model.id}-${startAtEnd}`} model={model} startAtEnd={startAtEnd} fullscreen />;
 }
