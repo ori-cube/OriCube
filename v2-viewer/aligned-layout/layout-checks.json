@@ -1,0 +1,90 @@
+[
+  {
+    "canvasBottom": 712,
+    "canvasHeight": 471.21875,
+    "canvasTop": 240.78125,
+    "controlX": 16,
+    "controlsRight": 304,
+    "controlsTop": 728,
+    "minButtonHeight": 44,
+    "overflows": 0,
+    "scroll": 320,
+    "titleX": 16,
+    "titleY": 80,
+    "toolsRight": 294.65625,
+    "toolsY": 157.59375,
+    "width": 320
+  },
+  {
+    "canvasBottom": 812,
+    "canvasHeight": 648.8125,
+    "canvasTop": 163.1875,
+    "controlX": 16,
+    "controlsRight": 751,
+    "controlsTop": 828,
+    "minButtonHeight": 44,
+    "overflows": 0,
+    "scroll": 767,
+    "titleX": 16,
+    "titleY": 80,
+    "toolsRight": 751,
+    "toolsY": 80,
+    "width": 767
+  },
+  {
+    "canvasBottom": 756,
+    "canvasHeight": 499.21875,
+    "canvasTop": 256.78125,
+    "controlX": 80,
+    "controlsRight": 688,
+    "controlsTop": 772,
+    "minButtonHeight": 44,
+    "overflows": 0,
+    "scroll": 768,
+    "titleX": 80,
+    "titleY": 96,
+    "toolsRight": 362.65625,
+    "toolsY": 173.59375,
+    "width": 768
+  },
+  {
+    "canvasBottom": 812,
+    "canvasHeight": 632.8125,
+    "canvasTop": 179.1875,
+    "controlX": 80,
+    "controlsRight": 906,
+    "controlsTop": 828,
+    "minButtonHeight": 44,
+    "overflows": 0,
+    "scroll": 986,
+    "titleX": 80,
+    "titleY": 96,
+    "toolsRight": 906,
+    "toolsY": 96,
+    "width": 986
+  },
+  {
+    "canvasBottom": 812,
+    "canvasHeight": 632.8125,
+    "canvasTop": 179.1875,
+    "controlX": 80,
+    "controlsRight": 1200,
+    "controlsTop": 828,
+    "minButtonHeight": 44,
+    "overflows": 0,
+    "scroll": 1280,
+    "titleX": 80,
+    "titleY": 96,
+    "toolsRight": 1200,
+    "toolsY": 96,
+    "width": 1280
+  },
+  {
+    "condition": "200% text",
+    "result": "\"{\\\"scroll\\\":986,\\\"width\\\":986,\\\"canvas\\\":640}\""
+  },
+  {
+    "condition": "RTL",
+    "result": "\"{\\\"scroll\\\":986,\\\"width\\\":986}\""
+  }
+]
