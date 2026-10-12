@@ -19,7 +19,7 @@ const polygonNormal = (points: THREE.Vector3[]) => {
 export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElement, size: number) => {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(35, 1, size / 100, size * 20);
+  const camera = new THREE.PerspectiveCamera(35, 1, size / 10, size * 20);
   const controls = new OrbitControls(camera, canvas);
   controls.enablePan = false;
   controls.minDistance = size * 0.8;

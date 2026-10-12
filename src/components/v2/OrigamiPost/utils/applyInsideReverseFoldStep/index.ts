@@ -49,8 +49,8 @@ export interface InsideReverseFoldStepResult {
  * 4. 最終状態で全ての片のペアの共有折り目が折り畳み空間でも一致すること
  *    （紙が破れないこと）を数値検証する
  * 5. 先端片は通常の折りと違い外側ではなく、点の前半分と後半分の間
- *    （折り筋が反転して差し込まれる位置）へ、半分ごとに重なり順を
- *    逆転して積む。挿入位置は整数レイヤーの隙間の小数レイヤーで表す
+ *    （折り筋が反転して差し込まれる位置）へ、前後の束を入れ替え、それぞれの重なり順を
+ *    逆転して積む。挿入位置は隣接するレイヤーの隙間で表す
  *
  * 既知の制限: 点を前後半分に分ける位置はレイヤー順の中央で近似しており、
  * 挿入後の厳密な貫通判定は行わない（エンジン全体の既知の制限と同じ）
@@ -112,17 +112,22 @@ export const applyInsideReverseFoldStep = (
   }
 
   // 先端片を点の前半分と後半分の間へ、半分ごとに重なり順を逆転して差し込む。
-  // 例: 点のレイヤーが[前半 a,b | 後半 c,d]なら先端片は前からb,a,d,cの順で
-  // aとcの間の小数レイヤーに置く（前半の先端は根元の裏へ、後半の先端は
+  // 例: 点のレイヤーが[前半 a,b | 後半 c,d]なら先端片は前からd,c,b,aの順で
+  // bとcの間に置く（前半の先端は根元の裏へ、後半の先端は
   // 根元の手前へ巻き込まれるため、半分ごとに順序が逆転する）
   const halfIndex = Math.ceil(splits.length / 2);
   const frontHalf = splits.slice(0, halfIndex);
   const backHalf = splits.slice(halfIndex);
   const tipsFrontToBack = [
-    ...frontHalf.slice().reverse(),
     ...backHalf.slice().reverse(),
+    ...frontHalf.slice().reverse(),
   ];
-  const gapTopLayer = splits[halfIndex - 1].target.layer;
+  const gapFrontLayer = splits[halfIndex - 1].target.layer;
+  // 再度の中割りでも、他の板をまたがず実際に隣り合うレイヤー間へ挿入する。
+  const gapBackLayer = boards.reduce((nearest, board) => {
+    const behind = viewFront ? board.layer < gapFrontLayer : board.layer > gapFrontLayer;
+    return behind && Math.abs(board.layer - gapFrontLayer) < Math.abs(nearest - gapFrontLayer) ? board.layer : nearest;
+  }, splits[halfIndex].target.layer);
 
   const staticBoards: LayeredBoard[] = [...otherBoards, ...basePieces];
   const movingBoards: LayeredBoard[] = [];
@@ -131,7 +136,7 @@ export const applyInsideReverseFoldStep = (
   tipsFrontToBack.forEach((split, index) => {
     const splitIndex = splits.indexOf(split);
     const insertedLayer =
-      gapTopLayer - (index + 1) / (tipsFrontToBack.length + 1);
+      gapFrontLayer + (gapBackLayer - gapFrontLayer) * (index + 1) / (tipsFrontToBack.length + 1);
     insertedBoards.push({
       ...movingFinalPieces[splitIndex],
       layer: insertedLayer,
