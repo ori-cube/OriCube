@@ -1,20 +1,30 @@
-.viewer { display: grid; grid-template-rows: auto minmax(18rem, 1fr) auto; min-height: calc(100svh - 5rem); padding: var(--spacing-lg) max(var(--spacing-md), calc((100vw - 80rem) / 2)) var(--spacing-xl); color: var(--text-default); background: var(--background-default); }
-.title { padding-inline: var(--spacing-xxl); z-index: 1; }
-.title h1 { font-size: 2rem; line-height: 1.4; }
-.step { display: inline-block; margin-top: var(--spacing-xs); border-top: var(--border-width-md) solid var(--border-default); padding-top: var(--spacing-xs); font-size: 0.875rem; }
-.description { min-height: 3.4em; margin-top: var(--spacing-xs); line-height: 1.7; overflow-wrap: anywhere; }
-.stage { min-height: 18rem; }
-.bottom { width: min(100%, 34rem); margin-inline: auto; display: grid; gap: var(--spacing-xs); }
-.views { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--spacing-xs); }
-.zoom { display: flex; align-items: center; gap: var(--spacing-xs); }
-.zoomLabel { color: var(--text-subtle); font-size: 0.875rem; }
-.zoomValue { min-width: 4ch; text-align: center; font-variant-numeric: tabular-nums; }
-.hint { text-align: center; color: var(--text-subtle); font-size: 0.75rem; line-height: 1.6; }
-.controls { display: grid; gap: var(--spacing-xs); padding: var(--spacing-md); border: var(--border-width-md) solid var(--border-default); border-radius: var(--border-radius-xl); background: var(--background-default); }
-.playback { display: flex; align-items: center; gap: var(--spacing-md); }
+.viewer { container-type: inline-size; display: grid; grid-template-rows: auto minmax(20rem, 1fr) auto; gap: var(--spacing-md); min-height: calc(100svh - 5rem); padding: var(--spacing-md) max(var(--spacing-md), calc((100vw - 80rem) / 2)); color: var(--text-default); background: var(--background-default); }
+.titleRow { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--spacing-md); }
+.title h1 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
+.step { font-size: 0.875rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+.description { margin-top: var(--spacing-xxs); line-height: 1.6; font-weight: 400; overflow-wrap: anywhere; }
+.stage { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 20rem; }
+.viewTools { display: grid; justify-items: end; gap: var(--spacing-xxs); }
+.views { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: var(--spacing-sm); }
+.toolButton { min-height: 2.75rem; }
+.zoom { display: flex; align-items: center; gap: var(--spacing-xxs); }
+.zoomButton { min-width: 2.75rem; min-height: 2.75rem; padding-inline: 0; }
+.zoomValue { display: flex; align-items: center; gap: var(--spacing-xxs); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.zoomValue span { min-width: 4ch; text-align: end; }
+.hint { color: var(--text-subtle); font-size: 0.75rem; line-height: 1.6; }
+.bottom { min-width: 0; }
+.controls { display: grid; align-items: center; gap: var(--spacing-xs); padding-block: var(--spacing-xs) 0; border-block-start: var(--border-width-md) solid var(--border-default); }
+.controls > label { justify-self: center; }
+.playback { display: flex; align-items: center; gap: var(--spacing-sm); width: min(100%, 32rem); margin-inline: auto; }
 .empty { text-align: center; padding: var(--spacing-md); line-height: 1.7; }
-@media (max-width: 48rem) { .viewer { padding: var(--spacing-md); min-height: calc(100svh - 4rem); grid-template-rows: auto minmax(12rem, 1fr) auto; } .stage { min-height: 12rem; } .title { padding: 0; } .title h1 { font-size: 1.5rem; } .playback { gap: var(--spacing-xs); } }
+@container (min-width: 42rem) {
+  .controls { grid-template-columns: minmax(14rem, 1fr) auto; column-gap: var(--spacing-lg); }
+  .playback { width: 100%; max-width: 32rem; margin: 0; }
+  .controls > nav { width: 23rem; }
+  .controls > label { justify-self: start; }
+  .controls > .hint { grid-column: 1 / -1; }
+}
 @media (max-width: 36rem) {
-  .playback { flex-wrap: wrap; justify-content: space-between; }
-  .playback > :nth-child(2) { order: -1; flex: 1 0 100%; }
+  .viewer { min-height: calc(100svh - 4rem); }
+  .views { gap: var(--spacing-xs); }
 }

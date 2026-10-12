@@ -39,8 +39,8 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21・裏返して裏側を向ける");
-    expect(screen.getByText("裏返して裏側を向ける")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
+    expect(screen.getAllByText("裏返して裏側を向ける")).toHaveLength(1);
   });
   it("完成形は同じ閲覧画面の最終ステップで確認し、前へ戻れる", async () => {
     const model = await getOrigamiV2("crane");
@@ -77,11 +77,11 @@ describe("V2閲覧画面", () => {
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("100%");
     fireEvent.click(screen.getByRole("button", { name: "拡大" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("125%");
-    fireEvent.click(screen.getByRole("button", { name: "斜めから見る" }));
+    expect(screen.queryByRole("button", { name: "斜めから見る" })).not.toBeInTheDocument();
+    expect(screen.queryByText("拡大率")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "視点をリセット" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("100%");
     expect(screen.getByRole("img")).toHaveAttribute("data-zoom", "1");
-    expect(screen.getByRole("img")).toHaveAttribute("data-preset", "front");
     expect(screen.getByRole("img")).toHaveAttribute("data-reset", "1");
   });
   it("手順が空の作品と見つからない作品を区別する", async () => {

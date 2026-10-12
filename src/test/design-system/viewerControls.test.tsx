@@ -73,6 +73,13 @@ describe("閲覧用デザインシステム", () => {
     render(<Pagination page={14} totalPages={14} onChange={vi.fn()} />);
     expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
   });
+  it("横一列のスライダーも操作名とパーセント表示を保ち、キーボードで調整できる", () => {
+    const onChange = vi.fn();
+    render(<Slider label="進み具合" layout="inline" defaultValue={50} minValue={0} maxValue={100} formatOptions={{ style: "unit", unit: "percent" }} onChange={onChange} />);
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("slider", { name: "進み具合" }), { key: "ArrowRight" });
+    expect(onChange).toHaveBeenCalledWith(51);
+  });
   it("スライダーはラベルと現在値を持ち、矢印キーで調整できる", () => {
     const onChange = vi.fn();
     render(<Slider label="進み具合" defaultValue={50} minValue={0} maxValue={100} onChange={onChange} />);
