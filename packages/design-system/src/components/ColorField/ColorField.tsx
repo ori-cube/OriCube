@@ -56,7 +56,7 @@ export function ColorField({
 
   const showFormatError = (inputValue: string) => {
     setErrorMessage(
-      `${label}：「${inputValue}」を色として反映できませんでした。#FF0000（6桁）または#F00（3桁）の形式で入力してください。色は変更していません。`,
+      `${label}：「${inputValue}」を色として反映できませんでした。#FF0000（6桁）または#F00（3桁）の形式で入力してください。`,
     );
   };
 

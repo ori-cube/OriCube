@@ -108,7 +108,7 @@ export const InvalidFormat: Story = {
     await expect(input).toHaveAccessibleDescription(/#FF0000（6桁）.*「#12」/);
     await expect(args.onChange).not.toHaveBeenCalled();
     await userEvent.tab();
-    await expect(canvas.getByRole("status")).toHaveTextContent("色は変更していません。");
+    await expect(canvas.getByRole("status")).toHaveTextContent("折り紙の色：「#12」を色として反映できませんでした。");
   },
 };
 

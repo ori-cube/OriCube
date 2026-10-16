@@ -58,7 +58,7 @@ describe("ColorField", () => {
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByRole("status")).toHaveTextContent("色：「#12」を色として反映できませんでした。");
     expect(screen.getByRole("status")).toHaveTextContent("#FF0000（6桁）または#F00（3桁）");
-    expect(input).toHaveAccessibleDescription(/色は変更していません/);
+    expect(input).toHaveAccessibleDescription(/色：「#12」.*#FF0000（6桁）/);
     expect(input).toBeValid();
   });
 
