@@ -13,3 +13,9 @@
   .rail { background: GrayText; }
   .thumb[data-focus-visible] { outline-color: Highlight; }
 }
+
+.inline { display: flex; align-items: center; gap: var(--spacing-xs); }
+.inline .track { flex: 1; min-width: 0; }
+.inline .heading { order: 1; }
+.inline .heading output { min-width: 4ch; text-align: end; }
+.hiddenLabel { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%); white-space: nowrap; border: 0; }

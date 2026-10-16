@@ -5,12 +5,13 @@ import styles from "./Slider.module.css";
 
 export type SliderProps = Omit<AriaSliderProps<number>, "children" | "className"> & {
   label: string;
+  layout?: "stacked" | "inline";
 };
 
-export function Slider({ label, ...props }: SliderProps) {
+export function Slider({ label, layout = "stacked", ...props }: SliderProps) {
   return (
-    <AriaSlider {...props} className={styles.slider}>
-      <div className={styles.heading}><Label>{label}</Label><SliderOutput /></div>
+    <AriaSlider {...props} className={[styles.slider, layout === "inline" ? styles.inline : undefined].filter(Boolean).join(" ")}>
+      <div className={styles.heading}><Label className={layout === "inline" ? styles.hiddenLabel : undefined}>{label}</Label><SliderOutput /></div>
       <SliderTrack className={styles.track}>
         {({ state }) => <>
           <div className={styles.rail} />

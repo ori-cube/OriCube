@@ -5,13 +5,14 @@ import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
 import type { FixBoardV2 } from "@/types/model-v2";
 import type { ViewerStep } from "./playback";
 
-const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn() }));
+const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn(), setViewport: vi.fn() }));
 vi.mock("three", async (importOriginal) => {
   const actual = await importOriginal<typeof import("three")>();
   return { ...actual, WebGLRenderer: class {
     render = renderer.render;
     dispose = renderer.dispose;
     setSize = renderer.setSize;
+    setViewport = renderer.setViewport;
     setPixelRatio = vi.fn();
   } };
 });
@@ -31,6 +32,19 @@ const step: ViewerStep = {
 };
 
 describe("V2閲覧シーン", () => {
+  it("上下を切り取らず、ビュー全体を描画範囲とカメラの縦横比に使う", () => {
+    const container = document.createElement("div");
+    Object.defineProperties(container, { clientWidth: { value: 986 }, clientHeight: { value: 961 } });
+    const scene = createViewerScene(document.createElement("canvas"), container, 100);
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 986, 961);
+    const camera: unknown = renderer.render.mock.calls.at(-1)?.[1];
+    if (!(camera instanceof THREE.PerspectiveCamera)) throw new Error("カメラがありません");
+    expect(camera.aspect).toBeCloseTo(986 / 961);
+    scene.setZoom(1.25);
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 986, 961);
+    expect(camera.zoom).toBe(1.25);
+    scene.dispose();
+  });
   it("進捗で同じメッシュを更新し、停止中に描画ループを作らない", () => {
     const raf = vi.spyOn(globalThis, "requestAnimationFrame");
     const canvas = document.createElement("canvas");
