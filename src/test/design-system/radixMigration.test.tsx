@@ -47,7 +47,7 @@ describe("Radix から共通部品への移行", () => {
     const onChange = vi.fn();
     render(<FoldStepSegmentedControl procedureLength={4} currentStep={1} handleChangeStep={onChange} />);
     expect(screen.getByRole("button", { name: "ステップ 1" })).toHaveAttribute("aria-current", "step");
-    fireEvent.click(screen.getByRole("button", { name: "ステップ 4" }));
+    fireEvent.click(screen.getByRole("button", { name: "最後へ" }));
     expect(onChange).toHaveBeenLastCalledWith(4);
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(onChange).toHaveBeenLastCalledWith(2);

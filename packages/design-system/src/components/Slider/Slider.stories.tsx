@@ -13,3 +13,5 @@ export const Default: Story = { play: async ({ canvasElement, args }) => {
 } };
 export const Halfway: Story = { args: { defaultValue: 50 } };
 export const Disabled: Story = { args: { isDisabled: true } };
+
+export const Inline: Story = { args: { layout: "inline", formatOptions: { style: "unit", unit: "percent" } } };

@@ -60,6 +60,7 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
     controls.maxDistance = Math.max(size * 8, distance * 2);
     renderer.setSize(width, height, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setViewport(0, 0, width, height);
     resetCamera();
   };
   controls.addEventListener("change", render);
