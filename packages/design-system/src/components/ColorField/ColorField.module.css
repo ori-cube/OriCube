@@ -29,3 +29,8 @@
   min-width: 0;
   width: 8rem;
 }
+
+.error {
+  margin-top: var(--spacing-xs);
+  overflow-wrap: anywhere;
+}

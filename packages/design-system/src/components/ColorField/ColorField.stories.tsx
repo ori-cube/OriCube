@@ -95,6 +95,46 @@ export const WithDescription: Story = {
   },
 };
 
+export const InvalidFormat: Story = {
+  args: { description: "例：#FF0000（6桁）、#F00（3桁）。" },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole("textbox", { name: "折り紙の色" });
+    await userEvent.clear(input);
+    await userEvent.type(input, "#12");
+    await userEvent.keyboard("{Enter}");
+    await expect(input).toHaveValue("#4A90E2");
+    await expect(canvas.getByRole("status")).toHaveTextContent("折り紙の色：「#12」を色として反映できませんでした。");
+    await expect(input).toHaveAccessibleDescription(/#FF0000（6桁）.*「#12」/);
+    await expect(args.onChange).not.toHaveBeenCalled();
+    await userEvent.tab();
+    await expect(canvas.getByRole("status")).toHaveTextContent("色は変更していません。");
+  },
+};
+
+export const CorrectInvalidFormat: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole("textbox", { name: "折り紙の色" });
+    await userEvent.clear(input);
+    await userEvent.paste("not-a-color");
+    await expect(canvas.getByRole("status")).toHaveTextContent("「not-a-color」");
+    await userEvent.type(input, "#0f0");
+    await userEvent.tab();
+    await expect(input).toHaveValue("#00FF00");
+    await expect(args.onChange).toHaveBeenLastCalledWith("#00FF00");
+    await expect(canvas.getByRole("status")).toBeEmptyDOMElement();
+    await userEvent.clear(input);
+    await userEvent.type(input, "#12");
+    await userEvent.tab();
+    await expect(canvas.getByRole("status")).toHaveTextContent("「#12」");
+    await userEvent.clear(input);
+    await userEvent.tab();
+    await expect(args.onChange).toHaveBeenLastCalledWith(null);
+    await expect(canvas.getByRole("status")).toBeEmptyDOMElement();
+  },
+};
+
 export const Disabled: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {
