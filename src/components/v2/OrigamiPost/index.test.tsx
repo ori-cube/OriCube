@@ -30,12 +30,25 @@ describe("OrigamiPostV2", () => {
 
   it("カラーピッカーで折り紙の色を変更できること", () => {
     render(<OrigamiPostV2 defaultOrigamiColor="#4a90e2" />);
-    const picker = screen.getByLabelText<HTMLInputElement>("折り紙の色");
+    const picker = screen.getByLabelText<HTMLInputElement>("折り紙の色を選択");
 
     expect(picker.value).toBe("#4a90e2");
 
     fireEvent.change(picker, { target: { value: "#ff0000" } });
 
     expect(picker.value).toBe("#ff0000");
+  });
+
+  it("コード入力で色を変更でき、空にしても直前の折り紙の色を保持すること", () => {
+    render(<OrigamiPostV2 defaultOrigamiColor="#4a90e2" />);
+    const input = screen.getByRole("textbox", { name: "折り紙の色" });
+    fireEvent.change(input, { target: { value: "#00ff00" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+    expect(screen.getByLabelText("折り紙の色を選択")).toHaveValue("#00ff00");
+
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+    expect(input).toHaveValue("#00FF00");
+    expect(screen.getByLabelText("折り紙の色を選択")).toHaveValue("#00ff00");
   });
 });

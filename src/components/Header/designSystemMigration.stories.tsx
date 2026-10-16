@@ -27,7 +27,7 @@ function MigrationExample() {
     <HeaderPresenter enableSearch origamiData={models} />
     <main style={{ maxWidth: 760, margin: "100px auto 32px", padding: "0 16px", display: "grid", gap: 24 }}>
       <SearchResults />
-      <NameAndColorControlPanel name={name} handleNameChange={setName} color={color} handleColorChange={event => setColor(event.target.value)} />
+      <NameAndColorControlPanel name={name} handleNameChange={setName} color={color} handleColorChange={value => { if (value !== null) setColor(value); }} />
       <FoldMethodSelectPanel handlePrevStep={fn()} handleNextStep={fn()} handleFoldFrontSide={() => setFront(true)} handleFoldBackSide={() => setFront(false)} foldAngle={angle} handleFoldAngleChange={setAngle} totalNumber={1} currentNumber={1} isFoldFrontSide={front} handleRegisterOrigami={fn()} origamiDescription={description} handleOrigamiDescriptionChange={setDescription} />
       <FoldStepSegmentedControl procedureLength={8} currentStep={step} handleChangeStep={setStep} />
     </main>

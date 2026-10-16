@@ -178,10 +178,8 @@ export function OrigamiPostV2({
   // 折り紙の表面の色（ユーザーがカラーピッカーで変更できる）
   const [origamiColor, setOrigamiColor] = useState(defaultOrigamiColor);
 
-  const handleOrigamiColorChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setOrigamiColor(e.target.value);
+  const handleOrigamiColorChange = (color: string | null) => {
+    if (color !== null) setOrigamiColor(color);
   };
 
   // 折り手順の履歴（唯一の状態源。Undo/Redoは適用済みステップ数の操作）

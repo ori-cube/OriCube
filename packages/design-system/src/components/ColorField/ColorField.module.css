@@ -1,0 +1,36 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.picker {
+  box-sizing: border-box;
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: var(--spacing-xxs);
+  border: var(--border-width-md) solid var(--border-default);
+  border-radius: var(--border-radius-md);
+  background: var(--background-default);
+  cursor: pointer;
+}
+
+.picker:disabled {
+  background: var(--background-subtle);
+  cursor: not-allowed;
+}
+
+.input {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  width: 8rem;
+}
+
+.error {
+  margin-top: var(--spacing-xs);
+  overflow-wrap: anywhere;
+}

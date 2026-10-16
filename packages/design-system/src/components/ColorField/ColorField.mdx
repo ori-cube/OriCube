@@ -1,0 +1,77 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as ColorFieldStories from "./ColorField.stories";
+
+<Meta of={ColorFieldStories} />
+
+# ColorField
+
+色見本と16進コードから色を選択できる入力欄です。ラベルとサポートテキストを1つのコンポーネントにまとめており、[react-aria-components](https://react-spectrum.adobe.com/react-aria/ColorField.html) をベースに、ラベルとの関連付け・キーボード操作を提供しています。
+
+<Canvas of={ColorFieldStories.Default} />
+
+<Controls include={["label", "description", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "name"]} />
+
+## 使用原則
+
+### ラベル
+
+- **何の色を変更するのかが伝わるラベル**を `label` に指定します。「折り紙の色」「背景色」のように、変更対象を明示してください。
+- **色は初期値を用意し、後から編集できるようにします**。初期値を省略した場合は黒（`#000000`）になります。
+
+### サポートテキスト（description）
+
+<Canvas of={ColorFieldStories.WithDescription} />
+
+- **入力方法は description で説明**します。プレースホルダーで説明してはいけません。
+- サポートテキストは**ラベルと入力欄の間**に表示されます。入力中・入力後も説明を確認できます。
+- プレースホルダーは入力例「例：#ff0000」の表示に使用します。入力を始めると消えるため、ラベルやサポートテキストの代わりには使用しません。
+
+### 色見本とコード入力
+
+<Canvas of={ColorFieldStories.Controlled} />
+
+- **色見本とコード入力は併せて表示**します。見本から選ぶ操作と、正確な色コードを入力・確認する操作の両方を提供するためです。
+- 色見本から選択すると、選択した色をコード入力にも反映します。コード入力は**Enter、または入力欄からフォーカスを移したときに確定**します。
+- 確定したコードは大文字の6桁に整えます。例えば `#f00` は `#FF0000` になります。
+- 扱う色は**不透明なRGB色**です。透明度や色チャンネルごとの編集は提供しません。
+
+### 入力形式のエラー
+
+<Canvas of={ColorFieldStories.InvalidFormat} story={{ autoplay: true }} />
+
+- **形式が正しくないコードを確定した場合は、エラーと修正方法を文章で伝えます**。例えば `#12` と入力してEnterを押すと、対象の入力欄、反映できなかったコード、正しい形式の入力例を表示します。
+- コード入力は直前の確定値に戻り、`onChange` は呼ばれません。色コード以外の文字列を貼り付けた場合も、反映せずにエラーを表示します。
+- メッセージは両方の入力に関連付け、ライブリージョンで通知します。自動で元に戻した値は正しいため、入力欄を無効な値として扱い続けません。
+- コードを編集するか色見本から選択するとメッセージを消します。**空入力はエラーにせず、必須入力やフォーム送信の制限も設けません**。
+
+### 値と空入力の扱い
+
+- 初期値だけを指定する場合は `defaultValue`、アプリケーションで値を管理する場合は `value` と `onChange` を使用します。
+- `onChange` は確定した色を `#RRGGBB` 形式の文字列で返します。入力を空にして確定した場合は `null` を返します。
+- 折り紙の描画など、**常に色が必要な画面では、null を状態に反映せず直前の色を保持**します。空入力を許可するかどうかは、色を使用する機能に合わせて決めてください。
+
+### スクリーンリーダーへの関連付け
+
+- コード入力には `label` の文言、色選択には「ラベルの文言＋を選択」というアクセシブルな名前が付きます。
+- `description` は、両方の入力に `aria-describedby` で関連付けます。実際の読み上げ方はブラウザーやスクリーンリーダーによって異なります。
+
+### 無効状態と読み取り専用
+
+<Canvas of={ColorFieldStories.Disabled} />
+
+- **操作を受け付けない状態には isDisabled** を指定します。色選択とコード入力の両方が無効になります。
+
+<Canvas of={ColorFieldStories.ReadOnly} />
+
+- **値の確認・コピーを許可し、変更だけを禁止する場合は isReadOnly** を指定します。色選択は無効になり、コード入力はフォーカスして選択・コピーできる読み取り専用の状態になります。
+
+### フォーム送信
+
+- フォームで送信する入力欄には `name` を指定します。コード入力の値が指定した名前で送信されます。
+- 色見本の入力には `name` を付けていないため、同じ色を二重に送信しません。
+
+## 関連するWCAG 2.2
+
+- [3.3.1 エラーの特定（レベルA）](https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html)：検出した入力エラーを文章で説明します。値を自動で戻す場合も、対象の入力欄と反映できなかったコードを通知します。
+- [3.3.3 エラー修正の提案（レベルAA）](https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html)：修正方法が分かるよう、正しい形式の入力例をエラー文に含めます。
+- [4.1.3 ステータスメッセージ（レベルAA）](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html)：フォーカスを移さず通知を伝えられるよう、常設の `role="status"` のライブリージョンにエラー文を表示します。

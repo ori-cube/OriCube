@@ -1,15 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 type UseOrigamiColor = () => {
   origamiColor: string;
-  handleOrigamiColorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleOrigamiColorChange: (color: string | null) => void;
 };
 
 export const useOrigamiColor: UseOrigamiColor = () => {
   const [origamiColor, setOrigamiColor] = useState("#ff0000");
 
-  const handleOrigamiColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOrigamiColor(e.target.value);
+  const handleOrigamiColorChange = (color: string | null) => {
+    if (color !== null) setOrigamiColor(color);
   };
 
   return {

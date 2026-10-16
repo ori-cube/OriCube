@@ -15,6 +15,10 @@ it("復元した手順をUndo/Redoし、確定済みの履歴と色を外へ通�
   expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [] }));
   fireEvent.click(screen.getByRole("button", { name: "やり直す" }));
   expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step] }));
-  fireEvent.change(screen.getByLabelText("折り紙の色"), { target: { value: "#44aabb" } });
-  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step], color: "#44aabb" }));
+  const colorInput = screen.getByRole("textbox", { name: "折り紙の色" });
+  changed.mockClear();
+  fireEvent.change(colorInput, { target: { value: "#44aabb" } });
+  expect(changed).not.toHaveBeenCalled();
+  fireEvent.blur(colorInput);
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step], color: "#44AABB" }));
 });

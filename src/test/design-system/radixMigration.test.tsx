@@ -28,8 +28,8 @@ describe("Radix から共通部品への移行", () => {
     render(<NameAndColorControlPanel name="" color="#ff0000" handleNameChange={onName} handleColorChange={onColor} />);
     fireEvent.change(screen.getByRole("textbox", { name: "名前" }), { target: { value: "つる" } });
     expect(onName).toHaveBeenCalledWith("つる");
-    fireEvent.change(screen.getByLabelText("色"), { target: { value: "#0000ff" } });
-    expect(onColor).toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("色を選択"), { target: { value: "#0000ff" } });
+    expect(onColor).toHaveBeenCalledWith("#0000FF");
   });
   it("折る角度・説明・登録の操作を既存処理へ渡す", () => {
     const onAngle = vi.fn();
