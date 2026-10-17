@@ -16,6 +16,7 @@ export default defineConfig({
       "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
       "packages/engine/src/**/*.{test,spec}.ts",
       "apps/web/src/**/*.{test,spec}.{ts,tsx}",
+      "apps/api/src/**/*.{test,spec}.ts",
     ],
     exclude: ["node_modules", "dist", ".storybook"],
     coverage: {

@@ -8,6 +8,7 @@
 export * from "./model-v2";
 export * from "./types";
 export * from "./playback";
+export * from "./validateProcedureV2";
 export * from "./utils/applyFoldStep";
 export * from "./utils/applyInsideReverseFoldStep";
 export * from "./utils/applyPetalFoldStep";

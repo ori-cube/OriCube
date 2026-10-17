@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { RouterProvider, createMemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
+import type { AppType } from "@oricube/api";
 import type { OrigamiViewerProps } from "@/components/v2/OrigamiViewer";
 import { createQueryClient } from "./queryClient";
 import { routes } from "./routes";
@@ -12,6 +13,11 @@ vi.mock("@/components/v2/OrigamiViewer", () => ({
   },
 }));
 vi.mock("@/features/origami-viewer-v2/MockWorkshop", () => ({ MockWorkshop: () => <main aria-label="作成" /> }));
+// 画面からAPIまでを通して確かめるため、RPCクライアントの通信先をHonoアプリに直接つなぐ
+vi.mock("./apiClient", async (original) => {
+  const [{ app }, { hc }] = await Promise.all([import("@oricube/api"), import("hono/client")]);
+  return { ...await original<typeof import("./apiClient")>(), apiClient: hc<AppType>("http://localhost", { fetch: (input: RequestInfo | URL, init?: RequestInit) => app.request(input, init) }) };
+});
 
 const renderAt = (path: string) => {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
