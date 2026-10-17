@@ -11,6 +11,8 @@
     "dev:web": "pnpm --filter @oricube/web dev",
     "build:web": "pnpm --filter @oricube/web build",
     "dev:api": "pnpm --filter @oricube/api dev",
+    "build:app": "pnpm --filter @oricube/web build && pnpm --filter @oricube/api build",
+    "start:app": "pnpm --filter @oricube/api start",
     "prod": "dotenv -e .env.production -- next dev",
     "build": "next build",
     "start": "next start",
