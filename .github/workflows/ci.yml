@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # packageManager を見て pnpm のキャッシュを自動で使おうとするが、この時点では pnpm がまだ無い
+          package-manager-cache: false
 
       # package.json の packageManager に指定された pnpm を使う（AGENTS.md）
       - name: Enable pnpm
