@@ -1,12 +1,29 @@
-.workshop { max-width: 80rem; margin: 0 auto; padding: var(--spacing-lg); color: var(--text-default); }
-.workshop h1 { margin-bottom: var(--spacing-md); font-size: 1.5rem; }
-.workshop p { margin-block: var(--spacing-sm); line-height: 1.6; }
-.workshop > div > [data-rac], .workshop > [data-rac] { max-width: 24rem; }
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-sm); margin-block: var(--spacing-md); }
-.workshop > main { --viewer-gutter: 0px; min-height: 40rem; }
-.stage { width: 100%; min-width: 0; margin-top: var(--spacing-md); }
-@media (max-width: 40rem) {
-  .workshop { padding: var(--spacing-md); }
-  .stage [role="toolbar"] { flex-direction: row; }
-  .stage > div > label { top: 5rem; }
+/* 閲覧画面（OrigamiViewer の全画面表示）と同じ構成。上に見出しと引き出し、全面に作業台のキャンバス、下端に操作帯 */
+.workshop { --editor-gutter: calc(var(--spacing-xxl) + var(--spacing-md)); position: fixed; inset: 0; isolation: isolate; display: flex; flex-direction: column; padding: calc(5rem + var(--spacing-md)) var(--editor-gutter) var(--spacing-md); color: var(--text-default); background: var(--background-subtle); }
+.top { position: relative; z-index: 1; pointer-events: none; }
+.top > * { pointer-events: auto; }
+.heading { display: grid; gap: var(--spacing-xxs); max-width: 32rem; padding-inline-end: var(--spacing-xxl); }
+.title { font-size: 0.875rem; font-weight: 600; line-height: 1.5; color: var(--text-subtle); overflow-wrap: anywhere; }
+.step { font-size: 0.75rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+.description { font-size: 1.25rem; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; text-shadow: 0 0 6px var(--background-subtle), 0 0 2px var(--background-subtle); }
+.alert { color: var(--text-danger); font-size: 0.875rem; line-height: 1.6; }
+.stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.loading { display: grid; height: 100%; place-content: center; }
+/* 余白を打ち消して画面の右端に接する。開いても見出しの配置は動かさない */
+.sidePanel { position: absolute; top: calc(-1 * var(--spacing-sm)); inset-inline-end: calc(-1 * var(--editor-gutter)); }
+.section { display: grid; gap: var(--spacing-xs); padding-block-start: var(--spacing-sm); border-block-start: 1px solid color-mix(in srgb, var(--text-default) 12%, transparent); }
+.sectionTitle { font-size: 0.875rem; font-weight: 600; line-height: 1.5; }
+.hint { color: var(--text-subtle); font-size: 0.75rem; line-height: 1.6; }
+
+.preview { display: flex; flex-direction: column; height: calc(100dvh - 5rem); }
+.previewBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--spacing-xs) var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); border-block-end: 1px solid color-mix(in srgb, var(--text-default) 12%, transparent); background: var(--background-subtle); }
+.previewNote { display: grid; gap: var(--spacing-xxs); }
+.previewActions { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); }
+.preview > main { flex: 1; min-height: 0; }
+
+@media (max-width: 767px) {
+  .workshop { --editor-gutter: var(--spacing-md); padding-top: calc(4rem + var(--spacing-md)); }
+  .description { font-size: 1.0625rem; }
+  .preview { height: calc(100dvh - 4rem); }
+  .previewBar { padding-inline: var(--spacing-md); }
 }

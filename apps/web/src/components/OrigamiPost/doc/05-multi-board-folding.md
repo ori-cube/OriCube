@@ -53,7 +53,7 @@ mouseup
 ## 折り方選択（selecting フェーズ）
 
 - 折り線は**全候補を覆うスパン**でプレビュー表示する（何枚選んでも折り線の位置関係が視覚的に分かるように）
-- `FoldCountSelector` がキャンバス下部にカードを表示。成立しない枚数のボタンは無効化され、デフォルトは選択できる最小の枚数（枚数が選べない場合は「開いて畳む」）。開いて畳むが成立する場合（`FoldProposal.squashAvailable`）は枚数に加えて「開いて畳む」の選択肢を表示する
+- `FoldCountSelector` がキャンバス下端の操作帯にパネルを表示（紙と折り線を覆わないよう横長に並べ、元に戻す・やり直すは隠す）。重なりがなく1枚しか折れない場合は枚数を出さず角度だけを選ぶ。成立しない枚数は無効化され、デフォルトは選択できる最小の枚数（枚数が選べない場合は「開いて畳む」）。開いて畳むが成立する場合（`FoldProposal.squashAvailable`）は枚数に加えて「開いて畳む」の選択肢を表示する
 - 「折る」→ `confirmFold(choice)`（`useDragDrop`、`choice` は枚数または `"squash"`）が `commenceFold` / `commenceSquashFold` を呼んで folding へ
 - 「キャンセル」→ `cancelFold()` が折り線を消して idle へ
 - selecting 中はドラッグ&ドロップと Undo/Redo は無効
@@ -70,4 +70,4 @@ mouseup
 | `hooks/useDragDrop/commenceFold.ts` | 通常の折りの確定処理（両フロー共通） |
 | `hooks/useDragDrop/commenceSquashFold.ts` | 開いて畳むの確定処理 |
 | `hooks/useDragDrop/index.tsx` | `confirmFold` / `cancelFold` |
-| `FoldCountSelector/index.tsx` | 折り方（枚数・開いて畳む）選択カード UI |
+| `FoldCountSelector/index.tsx` | 折り方（枚数・開いて畳む）選択パネル UI |
