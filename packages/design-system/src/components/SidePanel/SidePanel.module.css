@@ -1,0 +1,53 @@
+/*
+ * 画面の右端（inline-end）に接して置く引き出し。開閉ボタンはパネルの左側に付いたタブで、
+ * パネルの幅が広がるのに合わせて画面の端から一緒に出入りする。
+ * React Aria が --disclosure-panel-width を設定し、トランジションの終了後に hidden を付ける。
+ */
+.sidePanel {
+  --side-panel-border: color-mix(in srgb, var(--text-default) 12%, transparent);
+  --side-panel-radius: calc(var(--border-radius-md) + var(--spacing-xs));
+  --side-panel-duration: 240ms;
+  display: flex;
+  align-items: flex-start;
+  max-width: 100%;
+  color: var(--text-default);
+}
+.tab {
+  position: relative;
+  z-index: 1;
+  margin-block-start: var(--spacing-sm);
+  border-color: var(--side-panel-border);
+  border-inline-end-width: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+  background: var(--background-default);
+  box-shadow: -2px 2px 8px color-mix(in srgb, var(--text-default) 6%, transparent);
+}
+.tab svg { transition: transform var(--side-panel-duration) ease; }
+.sidePanel[data-expanded] .tab svg { transform: rotate(180deg); }
+.panel {
+  width: var(--disclosure-panel-width, 0px);
+  max-width: calc(100vw - 3.5rem);
+  overflow: hidden;
+  opacity: 0;
+  transition: width var(--side-panel-duration) ease, opacity var(--side-panel-duration) ease;
+}
+.sidePanel[data-expanded] .panel { width: var(--disclosure-panel-width, auto); opacity: 1; }
+.sheet {
+  display: grid;
+  gap: var(--spacing-sm);
+  width: 18rem;
+  max-width: calc(100vw - 3.5rem);
+  padding: var(--spacing-md);
+  border: 1px solid var(--side-panel-border);
+  border-inline-end-width: 0;
+  border-start-start-radius: var(--side-panel-radius);
+  border-end-start-radius: var(--side-panel-radius);
+  background: var(--background-default);
+  box-shadow: -4px 4px 16px color-mix(in srgb, var(--text-default) 8%, transparent);
+}
+.title { font-size: 0.875rem; font-weight: 600; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) {
+  .panel, .tab svg { transition: none; }
+}
+@media (forced-colors: active) { .sheet { border-color: CanvasText; } }
