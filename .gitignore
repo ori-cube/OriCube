@@ -56,3 +56,7 @@ storybook-static
 
 # vite
 /apps/*/dist
+
+# wrangler
+.wrangler/
+/.wrangler-dry-run/

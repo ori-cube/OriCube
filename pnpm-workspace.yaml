@@ -6,8 +6,10 @@ allowBuilds:
   "@prisma/client@6.9.0": true
   "@prisma/engines@6.9.0": true
   "esbuild@0.28.1": false
+  "esbuild@0.28.2": false
   "prisma@6.9.0": true
   "unrs-resolver@1.12.2": false
+  "workerd@1.20261012.1": false
 blockExoticSubdeps: true
 minimumReleaseAge: 1440
 overrides:

@@ -9,7 +9,20 @@ pnpm dev:api   # http://localhost:8787/api
 pnpm dev:web   # http://localhost:5173 （/api を上のAPIへproxy）
 ```
 
-## 本番相当の起動（Node.js）
+## Cloudflare Workers
+
+本番は Cloudflare Workers で動かす（#100）。設定は `wrangler.jsonc`、入口は `src/worker.ts`。
+
+```sh
+pnpm dev:worker      # 画面をビルドして wrangler dev（workerd）で起動
+pnpm deploy:worker   # 画面をビルドして wrangler deploy（Cloudflare のログインが必要）
+```
+
+- `/assets/*` は Worker を通さずに静的配信し、それ以外（API・作品ページのOGP・404）は Worker が返す（`run_worker_first`）。
+- `index.html` は `ASSETS` バインディングから読み、isolate ごとに1回だけアプリを組み立てる。
+- `APP_ORIGIN` は Cloudflare の環境変数（`vars`）で設定する。
+
+## Node.js での起動
 
 ```sh
 pnpm build:app   # apps/web/dist と apps/api/dist/index.js を作る
@@ -34,5 +47,5 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 - APIのエラーは `{ "error": { "code", "message" } }` の形で返す（`invalid_request` 400・`not_found` 404・`payload_too_large` 413・`internal_error` 500）。
 - フロントは `AppType` を type-only import し、`hono/client` で呼ぶ。
-- ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。Node.js固有なのは `src/index.ts`（起動と静的ファイル）だけで、ホスティング先が決まったらその環境向けの入口を追加する。
+- ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。実行環境ごとの入口は `src/worker.ts`（Cloudflare Workers）と `src/index.ts`（Node.js。CIのスモークテストで使う）。
 - 作品の取得元は保存契約が決まるまでモック（`src/mocks/models.ts`）。認証・投稿・画像保存は、認証サービスとホスティングを決めてから追加する。og:image は作品のサムネイル保存ができるまでロゴを使う。

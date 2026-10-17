@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "oricube",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // 画面のビルド結果（pnpm build:web）。/assets/* は Worker を通さずに静的配信し、
+  // それ以外（API・作品ページのOGP・404）は Worker で返す
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/*", "!/assets/*"]
+  },
+  "observability": { "enabled": true }
+}
