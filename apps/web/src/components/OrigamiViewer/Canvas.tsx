@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { FixBoardV2, ViewerStep } from "@oricube/engine";
-import { createViewerScene, type CameraPreset } from "./scene";
+import { createViewerScene, type CameraPreset, type CaptureOptions } from "./scene";
 import styles from "./Canvas.module.css";
 
 export interface OrigamiCanvasProps {
@@ -19,11 +19,20 @@ export interface OrigamiCanvasProps {
   label: string;
 }
 
-export function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFinalBoards = finalBoards, finalViewFront, cameraPreset = "front", resetKey = 0, zoom = 1, label }: OrigamiCanvasProps) {
+/** 親から呼べる操作。サムネイルの撮影に使う */
+export interface OrigamiCanvasHandle {
+  /** 今の視点で、ビュー中央の正方形と同じ範囲を画像にする。3D表示が使えなければ失敗する */
+  capture(options: CaptureOptions): Promise<Blob>;
+}
+
+export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFinalBoards = finalBoards, finalViewFront, cameraPreset = "front", resetKey = 0, zoom = 1, label }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ReturnType<typeof createViewerScene>>();
   const [failed, setFailed] = useState(false);
+  useImperativeHandle(ref, () => ({
+    capture: (options) => sceneRef.current && !failed ? sceneRef.current.capture(options) : Promise.reject(new Error("3D表示を読み込めていません")),
+  }), [failed]);
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -54,4 +63,4 @@ export function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFi
     }} />
     {failed && <p className={styles.error} role="alert">3D表示を読み込めませんでした。「視点をリセット」で再試行してください。</p>}
   </div>;
-}
+});

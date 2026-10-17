@@ -12,6 +12,14 @@ import { disposeObject3D } from "../OrigamiPost/utils/disposeObject3D";
 import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
 
 export type CameraPreset = "front" | "angled";
+
+export interface CaptureOptions {
+  /** 出力する正方形の一辺（px） */
+  size: number;
+  /** 背景色。OGPなど透過を扱えない表示先があるため塗りつぶす */
+  background: string;
+  type?: "image/png" | "image/webp";
+}
 const toVector = (point: PointV2) => new THREE.Vector3(...point);
 const polygonNormal = (points: THREE.Vector3[]) => {
   for (let index = 1; index < points.length - 1; index++) {
@@ -57,17 +65,52 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
     controls.update();
     render();
   };
-  const resize = () => {
-    const width = Math.max(container.clientWidth, 1);
-    const height = Math.max(container.clientHeight, 1);
+  const viewSize = () => ({ width: Math.max(container.clientWidth, 1), height: Math.max(container.clientHeight, 1) });
+  const applyViewSize = () => {
+    const { width, height } = viewSize();
     camera.aspect = width / height;
-    distance = size * 2.2 / Math.min(camera.aspect, 1);
-    controls.maxDistance = Math.max(size * 8, distance * 2);
+    camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setViewport(0, 0, width, height);
+  };
+  const resize = () => {
+    applyViewSize();
+    distance = size * 2.2 / Math.min(camera.aspect, 1);
+    controls.maxDistance = Math.max(size * 8, distance * 2);
     resetCamera();
   };
+  /**
+   * 今の視点のまま、ビュー中央の正方形（短い辺に合わせた枠）と同じ範囲を正方形の画像にする
+   *
+   * @description
+   * 縦長のビューでは縦の視野角を枠の幅に合わせて狭める。描画した直後に同じタスクで画像にするため、
+   * preserveDrawingBuffer なしでも描画結果を読める。終わったら表示の大きさと背景を戻す
+   */
+  const capture = ({ size: output, background, type = "image/png" }: CaptureOptions) => new Promise<Blob>((resolve, reject) => {
+    const { width, height } = viewSize();
+    const fov = camera.fov;
+    const clearColor = renderer.getClearColor(new THREE.Color());
+    const clearAlpha = renderer.getClearAlpha();
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(fov) / 2) * Math.min(width, height) / height));
+    camera.aspect = 1;
+    camera.updateProjectionMatrix();
+    renderer.setClearColor(background, 1);
+    renderer.setPixelRatio(1);
+    renderer.setSize(output, output, false);
+    renderer.setViewport(0, 0, output, output);
+    try {
+      renderer.render(scene, camera);
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("サムネイルを作れませんでした")), type);
+    } catch (error) {
+      reject(error);
+    } finally {
+      camera.fov = fov;
+      renderer.setClearColor(clearColor, clearAlpha);
+      applyViewSize();
+      render();
+    }
+  });
   controls.addEventListener("change", render);
   document.addEventListener("visibilitychange", render);
   const observer = new ResizeObserver(resize);
@@ -139,7 +182,7 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   };
 
   return {
-    setContent, setProgress,
+    setContent, setProgress, capture,
     rotateCamera: (horizontal: number, vertical: number) => {
       const offset = camera.position.clone().sub(controls.target);
       const spherical = new THREE.Spherical().setFromVector3(offset);

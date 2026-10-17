@@ -21,7 +21,23 @@
 .previewActions { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); }
 .preview > main { flex: 1; min-height: 0; }
 
+/* 投稿画面。左に撮影用のビュー、右に投稿の内容 */
+.publish { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem); min-height: 0; }
+/* 枠は短い辺に合わせた中央の正方形。撮影（scene の capture）はこの範囲を写す */
+.camera { position: relative; container-type: size; overflow: hidden; min-height: 16rem; background: var(--background-subtle); }
+.cameraFrame { position: absolute; inset: 0; margin: auto; width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); outline: var(--border-width-lg) dashed var(--border-bold); outline-offset: -2px; box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--text-default) 16%, transparent); pointer-events: none; }
+.publishForm { display: grid; align-content: start; gap: var(--spacing-md); padding: var(--spacing-lg); overflow-y: auto; border-inline-start: 1px solid color-mix(in srgb, var(--text-default) 12%, transparent); background: var(--background-default); }
+.publishTitle { font-size: 1.25rem; font-weight: 600; line-height: 1.5; }
+.thumbnail { width: 10rem; height: auto; aspect-ratio: 1; border-radius: var(--border-radius-sm); border: 1px solid color-mix(in srgb, var(--text-default) 12%, transparent); }
+.published { display: grid; justify-items: start; gap: var(--spacing-md); max-width: 32rem; margin-inline: auto; padding: var(--spacing-xxl) var(--spacing-lg); }
+.publishedTitle { font-size: 1.5rem; font-weight: 600; }
+.publishedImage { width: min(100%, 16rem); height: auto; aspect-ratio: 1; border-radius: var(--border-radius-sm); }
+.link { color: var(--text-default); font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; align-self: center; }
+.link:focus-visible { outline: var(--border-width-lg) solid var(--border-bold); outline-offset: 2px; }
+
 @media (max-width: 767px) {
+  .publish { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(16rem, 55dvh) auto; overflow-y: auto; }
+  .publishForm { padding: var(--spacing-md); border-inline-start: 0; border-block-start: 1px solid color-mix(in srgb, var(--text-default) 12%, transparent); overflow-y: visible; }
   .workshop { --editor-gutter: var(--spacing-md); padding-top: calc(4rem + var(--spacing-md)); }
   .description { font-size: 1.0625rem; }
   .preview { height: calc(100dvh - 4rem); }

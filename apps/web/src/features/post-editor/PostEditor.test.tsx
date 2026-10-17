@@ -1,4 +1,8 @@
-import { useEffect } from "react";
+import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
+import { createApp } from "@oricube/api";
+import type { OrigamiCanvasHandle, OrigamiCanvasProps } from "../../components/OrigamiViewer/Canvas";
 import * as THREE from "three";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
@@ -17,6 +21,11 @@ vi.mock("../../components/OrigamiPost", () => ({ OrigamiPostV2: function Editor(
   </>;
 } }));
 vi.mock("../../components/OrigamiViewer", () => ({ OrigamiViewer: function Preview({ model, startAtEnd }: OrigamiViewerProps) { return <div aria-label="プレビュー">{startAtEnd ? "完成形" : "折り方"}・{model.procedure.steps.length}回</div>; } }));
+const capture = vi.hoisted(() => vi.fn());
+vi.mock("../../components/OrigamiViewer/Canvas", () => ({ OrigamiCanvas: forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function Camera({ label }, ref) {
+  useImperativeHandle(ref, () => ({ capture }));
+  return <div role="img" aria-label={label} />;
+}) }));
 const openPanel = () => fireEvent.click(screen.getByRole("button", { name: "作品の設定" }));
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} }); });
 afterEach(() => vi.unstubAllGlobals());
@@ -75,5 +84,85 @@ describe("投稿画面", () => {
     openPanel();
     fireEvent.click(screen.getByRole("button", { name: "白紙に戻す" }));
     await waitFor(() => expect(localStorage.getItem(DRAFT_KEY)).not.toBe("invalid"));
+  });
+});
+
+describe("投稿", () => {
+  const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider>;
+  let app: ReturnType<typeof createApp>;
+  beforeEach(() => {
+    app = createApp({ auth: { authenticate: async () => "user_a" } });
+    capture.mockResolvedValue(new Blob([new Uint8Array(8)], { type: "image/png" }));
+    // 同一オリジンの fetch と同じく Origin を付けてメモリ上の API へ送る
+    vi.stubGlobal("fetch", (url: string | URL | Request, init?: RequestInit) => {
+      const request = new Request(new URL(url instanceof Request ? url.url : url, window.location.origin), init);
+      if (request.method !== "GET") request.headers.set("Origin", window.location.origin);
+      return app.request(request);
+    });
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: () => "blob:thumbnail", revokeObjectURL: () => {} }));
+  });
+  const openPublish = async () => {
+    render(<PostEditor />, { wrapper });
+    openPanel();
+    expect(screen.getByRole("button", { name: "投稿へ進む" })).toBeDisabled();
+    fireEvent.click(await screen.findByRole("button", { name: "頂点を折る" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "投稿へ進む" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "投稿へ進む" }));
+  };
+
+  it("完成形を撮影してから投稿し、作品ページへ案内する", async () => {
+    await openPublish();
+    // 空欄は必須入力の検証で止まり、空白だけの名前も受け付けない
+    expect(screen.getByRole("textbox", { name: /作品名/ })).toBeRequired();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "  " } });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByText("作品名を入力してください。")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "説明" }), { target: { value: "はじめて折りました" } });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("先にサムネイルを撮影してください。");
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    expect(await screen.findByRole("img", { name: "撮影したサムネイル" })).toBeInTheDocument();
+    expect(capture).toHaveBeenCalledWith(expect.objectContaining({ size: 640 }));
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("heading", { name: "投稿しました" })).toBeInTheDocument();
+    const href = screen.getByRole("link", { name: "作品ページを見る" }).getAttribute("href") ?? "";
+    const id = href.replace("/view/", "");
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ name: "私の鶴", description: "はじめて折りました", procedure: { history: [{ kind: "fold" }] } });
+    // 説明も下書きに残る
+    expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ name: "私の鶴", description: "はじめて折りました" });
+    fireEvent.click(screen.getByRole("button", { name: "白紙から新しく折る" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0回の折りを記録"));
+  });
+
+  it("未ログインなら下書きが残ることを伝える", async () => {
+    app = createApp();
+    await openPublish();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("ログインが必要です。折った手順はこのブラウザに保存されています。");
+    fireEvent.click(screen.getByRole("button", { name: "折る画面に戻る" }));
+    expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
+  });
+
+  it("撮影できなければ再試行を案内する", async () => {
+    capture.mockRejectedValue(new Error("WebGL"));
+    await openPublish();
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("撮影できませんでした");
+  });
+});
+
+describe("fitZoom", () => {
+  it("完成形の外接球が枠の約75%になる倍率にし、1〜4倍に収める", async () => {
+    const { fitZoom } = await import("./PublishScreen");
+    const square = (half: number) => [{ layer: 0, polygon: [[-half, -half, 0], [half, -half, 0], [half, half, 0], [-half, half, 0]] as [number, number, number][] }];
+    const visible = 2 * 2.2 * 100 * Math.tan(Math.PI * 35 / 360);
+    expect(fitZoom(100, square(25))).toBeCloseTo(visible * 0.75 / (2 * 25 * Math.SQRT2));
+    expect(fitZoom(100, square(50))).toBe(1);
+    expect(fitZoom(100, square(1))).toBe(4);
+    expect(fitZoom(100, [])).toBe(1);
   });
 });

@@ -6,6 +6,7 @@ import type { OrigamiEditorState, OrigamiPostV2Props } from "../../components/Or
 import { OrigamiViewer } from "../../components/OrigamiViewer";
 import { exportProcedureV2 } from "@oricube/engine";
 import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft } from "./draft";
+import { PublishScreen } from "./PublishScreen";
 import styles from "./PostEditor.module.css";
 
 const UNTITLED = "無題の作品";
@@ -32,22 +33,23 @@ export function PostEditor() {
   const [state, setState] = useState(emptyState);
   const [size, setSize] = useState(100);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [ready, setReady] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const [generation, setGeneration] = useState(0);
-  const [preview, setPreview] = useState<"fold" | "completed" | null>(null);
+  const [preview, setPreview] = useState<"fold" | "completed" | "publish" | null>(null);
   const [message, setMessage] = useState("");
   const [storageError, setStorageError] = useState("");
   const stage = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const procedure = useMemo(() => exportProcedureV2({ size, steps: state.steps }), [size, state.steps]);
-  const draft: Draft | null = useMemo(() => procedure ? { model: { id: "draft", name: name.trim() || UNTITLED, description: "", color: state.color, procedure }, viewFront: state.viewFront } : null, [procedure, name, state.color, state.viewFront]);
+  const draft: Draft | null = useMemo(() => procedure ? { model: { id: "draft", name: name.trim() || UNTITLED, description, color: state.color, procedure }, viewFront: state.viewFront } : null, [procedure, name, description, state.color, state.viewFront]);
   const blocked = !ready || state.busy || !draft;
 
   const loadDraft = useCallback((next: Draft) => {
     setState({ steps: restoreHistory(next.model.procedure.history), color: next.model.color, viewFront: next.viewFront, busy: false, phase: "idle" });
-    setSize(next.model.procedure.size); setName(next.model.name === UNTITLED ? "" : next.model.name); setPreview(null);
+    setSize(next.model.procedure.size); setName(next.model.name === UNTITLED ? "" : next.model.name); setDescription(next.model.description); setPreview(null);
     setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true);
   }, []);
   useEffect(() => {
@@ -79,15 +81,19 @@ export function PostEditor() {
   const handleStateChange = useCallback((next: OrigamiEditorState) => setState(next), []);
   // 空にした色は反映せず、直前の色を保つ
   const changeColor = (color: string | null) => { if (color !== null) setState((current) => ({ ...current, color })); };
-  const reset = () => {
-    if (state.steps.length && !window.confirm("現在の手順を消して、白紙から折り直しますか？")) return;
-    setState(emptyState()); setSize(100); setName(""); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
+  const reset = ({ confirm = true } = {}) => {
+    if (confirm && state.steps.length && !window.confirm("現在の手順を消して、白紙から折り直しますか？")) return;
+    setState(emptyState()); setSize(100); setName(""); setDescription(""); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
   };
   const status = <p className={styles.step} role="status">{ready ? `${state.steps.length}回の折りを記録${state.busy ? "・操作中" : ""}` : "保存した手順を確認しています…"} {message}</p>;
   const alerts = <>
     {storageError && <p className={styles.alert} role="alert">{storageError}</p>}
     {!procedure && <p className={styles.alert} role="alert">この手順は保存できません。最後の操作を元に戻してください。</p>}
   </>;
+  if (preview === "publish" && draft) return <PublishScreen
+    model={draft.model} name={name} onNameChange={setName} description={description} onDescriptionChange={setDescription}
+    onBack={() => setPreview(null)} onStartNew={() => reset({ confirm: false })}
+  />;
   if (preview && draft) return <div className={styles.preview}>
     <div className={styles.previewBar}>
       <div className={styles.previewNote}>
@@ -117,9 +123,14 @@ export function PostEditor() {
           <Button text="折り方を確認" variant="secondary" onClick={() => setPreview("fold")} disabled={blocked} />
           <Button text="完成形を確認" variant="secondary" onClick={() => setPreview("completed")} disabled={blocked} />
         </section>
+        <section className={styles.section} aria-labelledby="post-publish">
+          <h3 id="post-publish" className={styles.sectionTitle}>投稿</h3>
+          <Button text="投稿へ進む" onClick={() => setPreview("publish")} disabled={blocked || !state.steps.length} />
+          <p className={styles.hint}>{state.steps.length ? "完成形の向きを決めてサムネイルを撮影し、作品を公開します。投稿にはログインが必要です。" : "1回以上折ると投稿できます。"}</p>
+        </section>
         <section className={styles.section} aria-labelledby="post-reset">
           <h3 id="post-reset" className={styles.sectionTitle}>やり直し</h3>
-          <Button text="白紙に戻す" variant="secondary" onClick={reset} disabled={!ready || state.busy} />
+          <Button text="白紙に戻す" variant="secondary" onClick={() => reset()} disabled={!ready || state.busy} />
           <p className={styles.hint}>折った手順はこのブラウザに自動で保存され、次に開いたときに続きから折れます。Ctrl+Z（⌘Z）で元に戻し、Ctrl+Shift+Z（⌘⇧Z）でやり直せます。</p>
         </section>
       </SidePanel>
