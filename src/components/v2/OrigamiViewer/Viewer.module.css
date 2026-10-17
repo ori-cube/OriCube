@@ -18,7 +18,8 @@
 .bar { display: flex; align-items: center; gap: var(--spacing-xs); min-width: 0; }
 .progress { flex: 1; min-width: 0; padding-inline: var(--spacing-xs); }
 .empty { padding: var(--spacing-xs); text-align: center; font-size: 0.875rem; line-height: 1.7; }
-.sidePanel { margin-inline-start: auto; }
+/* 余白を打ち消して閲覧画面の右端に接する */
+.sidePanel { margin-inline-start: auto; margin-inline-end: calc(-1 * var(--viewer-gutter)); }
 .controls > .hint { padding-inline: var(--spacing-xs); }
 .options { display: flex; flex-wrap: wrap; column-gap: var(--spacing-lg); padding-inline: var(--spacing-xs); }
 .toolButton { min-height: 2.75rem; }

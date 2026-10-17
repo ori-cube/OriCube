@@ -1,20 +1,31 @@
+/* 画面の右端（inline-end）に接して置く。端に接する側は角を丸めず、枠線も付けない */
 .sidePanel {
+  --side-panel-radius: calc(var(--border-radius-md) + var(--spacing-xs));
   display: grid;
   justify-items: end;
   width: max-content;
   max-width: 100%;
-  border-radius: calc(var(--border-radius-md) + var(--spacing-xs));
+  --side-panel-border: color-mix(in srgb, var(--text-default) 12%, transparent);
   color: var(--text-default);
+}
+.tab {
+  border-color: var(--side-panel-border);
+  border-inline-end-width: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+  background: var(--background-default);
+  box-shadow: -2px 2px 8px color-mix(in srgb, var(--text-default) 6%, transparent);
 }
 .sidePanel[data-expanded] {
   justify-items: stretch;
   width: 18rem;
   padding: var(--spacing-xs);
+  border: 1px solid var(--side-panel-border);
+  border-inline-end-width: 0;
+  border-start-start-radius: var(--side-panel-radius);
+  border-end-start-radius: var(--side-panel-radius);
   background: var(--background-default);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--text-default) 8%, transparent),
-    0 2px 4px color-mix(in srgb, var(--text-default) 6%, transparent),
-    0 8px 24px color-mix(in srgb, var(--text-default) 8%, transparent);
+  box-shadow: -4px 4px 16px color-mix(in srgb, var(--text-default) 8%, transparent);
 }
 .header { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-xs); }
 .title { flex: 1; min-width: 0; padding-inline-start: var(--spacing-xs); font-size: 0.875rem; font-weight: 600; line-height: 1.5; }
