@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { Button, FileButton, TextInput } from "@oricube/design-system";
 import type { OrigamiEditorState, OrigamiPostV2Props } from "../../components/OrigamiPost";
 import { OrigamiViewer } from "../../components/OrigamiViewer";
@@ -10,7 +10,12 @@ import styles from "./MockWorkshop.module.css";
 
 const emptyState = (): OrigamiEditorState => ({ steps: [], color: "#ed7070", viewFront: true, busy: false });
 
-export function MockWorkshop() {
+interface MockWorkshopProps {
+  /** 操作ボタンの後ろに並べる追加の操作（投稿など）。下書きと、操作できない状態かを受け取る */
+  actions?: (draft: MockDraft | null, blocked: boolean) => ReactNode;
+}
+
+export function MockWorkshop({ actions }: MockWorkshopProps = {}) {
   // WebGLを使う編集画面はブラウザでだけ読み込む（サーバー描画・フレームワークに依存しない）
   const [Editor, setEditor] = useState<ComponentType<OrigamiPostV2Props> | null>(null);
   const [state, setState] = useState(emptyState);
@@ -87,6 +92,7 @@ export function MockWorkshop() {
     <Button text="白紙に戻す" variant="secondary" onClick={reset} disabled={!ready || state.busy} />
     <Button text={preview ? "折る画面に戻る" : "折り方を確認"} variant="secondary" onClick={() => setPreview(preview ? null : "fold")} disabled={blocked} />
     <Button text="完成形を確認" variant="secondary" onClick={() => setPreview("completed")} disabled={blocked || preview === "completed"} />
+    {actions?.(draft, blocked)}
   </div>;
   const heading = <>
     <h1>鶴のモックを折る</h1>
