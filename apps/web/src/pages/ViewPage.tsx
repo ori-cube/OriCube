@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "react-router";
 import { Button } from "@oricube/design-system";
-import { OrigamiViewer } from "@/components/v2/OrigamiViewer";
+import { OrigamiViewer } from "../components/OrigamiViewer";
 import { apiClient, fetchOrigami } from "../apiClient";
 import { NotFoundPage } from "./NotFoundPage";
 

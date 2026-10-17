@@ -1,5 +1,5 @@
 import { Navigate, type RouteObject } from "react-router";
-import { DEFAULT_ORIGAMI_V2_ID } from "@/features/origami-viewer-v2/constants";
+import { DEFAULT_ORIGAMI_V2_ID } from "./constants";
 import { AppLayout } from "./layouts/AppLayout";
 import { ErrorPage } from "./pages/ErrorPage";
 import { NotFoundPage } from "./pages/NotFoundPage";

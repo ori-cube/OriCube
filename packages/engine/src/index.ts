@@ -6,6 +6,7 @@
  * React・DOM・Hono・ルーティングに依存しない（three は数学型として使う）
  */
 export * from "./model-v2";
+export * from "./origamiModel";
 export * from "./types";
 export * from "./playback";
 export * from "./validateProcedureV2";

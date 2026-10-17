@@ -12,10 +12,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowJs": false,
-    "types": ["vite/client", "@testing-library/jest-dom/vitest"],
-    "paths": {
-      "@/*": ["../../src/*"]
-    }
+    "types": ["vite/client", "@testing-library/jest-dom/vitest"]
   },
   "include": ["src", "vite.config.ts"]
 }
