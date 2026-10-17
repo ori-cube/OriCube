@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServerApp, renderPage } from "./pages";
+import { createMemoryOrigamiRepository } from "./repository";
 
 const template = `<!doctype html><html><head>
     <!-- page-meta:start -->
@@ -57,9 +58,15 @@ describe("画面の配信", () => {
     expect(await res.json()).toMatchObject({ error: { code: "not_found" } });
   });
 
+  it("同一オリジン配信でも他サイトからのフォーム送信はJSONの403にする", async () => {
+    const res = await app.request("/api/models", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", Origin: "https://evil.example" }, body: "name=x" });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ error: { code: "forbidden" } });
+  });
+
   it("保存済みの値が不正な作品ページは500にする", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const broken = createServerApp({ template, repository: { findById: async () => ({ id: "broken" }) } });
+    const broken = createServerApp({ template, repository: createMemoryOrigamiRepository([{ ownerId: null, model: { id: "broken" } }]) });
     const res = await broken.request("/view/broken");
     expect(res.status).toBe(500);
     expect(await res.text()).toContain(`<meta name="robots" content="noindex" />`);

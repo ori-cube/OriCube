@@ -3,6 +3,7 @@ import path from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { app } from "./app";
+import { verifierFromEnv } from "./auth";
 import { createServerApp } from "./pages";
 
 const port = Number(process.env.PORT ?? 8787);
@@ -16,6 +17,11 @@ const createServer = () => {
   return createServerApp({
     template: readFileSync(indexHtml, "utf8"),
     origin: process.env.APP_ORIGIN,
+    auth: verifierFromEnv({
+      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+      CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
+      APP_ORIGIN: process.env.APP_ORIGIN,
+    }),
     assets: serveStatic({ root }),
   });
 };
