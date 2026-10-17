@@ -26,7 +26,11 @@ export function OrigamiViewer({ model, startAtEnd = false, fullscreen = false }:
 
   return <main className={[styles.viewer, fullscreen && styles.fullscreen].filter(Boolean).join(" ")} data-fullscreen={fullscreen ? "" : undefined} id="origami-viewer">
     <div className={styles.top}>
-      <h1 className={styles.title}>{model.name}</h1>
+      <div className={styles.heading}>
+        <h1 className={styles.title}>{model.name}</h1>
+        {showControls && <p className={styles.step} role="status" aria-label="現在のステップ">{stepName}</p>}
+        <p className={styles.description}>{description}</p>
+      </div>
       <SidePanel className={styles.sidePanel} title="視点" triggerLabel="視点の操作">
         <div className={styles.zoom} role="group" aria-label="拡大率">
           <Button variant="secondary" size="sm" className={styles.zoomButton} aria-label="縮小" disabled={zoom <= 0.5} onClick={() => setZoom((value) => Math.max(0.5, value - 0.25))} text="−" />
@@ -51,10 +55,6 @@ export function OrigamiViewer({ model, startAtEnd = false, fullscreen = false }:
         <IconButton variant="floating" size="lg" icon="NextIcon" label="次へ" className={styles.next} isDisabled={playback.index >= timeline.steps.length - 1} onPress={() => playback.selectStep(playback.index + 1)} />
       </>}
       <FloatingPanel className={styles.panel}>{showControls ? <section className={styles.controls} aria-label="折り手順の操作">
-        <div className={styles.caption}>
-          <p className={styles.step} role="status" aria-label="現在のステップ">{stepName}</p>
-          <p className={styles.description}>{description}</p>
-        </div>
         <div className={styles.bar}>
           <IconButton icon={playback.playing ? "StopIcon" : "PlayIcon"} label={playback.playing ? "一時停止" : playback.reducedMotion ? "このステップを完了" : "再生"} variant="primary" onPress={playback.togglePlaying} />
           <div className={styles.progress}>

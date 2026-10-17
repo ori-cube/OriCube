@@ -47,6 +47,8 @@ describe("V2閲覧画面", () => {
     expect(within(procedure).getByRole("checkbox", { name: "移動したら自動再生" })).toBeInTheDocument();
     expect(within(procedure).getByRole("checkbox", { name: "繰り返し再生" })).toBeInTheDocument();
     expect(within(procedure).queryByRole("button", { name: "前へ" })).not.toBeInTheDocument();
+    expect(within(procedure).queryByRole("status", { name: "現在のステップ" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
     expect(screen.getByRole("button", { name: "前へ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
   });
