@@ -3,7 +3,7 @@
 折り紙の計算・データ型・編集用から再生用への変換をまとめたパッケージ。投稿画面・閲覧画面・API（予定）から共通で使う。
 
 - React・DOM・Hono・ルーティングに依存しない。`three` は `Vector3` などの数学型としてのみ使う（`tsconfig.json` は DOM の型を読み込まない）。
-- メッシュ生成・シーン・アニメーションなどの描画処理は画面側（`src/components/v2`）に置く。
+- メッシュ生成・シーン・アニメーションなどの描画処理は画面側（`apps/web/src/components`）に置く。
 - 方針は [#100](https://github.com/ori-cube/OriCube/issues/100) を参照。
 
 | パス | 内容 |

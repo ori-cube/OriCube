@@ -24,6 +24,7 @@
     "@oricube/api": "workspace:*",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/three": "^0.169.0",
     "@vitejs/plugin-react": "^5.2.0",
     "sass": "^1.105.1",
     "typescript": "^5",

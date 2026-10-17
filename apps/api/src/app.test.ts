@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createApp } from "./app";
-import { getOrigamiV2 } from "@/features/origami-viewer-v2/repository";
+import { getOrigamiV2 } from "./mocks/models";
 
 describe("GET /api/models/:id", () => {
   it("検証済みの作品を返す", async () => {

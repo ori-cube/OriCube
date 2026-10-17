@@ -3,16 +3,16 @@ import { render, screen } from "@testing-library/react";
 import { RouterProvider, createMemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { AppType } from "@oricube/api";
-import type { OrigamiViewerProps } from "@/components/v2/OrigamiViewer";
+import type { OrigamiViewerProps } from "./components/OrigamiViewer";
 import { createQueryClient } from "./queryClient";
 import { routes } from "./routes";
 
-vi.mock("@/components/v2/OrigamiViewer", () => ({
+vi.mock("./components/OrigamiViewer", () => ({
   OrigamiViewer: function Viewer({ model, startAtEnd }: OrigamiViewerProps) {
     return <main aria-label="閲覧">{model.name}・{startAtEnd ? "最終ステップ" : "最初のステップ"}</main>;
   },
 }));
-vi.mock("@/features/origami-viewer-v2/MockWorkshop", () => ({ MockWorkshop: () => <main aria-label="作成" /> }));
+vi.mock("./features/mock-workshop/MockWorkshop", () => ({ MockWorkshop: () => <main aria-label="作成" /> }));
 // 画面からAPIまでを通して確かめるため、RPCクライアントの通信先をHonoアプリに直接つなぐ
 vi.mock("./apiClient", async (original) => {
   const [{ app }, { hc }] = await Promise.all([import("@oricube/api"), import("hono/client")]);

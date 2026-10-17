@@ -1,4 +1,4 @@
-import { MockWorkshop } from "@/features/origami-viewer-v2/MockWorkshop";
+import { MockWorkshop } from "../features/mock-workshop/MockWorkshop";
 
 export function PostPage() {
   return <MockWorkshop />;

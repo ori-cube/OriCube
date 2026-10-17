@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/app.ts"
+    ".": "./src/app.ts",
+    "./mocks/*": "./src/mocks/*.ts"
   },
   "scripts": {
     "dev": "tsx watch --tsconfig tsconfig.json src/index.ts",

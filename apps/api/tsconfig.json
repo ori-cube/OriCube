@@ -10,10 +10,7 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "types": ["node"],
-    "paths": {
-      "@/*": ["../../src/*"]
-    }
+    "types": ["node"]
   },
   "include": ["src"]
 }

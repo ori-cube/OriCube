@@ -62,7 +62,7 @@ describe("YourComponent", () => {
 
 ## 📝 例
 
-実装例は `src/components/v2/OrigamiPost/` を参照してください：
+実装例は `apps/web/src/components/OrigamiPost/` を参照してください：
 
 - `index.test.tsx` - テストの実装例
 - `index.stories.tsx` - Storybook の実装例

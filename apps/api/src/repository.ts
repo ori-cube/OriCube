@@ -1,4 +1,4 @@
-import { getOrigamiV2 } from "@/features/origami-viewer-v2/repository";
+import { getOrigamiV2 } from "./mocks/models";
 
 /**
  * 作品の取得元
