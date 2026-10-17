@@ -1,12 +1,19 @@
-import React from "react";
-import {
-  HiArrowUturnLeft,
-  HiArrowUturnRight,
-  HiArrowsRightLeft,
-  HiCubeTransparent,
-} from "react-icons/hi2";
-import { IconButton } from "@/components/ui/IconButton";
+import { IconButton, type IconButtonProps } from "@oricube/design-system";
 import styles from "./index.module.scss";
+
+/**
+ * 操作ごとのアイコン
+ *
+ * @description
+ * 元に戻す・やり直す・裏返す・ビューモード用のアイコンはFigmaに未作成のため、
+ * 既存のアイコンを仮に割り当てている。Figmaに追加して同期したら差し替える
+ */
+const ICONS = {
+  undo: "ArrowLeftIcon",
+  redo: "ArrowRightIcon",
+  flip: "RepeatIcon",
+  viewMode: "SearchIcon",
+} satisfies Record<string, IconButtonProps["icon"]>;
 
 interface Props {
   /** 1手戻せるか */
@@ -51,29 +58,14 @@ export function Toolbar({
 }: Props) {
   return (
     <div className={styles.toolbar} role="toolbar" aria-label="折り操作">
+      <IconButton icon={ICONS.undo} label="元に戻す" onPress={onUndo} isDisabled={!canUndo} />
+      <IconButton icon={ICONS.redo} label="やり直す" onPress={onRedo} isDisabled={!canRedo} />
+      <IconButton icon={ICONS.flip} label="裏返す" onPress={onFlip} isDisabled={!canFlip} />
       <IconButton
-        Icon={HiArrowUturnLeft}
-        handleClick={onUndo}
-        disable={!canUndo}
-        ariaLabel="元に戻す"
-      />
-      <IconButton
-        Icon={HiArrowUturnRight}
-        handleClick={onRedo}
-        disable={!canRedo}
-        ariaLabel="やり直す"
-      />
-      <IconButton
-        Icon={HiArrowsRightLeft}
-        handleClick={onFlip}
-        disable={!canFlip}
-        ariaLabel="裏返す"
-      />
-      <IconButton
-        Icon={HiCubeTransparent}
-        handleClick={onToggleViewMode}
-        disable={!canToggleViewMode}
-        ariaLabel={isViewing ? "折りに戻る" : "ビューモード"}
+        icon={ICONS.viewMode}
+        label={isViewing ? "折りに戻る" : "ビューモード"}
+        onPress={onToggleViewMode}
+        isDisabled={!canToggleViewMode}
       />
     </div>
   );
