@@ -19,6 +19,15 @@ beforeEach(() => {
   vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
   vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })); });
 afterEach(() => vi.unstubAllGlobals());
+const openSettings = () => fireEvent.click(screen.getByRole("button", { name: "表示と再生の設定" }));
+const closeSettings = () => fireEvent.keyDown(screen.getByRole("dialog", { name: "表示と再生の設定" }), { key: "Escape" });
+const toggleSetting = (name: string) => {
+  openSettings();
+  fireEvent.click(screen.getByRole("checkbox", { name }));
+  const checked = (screen.getByRole("checkbox", { name }) as HTMLInputElement).checked;
+  closeSettings();
+  return checked;
+};
 
 describe("V2閲覧画面", () => {
   it("単独の閲覧はウィンドウ全体、埋め込みはページ内で表示する", async () => {
@@ -29,7 +38,19 @@ describe("V2閲覧画面", () => {
     rerender(<OrigamiViewer model={model} />);
     expect(screen.getByRole("main")).not.toHaveAttribute("data-fullscreen");
   });
-  it("折り方を表示し、ページ送りとスライダーで操作できる", async () => {
+  it("既定では主要な操作だけを表示し、設定は必要なときに開く", async () => {
+    const model = await getOrigamiV2("crane");
+    if (!model) throw new Error("モックがありません");
+    render(<OrigamiViewer model={model} />);
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "視点をリセット" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "前へ" })).toBeDisabled();
+    openSettings();
+    expect(screen.getByRole("dialog", { name: "表示と再生の設定" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "ステップ移動時に自動再生" })).toBeInTheDocument();
+  });
+  it("折り方を表示し、前後の移動とスライダーで操作できる", async () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
@@ -60,20 +81,20 @@ describe("V2閲覧画面", () => {
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "前へ" }));
     expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 20 / 21");
+    fireEvent.click(screen.getByRole("button", { name: "次へ" }));
+    expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
   });
   it("自動再生を選んで次へ移動すると再生し、解除すると停止状態で移動する", async () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    const checkbox = screen.getByRole("checkbox", { name: "ステップ移動時に自動再生" });
-    expect(checkbox).not.toBeChecked();
-    fireEvent.click(checkbox);
+    expect(toggleSetting("ステップ移動時に自動再生")).toBe(true);
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByRole("button", { name: "一時停止" })).toBeInTheDocument();
     advance(0); advance(1000);
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0.5");
-    fireEvent.click(checkbox);
+    expect(toggleSetting("ステップ移動時に自動再生")).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0");
@@ -82,17 +103,15 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    const checkbox = screen.getByRole("checkbox", { name: "このステップを繰り返す" });
-    expect(checkbox).not.toBeChecked();
-    expect(screen.queryByRole("button", { name: "このステップを繰り返す" })).not.toBeInTheDocument();
-    fireEvent.click(checkbox);
-    expect(checkbox).toBeChecked();
+    openSettings();
+    expect(screen.getByRole("checkbox", { name: "このステップを繰り返す" })).not.toBeChecked();
+    closeSettings();
+    expect(toggleSetting("このステップを繰り返す")).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "再生" }));
     advance(0); advance(800); advance(1800);
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0");
     expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
-    fireEvent.click(checkbox);
-    expect(checkbox).not.toBeChecked();
+    expect(toggleSetting("このステップを繰り返す")).toBe(false);
     advance(1800); advance(2600); advance(2616);
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "1");
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
@@ -102,6 +121,7 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
+    openSettings();
     expect(screen.getByRole("checkbox", { name: "このステップを繰り返す" })).toBeDisabled();
     expect(screen.getByRole("checkbox", { name: "ステップ移動時に自動再生" })).not.toBeDisabled();
   });
@@ -109,6 +129,7 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
+    openSettings();
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("100%");
     fireEvent.click(screen.getByRole("button", { name: "拡大" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("125%");
@@ -116,6 +137,8 @@ describe("V2閲覧画面", () => {
     expect(screen.queryByText("拡大率")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "視点をリセット" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("100%");
+    closeSettings();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAttribute("data-zoom", "1");
     expect(screen.getByRole("img")).toHaveAttribute("data-reset", "1");
   });

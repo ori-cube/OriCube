@@ -1,0 +1,18 @@
+.popover {
+  max-width: min(22rem, calc(100vw - 2 * var(--spacing-md)));
+  max-height: var(--visible-viewport-height);
+  overflow: auto;
+  border-radius: calc(var(--border-radius-md) + var(--spacing-sm));
+  background: var(--background-default);
+  color: var(--text-default);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--text-default) 8%, transparent),
+    0 2px 4px color-mix(in srgb, var(--text-default) 6%, transparent),
+    0 8px 24px color-mix(in srgb, var(--text-default) 12%, transparent);
+}
+.popover[data-entering] { animation: enter 120ms ease-out; }
+.dialog { display: grid; gap: var(--spacing-sm); padding: var(--spacing-md); outline: none; }
+.title { font-size: 0.875rem; font-weight: 600; line-height: 1.5; }
+@keyframes enter { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .popover[data-entering] { animation: none; } }
+@media (forced-colors: active) { .popover { outline: 1px solid CanvasText; } }

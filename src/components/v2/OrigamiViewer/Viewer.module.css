@@ -1,40 +1,30 @@
 .viewer { --viewer-gutter: calc(var(--spacing-xxl) + var(--spacing-md)); position: relative; isolation: isolate; display: flex; flex-direction: column; gap: var(--spacing-md); min-height: 40rem; padding: var(--spacing-md) var(--viewer-gutter); color: var(--text-default); background: var(--background-default); }
 .fullscreen { position: fixed; inset: 0; height: 100dvh; min-height: 0; overflow: auto; padding-top: calc(5rem + var(--spacing-md)); }
-.headingContainer { position: relative; z-index: 1; flex-shrink: 0; container-type: inline-size; pointer-events: none; }
-.heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--spacing-xl); }
-.title { min-width: 0; pointer-events: auto; }
-.titleRow { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--spacing-md); }
-.title h1 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
-.step { font-size: 0.875rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-.description { margin-top: var(--spacing-xs); line-height: 1.6; font-weight: 400; overflow-wrap: anywhere; }
+.title { position: relative; z-index: 1; align-self: flex-start; max-width: 100%; font-size: 1.25rem; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; pointer-events: none; }
 .stage { position: absolute; inset: 0; z-index: 0; }
 .fullscreen .stage { position: fixed; }
 .fullscreen .stage > div { min-height: 0; }
-.viewTools { pointer-events: auto; max-width: 100%; display: grid; justify-items: end; gap: var(--spacing-xxs); }
-.views { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: var(--spacing-sm); }
+.bottom { position: relative; z-index: 1; flex-shrink: 0; width: 100%; max-width: 40rem; margin-inline: auto; margin-block-start: auto; min-width: 0; }
+.controls { display: grid; gap: var(--spacing-xxs); }
+.caption { display: flex; align-items: baseline; gap: var(--spacing-sm); padding-inline: var(--spacing-xs); min-width: 0; }
+.step { flex-shrink: 0; font-size: 0.75rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+.description { min-width: 0; font-size: 0.875rem; line-height: 1.6; overflow-wrap: anywhere; }
+.bar { display: flex; align-items: center; gap: var(--spacing-xs); min-width: 0; }
+.progress { flex: 1; min-width: 0; padding-inline: var(--spacing-xs); }
+.empty { flex: 1; padding-inline: var(--spacing-xs); font-size: 0.875rem; line-height: 1.7; }
+.settings { width: 20rem; max-width: 100%; }
+.views, .options { display: grid; gap: var(--spacing-xs); }
+.views { grid-template-columns: auto 1fr; align-items: center; }
+.options { padding-block-start: var(--spacing-xs); border-block-start: var(--border-width-md) solid var(--border-default); }
 .toolButton { min-height: 2.75rem; }
 .zoom { display: flex; align-items: center; gap: var(--spacing-xxs); }
 .zoomButton { min-width: 2.75rem; min-height: 2.75rem; padding-inline: 0; }
 .zoomValue { display: flex; align-items: center; gap: var(--spacing-xxs); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
 .zoomValue span { min-width: 4ch; text-align: end; }
 .hint { color: var(--text-subtle); font-size: 0.75rem; line-height: 1.6; }
-.bottom { position: relative; z-index: 1; flex-shrink: 0; container-type: inline-size; width: 100%; max-width: 52rem; margin-inline: auto; margin-block-start: auto; min-width: 0; }
-.controls { display: grid; align-items: center; gap: var(--spacing-sm); }
-.settings { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; column-gap: var(--spacing-lg); }
-.playback { display: flex; align-items: center; gap: var(--spacing-sm); width: 100%; min-width: 0; }
-.empty { text-align: center; padding: var(--spacing-md); line-height: 1.7; }
-@container (min-width: 42rem) {
-  .controls { grid-template-columns: minmax(14rem, 1fr) auto; column-gap: var(--spacing-lg); }
-  .controls > nav { width: 23rem; }
-  .controls > .hint { grid-column: 1 / -1; }
-}
-@container (max-width: 44rem) {
-  .heading { grid-template-columns: minmax(0, 1fr); gap: var(--spacing-md); }
-  .viewTools { justify-self: end; justify-items: start; }
-  .views { justify-content: flex-start; }
-}
 @media (max-width: 767px) {
   .viewer { --viewer-gutter: var(--spacing-md); }
   .fullscreen { padding-top: calc(4rem + var(--spacing-md)); }
-  .views { gap: var(--spacing-xs); }
+  .title { font-size: 1rem; }
+  .caption { flex-direction: column; gap: 0; }
 }
