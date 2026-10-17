@@ -33,10 +33,17 @@ describe("V2閲覧画面", () => {
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-    const views = screen.getByRole("group", { name: "視点の操作" });
     const procedure = screen.getByRole("region", { name: "折り手順の操作" });
+    const viewToggle = screen.getByRole("button", { name: "視点の操作" });
+    expect(viewToggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "視点をリセット" })).not.toBeInTheDocument();
+    fireEvent.click(viewToggle);
+    expect(viewToggle).toHaveAttribute("aria-expanded", "true");
+    const views = screen.getByRole("group", { name: "視点の操作" });
     expect(within(views).getByRole("button", { name: "視点をリセット" })).toBeInTheDocument();
     expect(within(views).queryByRole("checkbox")).not.toBeInTheDocument();
+    fireEvent.click(viewToggle);
+    expect(viewToggle).toHaveAttribute("aria-expanded", "false");
     expect(within(procedure).getByRole("checkbox", { name: "移動したら自動再生" })).toBeInTheDocument();
     expect(within(procedure).getByRole("checkbox", { name: "繰り返し再生" })).toBeInTheDocument();
     expect(within(procedure).getByRole("button", { name: "前へ" })).toBeDisabled();
@@ -122,6 +129,7 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
+    fireEvent.click(screen.getByRole("button", { name: "視点の操作" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("100%");
     fireEvent.click(screen.getByRole("button", { name: "拡大" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("125%");

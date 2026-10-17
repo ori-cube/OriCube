@@ -1,0 +1,24 @@
+.sidePanel {
+  display: grid;
+  justify-items: end;
+  width: max-content;
+  max-width: 100%;
+  border-radius: calc(var(--border-radius-md) + var(--spacing-xs));
+  color: var(--text-default);
+}
+.sidePanel[data-expanded] {
+  justify-items: stretch;
+  width: 18rem;
+  padding: var(--spacing-xs);
+  background: var(--background-default);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--text-default) 8%, transparent),
+    0 2px 4px color-mix(in srgb, var(--text-default) 6%, transparent),
+    0 8px 24px color-mix(in srgb, var(--text-default) 8%, transparent);
+}
+.header { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-xs); }
+.title { flex: 1; min-width: 0; padding-inline-start: var(--spacing-xs); font-size: 0.875rem; font-weight: 600; line-height: 1.5; }
+.sidePanel:not([data-expanded]) .trigger { box-shadow: 0 2px 8px color-mix(in srgb, var(--text-default) 12%, transparent); }
+.panel { display: grid; gap: var(--spacing-sm); }
+.panel[data-expanded] { padding: var(--spacing-xs); }
+@media (forced-colors: active) { .sidePanel[data-expanded] { outline: 1px solid CanvasText; } }

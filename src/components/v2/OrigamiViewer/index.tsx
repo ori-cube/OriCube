@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Checkbox, FloatingPanel, IconButton, SearchIcon, Slider } from "@oricube/design-system";
+import { Button, Checkbox, FloatingPanel, IconButton, SearchIcon, SidePanel, Slider } from "@oricube/design-system";
 import type { OrigamiModelV2 } from "@/features/origami-viewer-v2/model";
 import { OrigamiCanvas } from "./Canvas";
 import { createViewerTimeline } from "./playback";
@@ -27,14 +27,15 @@ export function OrigamiViewer({ model, startAtEnd = false, fullscreen = false }:
   return <main className={[styles.viewer, fullscreen && styles.fullscreen].filter(Boolean).join(" ")} data-fullscreen={fullscreen ? "" : undefined} id="origami-viewer">
     <div className={styles.top}>
       <h1 className={styles.title}>{model.name}</h1>
-      <FloatingPanel className={styles.views} role="group" aria-label="視点の操作">
+      <SidePanel className={styles.sidePanel} title="視点" triggerLabel="視点の操作">
         <div className={styles.zoom} role="group" aria-label="拡大率">
           <Button variant="secondary" size="sm" className={styles.zoomButton} aria-label="縮小" disabled={zoom <= 0.5} onClick={() => setZoom((value) => Math.max(0.5, value - 0.25))} text="−" />
           <output className={styles.zoomValue} aria-label="拡大率"><SearchIcon size={16} aria-hidden /><span>{Math.round(zoom * 100)}%</span></output>
           <Button variant="secondary" size="sm" className={styles.zoomButton} aria-label="拡大" disabled={zoom >= 2} onClick={() => setZoom((value) => Math.min(2, value + 0.25))} text="＋" />
         </div>
         <Button variant="secondary" text="視点をリセット" size="sm" className={styles.toolButton} onClick={() => { setZoom(1); setResetKey((value) => value + 1); }} />
-      </FloatingPanel>
+        <p className={styles.hint}>ドラッグまたは矢印キーで回転、ホイールやピンチで拡大・縮小できます。</p>
+      </SidePanel>
     </div>
     <div className={styles.stage}>
       <OrigamiCanvas

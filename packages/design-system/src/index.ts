@@ -11,3 +11,4 @@ export * from "./components/ColorField";
 export * from "./components/FloatingPanel";
 export * from "./components/Checkbox";
 export * from "./components/FileButton";
+export * from "./components/SidePanel";
