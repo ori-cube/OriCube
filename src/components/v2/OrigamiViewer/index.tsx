@@ -46,15 +46,17 @@ export function OrigamiViewer({ model, startAtEnd = false, fullscreen = false }:
       />
     </div>
     <div className={styles.bottom}>
-      <FloatingPanel>{showControls ? <section className={styles.controls} aria-label="折り手順の操作">
+      {showControls && <>
+        <Button variant="secondary" size="lg" prefixIcon="PreviousIcon" text="前へ" className={[styles.stepButton, styles.previous].join(" ")} disabled={playback.index <= 0} onClick={() => playback.selectStep(playback.index - 1)} />
+        <Button variant="secondary" size="lg" suffixIcon="NextIcon" text="次へ" className={[styles.stepButton, styles.next].join(" ")} disabled={playback.index >= timeline.steps.length - 1} onClick={() => playback.selectStep(playback.index + 1)} />
+      </>}
+      <FloatingPanel className={styles.panel}>{showControls ? <section className={styles.controls} aria-label="折り手順の操作">
         <div className={styles.caption}>
           <p className={styles.step} role="status" aria-label="現在のステップ">{stepName}</p>
           <p className={styles.description}>{description}</p>
         </div>
         <div className={styles.bar}>
-          <IconButton icon="PreviousIcon" label="前へ" isDisabled={playback.index <= 0} onPress={() => playback.selectStep(playback.index - 1)} />
           <IconButton icon={playback.playing ? "StopIcon" : "PlayIcon"} label={playback.playing ? "一時停止" : playback.reducedMotion ? "このステップを完了" : "再生"} variant="primary" onPress={playback.togglePlaying} />
-          <IconButton icon="NextIcon" label="次へ" isDisabled={playback.index >= timeline.steps.length - 1} onPress={() => playback.selectStep(playback.index + 1)} />
           <div className={styles.progress}>
             <Slider label="進み具合（%）" layout="inline" formatOptions={{ style: "unit", unit: "percent" }} minValue={0} maxValue={100} step={1} value={Math.round(playback.progress * 100)} onChange={(value) => playback.scrub(value / 100)} />
           </div>

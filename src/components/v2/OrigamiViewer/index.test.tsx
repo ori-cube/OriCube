@@ -28,7 +28,7 @@ describe("V2閲覧画面", () => {
     rerender(<OrigamiViewer model={model} />);
     expect(screen.getByRole("main")).not.toHaveAttribute("data-fullscreen");
   });
-  it("視点の操作と手順の操作を分けて表示し、ステップ一覧は出さない", async () => {
+  it("視点の操作と手順の操作を分け、前後の移動はパネルの外に大きく表示する", async () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
@@ -46,7 +46,9 @@ describe("V2閲覧画面", () => {
     expect(viewToggle).toHaveAttribute("aria-expanded", "false");
     expect(within(procedure).getByRole("checkbox", { name: "移動したら自動再生" })).toBeInTheDocument();
     expect(within(procedure).getByRole("checkbox", { name: "繰り返し再生" })).toBeInTheDocument();
-    expect(within(procedure).getByRole("button", { name: "前へ" })).toBeDisabled();
+    expect(within(procedure).queryByRole("button", { name: "前へ" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "前へ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
   });
   it("折り方を表示し、前後の移動とスライダーで操作できる", async () => {
     const model = await getOrigamiV2("crane");

@@ -6,7 +6,12 @@
 .stage { position: absolute; inset: 0; z-index: 0; }
 .fullscreen .stage { position: fixed; }
 .fullscreen .stage > div { min-height: 0; }
-.bottom { position: relative; z-index: 1; flex-shrink: 0; width: 100%; max-width: 40rem; margin-inline: auto; margin-block-start: auto; min-width: 0; }
+.bottom { position: relative; z-index: 1; flex-shrink: 0; display: grid; grid-template-columns: 1fr minmax(0, 40rem) 1fr; grid-template-areas: "previous panel next"; align-items: center; gap: var(--spacing-md); width: 100%; margin-block-start: auto; min-width: 0; pointer-events: none; }
+.bottom > * { pointer-events: auto; }
+.panel { grid-area: panel; min-width: 0; }
+.stepButton { min-width: 7.5rem; box-shadow: 0 2px 4px color-mix(in srgb, var(--text-default) 6%, transparent), 0 8px 24px color-mix(in srgb, var(--text-default) 10%, transparent); }
+.previous { grid-area: previous; justify-self: end; }
+.next { grid-area: next; justify-self: start; }
 .controls { display: grid; gap: var(--spacing-xxs); }
 .caption { display: flex; align-items: baseline; gap: var(--spacing-sm); padding-inline: var(--spacing-xs); min-width: 0; }
 .step { flex-shrink: 0; font-size: 0.75rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
@@ -28,4 +33,7 @@
   .fullscreen { padding-top: calc(4rem + var(--spacing-md)); }
   .title { font-size: 1rem; }
   .caption { flex-direction: column; gap: 0; }
+  .bottom { grid-template-columns: 1fr 1fr; grid-template-areas: "previous next" "panel panel"; gap: var(--spacing-xs); }
+  .previous { justify-self: start; }
+  .next { justify-self: end; }
 }

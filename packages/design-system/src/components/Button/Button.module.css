@@ -68,6 +68,16 @@
   line-height: 1.75rem;
 }
 
+.lg {
+  --button-padding-x: var(--spacing-lg);
+  --button-padding-x-with-icon: var(--spacing-md);
+
+  /* a11y: line-height 32px + padding 24px で高さ56px。画面の主要な移動操作向け */
+  padding: var(--spacing-sm) var(--button-padding-x);
+  font-size: 1.125rem;
+  line-height: 2rem;
+}
+
 .hasPrefix {
   padding-left: var(--button-padding-x-with-icon);
 }
