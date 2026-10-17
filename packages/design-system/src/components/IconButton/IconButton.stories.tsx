@@ -11,4 +11,5 @@ export const Default: Story = { play: async ({ canvasElement, args }) => {
 } };
 export const Primary: Story = { args: { variant: "primary" } };
 export const Selected: Story = { args: { icon: "RepeatIcon", label: "繰り返す", selected: true } };
+export const Floating: Story = { args: { icon: "NextIcon", label: "次へ", variant: "floating", size: "lg" } };
 export const Disabled: Story = { args: { isDisabled: true } };

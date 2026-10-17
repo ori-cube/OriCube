@@ -16,9 +16,26 @@
 .primary, .button[aria-pressed="true"] { background: var(--background-primary-action-enabled); color: var(--text-primary-action); border-color: transparent; }
 .primary[data-hovered], .button[aria-pressed="true"][data-hovered] { background: var(--background-primary-action-hover); }
 .primary[data-pressed] { background: var(--background-primary-action-pressed); }
+.lg { width: 4rem; height: 4rem; border-radius: var(--border-radius-infinity); }
+/* 3D表示などの上に浮かせて置く操作。枠線の代わりに影で背景から切り離す */
+.floating {
+  background: var(--background-default);
+  color: var(--text-default);
+  border-color: transparent;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--text-default) 8%, transparent),
+    0 2px 4px color-mix(in srgb, var(--text-default) 6%, transparent),
+    0 8px 24px color-mix(in srgb, var(--text-default) 10%, transparent);
+  transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+.floating[data-hovered] { background: var(--background-secondary-action-hover); transform: translateY(-1px); }
+.floating[data-pressed] { background: var(--background-secondary-action-pressed); transform: none; }
+.floating[data-disabled] { opacity: 0.35; box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-default) 8%, transparent); }
 .button[data-focus-visible] { outline: var(--border-width-lg) solid var(--border-bold); outline-offset: 2px; }
 .button[data-disabled] { opacity: 0.5; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .floating { transition: background-color 150ms ease; } .floating[data-hovered] { transform: none; } }
 @media (forced-colors: active) {
+  .floating { border-color: ButtonText; }
   .button[aria-pressed="true"] { border-color: Highlight; }
   .button[data-focus-visible] { outline-color: Highlight; }
 }
