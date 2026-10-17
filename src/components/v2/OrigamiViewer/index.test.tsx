@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrigamiViewer } from "./index";
 import type { OrigamiCanvasProps } from "./Canvas";
@@ -19,16 +19,6 @@ beforeEach(() => {
   vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
   vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })); });
 afterEach(() => vi.unstubAllGlobals());
-const openSettings = () => fireEvent.click(screen.getByRole("button", { name: "表示と再生の設定" }));
-const closeSettings = () => fireEvent.keyDown(screen.getByRole("dialog", { name: "表示と再生の設定" }), { key: "Escape" });
-const toggleSetting = (name: string) => {
-  openSettings();
-  fireEvent.click(screen.getByRole("checkbox", { name }));
-  const checked = (screen.getByRole("checkbox", { name }) as HTMLInputElement).checked;
-  closeSettings();
-  return checked;
-};
-
 describe("V2閲覧画面", () => {
   it("単独の閲覧はウィンドウ全体、埋め込みはページ内で表示する", async () => {
     const model = await getOrigamiV2("crane");
@@ -38,17 +28,18 @@ describe("V2閲覧画面", () => {
     rerender(<OrigamiViewer model={model} />);
     expect(screen.getByRole("main")).not.toHaveAttribute("data-fullscreen");
   });
-  it("既定では主要な操作だけを表示し、設定は必要なときに開く", async () => {
+  it("視点の操作と手順の操作を分けて表示し、ステップ一覧は出さない", async () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "視点をリセット" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "前へ" })).toBeDisabled();
-    openSettings();
-    expect(screen.getByRole("dialog", { name: "表示と再生の設定" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "ステップ移動時に自動再生" })).toBeInTheDocument();
+    const views = screen.getByRole("group", { name: "視点の操作" });
+    const procedure = screen.getByRole("region", { name: "折り手順の操作" });
+    expect(within(views).getByRole("button", { name: "視点をリセット" })).toBeInTheDocument();
+    expect(within(views).queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(within(procedure).getByRole("checkbox", { name: "移動したら自動再生" })).toBeInTheDocument();
+    expect(within(procedure).getByRole("checkbox", { name: "繰り返し再生" })).toBeInTheDocument();
+    expect(within(procedure).getByRole("button", { name: "前へ" })).toBeDisabled();
   });
   it("折り方を表示し、前後の移動とスライダーで操作できる", async () => {
     const model = await getOrigamiV2("crane");
@@ -88,13 +79,15 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    expect(toggleSetting("ステップ移動時に自動再生")).toBe(true);
+    const checkbox = screen.getByRole("checkbox", { name: "移動したら自動再生" });
+    expect(checkbox).not.toBeChecked();
+    fireEvent.click(checkbox);
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByRole("button", { name: "一時停止" })).toBeInTheDocument();
     advance(0); advance(1000);
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0.5");
-    expect(toggleSetting("ステップ移動時に自動再生")).toBe(false);
+    fireEvent.click(checkbox);
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0");
@@ -103,15 +96,16 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    openSettings();
-    expect(screen.getByRole("checkbox", { name: "このステップを繰り返す" })).not.toBeChecked();
-    closeSettings();
-    expect(toggleSetting("このステップを繰り返す")).toBe(true);
+    const checkbox = screen.getByRole("checkbox", { name: "繰り返し再生" });
+    expect(checkbox).not.toBeChecked();
+    fireEvent.click(checkbox);
+    expect(checkbox).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "再生" }));
     advance(0); advance(800); advance(1800);
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0");
     expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
-    expect(toggleSetting("このステップを繰り返す")).toBe(false);
+    fireEvent.click(checkbox);
+    expect(checkbox).not.toBeChecked();
     advance(1800); advance(2600); advance(2616);
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "1");
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
@@ -121,15 +115,13 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    openSettings();
-    expect(screen.getByRole("checkbox", { name: "このステップを繰り返す" })).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: "ステップ移動時に自動再生" })).not.toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "繰り返し再生" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "移動したら自動再生" })).not.toBeDisabled();
   });
   it("拡大率を表示し、文字付きのリセットで視点と倍率を戻す", async () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    openSettings();
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("100%");
     fireEvent.click(screen.getByRole("button", { name: "拡大" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("125%");
@@ -137,8 +129,6 @@ describe("V2閲覧画面", () => {
     expect(screen.queryByText("拡大率")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "視点をリセット" }));
     expect(screen.getByRole("status", { name: "拡大率" })).toHaveTextContent("100%");
-    closeSettings();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAttribute("data-zoom", "1");
     expect(screen.getByRole("img")).toHaveAttribute("data-reset", "1");
   });
