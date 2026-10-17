@@ -10,7 +10,7 @@ import { MockWorkshop } from "./MockWorkshop";
 
 const files = vi.hoisted(() => ({ save: vi.fn() }));
 vi.mock("./mockAuthoring", async (original) => ({ ...await original<typeof import("./mockAuthoring")>(), saveMockFile: files.save }));
-vi.mock("next/dynamic", () => ({ default: () => function Editor({ initialSteps = [], onStateChange, defaultOrigamiColor = "#ed7070", cameraPosition }: OrigamiPostV2Props) {
+vi.mock("@/components/v2/OrigamiPost", () => ({ OrigamiPostV2: function Editor({ initialSteps = [], onStateChange, defaultOrigamiColor = "#ed7070", cameraPosition }: OrigamiPostV2Props) {
   useEffect(() => { onStateChange?.({ steps: initialSteps, color: defaultOrigamiColor, viewFront: (cameraPosition?.z ?? 1) >= 0, busy: false }); }, [initialSteps, defaultOrigamiColor, onStateChange, cameraPosition?.z]);
   return <button onClick={() => onStateChange?.({ steps: [...initialSteps, { kind: "fold", foldLine: { start: new THREE.Vector3(-50, -50, 0), end: new THREE.Vector3(50, 50, 0) }, dragVertex: new THREE.Vector3(-50, 50, 0), foldCount: 1, viewFront: true }], color: defaultOrigamiColor, viewFront: false, busy: false })}>頂点を折る</button>;
 } }));

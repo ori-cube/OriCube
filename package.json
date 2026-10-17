@@ -8,6 +8,8 @@
     "test:package-manager": "node --test scripts/check-package-manager.test.mjs",
     "test:security": "node --test scripts/dependency-security.test.mjs",
     "dev": "dotenv -e .env.development -- next dev",
+    "dev:web": "pnpm --filter @oricube/web dev",
+    "build:web": "pnpm --filter @oricube/web build",
     "prod": "dotenv -e .env.production -- next dev",
     "build": "next build",
     "start": "next start",

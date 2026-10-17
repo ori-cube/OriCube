@@ -1,0 +1,12 @@
+.header { position: fixed; top: 0; z-index: 100; display: flex; align-items: center; width: 100%; min-height: 78px; padding: 16px 80px; background: var(--background-default); box-shadow: 0 1px 10px rgba(0, 0, 0, 0.1); }
+.logo { display: inline-flex; }
+.content { padding-top: 5rem; }
+.skip { position: fixed; top: var(--spacing-xs); left: var(--spacing-xs); z-index: 200; transform: translateY(-200%); padding: var(--spacing-xs) var(--spacing-md); background: var(--background-default); color: var(--text-default); }
+.skip:focus { transform: translateY(0); }
+@media (max-width: 767px) {
+  .header { justify-content: center; min-height: 62px; padding: 8px 16px; }
+  .content { padding-top: 4rem; }
+}
+
+.shell:has([data-fullscreen]) > .header { background: transparent; box-shadow: none; pointer-events: none; }
+.shell:has([data-fullscreen]) > .header a { pointer-events: auto; }

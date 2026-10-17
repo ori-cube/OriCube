@@ -53,3 +53,6 @@ firestore-admin-key.json
 /database
 *storybook.log
 storybook-static
+
+# vite
+/apps/*/dist
