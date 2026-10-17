@@ -59,6 +59,12 @@ jobs:
       - name: Smoke test v2 server
         run: pnpm smoke:app
 
+      # Cloudflareのアカウントなしで、Workerのバンドルと設定が通ることを確かめる
+      - name: Bundle Cloudflare Worker
+        run: pnpm --filter @oricube/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
+        env:
+          WRANGLER_SEND_METRICS: "false"
+
       - name: Build v1 (Next.js)
         run: pnpm build
 
