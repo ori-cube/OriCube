@@ -1,7 +1,7 @@
 import type { OrigamiModelV2 } from "@oricube/engine";
 import { craneProcedure } from "./crane";
 
-const models: OrigamiModelV2[] = [
+export const models: OrigamiModelV2[] = [
   {
     id: "crane",
     name: "鶴",

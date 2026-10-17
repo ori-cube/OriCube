@@ -1,7 +1,8 @@
 import { Hono, type MiddlewareHandler } from "hono";
-import { apiError } from "./errors";
+import { apiError, handleApiError } from "./errors";
 import { createApp } from "./app";
-import { mockOrigamiRepository, type OrigamiRepository } from "./repository";
+import type { AuthVerifier } from "./auth";
+import { createMockOrigamiRepository, type OrigamiRepository } from "./repository";
 import { modelIdSchema, origamiModelSchema } from "./schema";
 
 const SITE_NAME = "OriCube";
@@ -49,6 +50,8 @@ interface ServerAppOptions {
   /** ビルド済みの apps/web/dist/index.html */
   template: string;
   repository?: OrigamiRepository;
+  /** 書き込みAPIのログイン検証 */
+  auth?: AuthVerifier;
   /** 公開時のオリジン（例: https://oricube.example）。未指定ならリクエストのオリジンを使う */
   origin?: string;
   /** /assets/* の静的ファイルを返すミドルウェア（実行環境ごとに渡す） */
@@ -63,7 +66,7 @@ interface ServerAppOptions {
  * - 作品ページは作品名・説明をmetaに入れ、存在しない作品・URLはHTTP 404にする
  * - 静的ファイルの配信は実行環境ごとのミドルウェアを assets で受け取る（Node.jsでは index.ts）
  */
-export const createServerApp = ({ template, repository = mockOrigamiRepository, origin, assets }: ServerAppOptions) => {
+export const createServerApp = ({ template, repository = createMockOrigamiRepository(), auth, origin, assets }: ServerAppOptions) => {
   renderPage(template, { title: SITE_NAME, description: DEFAULT_DESCRIPTION, url: "/", image: "/" });
   const absolute = (requestUrl: string, path: string) => new URL(path, origin ?? new URL(requestUrl).origin).toString();
   const meta = (requestUrl: string, overrides: Partial<PageMeta> = {}): PageMeta => ({
@@ -78,10 +81,10 @@ export const createServerApp = ({ template, repository = mockOrigamiRepository, 
   const app = new Hono();
   if (assets) app.use("/assets/*", assets);
   return app
-    .route("/", createApp({ repository }))
+    .route("/", createApp({ repository, auth }))
     .get("/view/:id", async (c) => {
       const id = modelIdSchema.safeParse(c.req.param("id"));
-      const stored = id.success ? await repository.findById(id.data) : null;
+      const stored = id.success ? (await repository.findById(id.data))?.model ?? null : null;
       if (stored === null) return c.html(notFoundPage(c.req.url), 404);
       const model = origamiModelSchema.safeParse(stored);
       if (!model.success) throw new Error(`保存済みの作品 ${id.data} の形式が正しくありません`);
@@ -97,8 +100,8 @@ export const createServerApp = ({ template, repository = mockOrigamiRepository, 
       ? apiError(c, 404, "not_found", "APIが見つかりません。")
       : c.html(notFoundPage(c.req.url), 404))
     .onError((error, c) => {
+      if (c.req.path.startsWith("/api/")) return handleApiError(error, c);
       console.error(error);
-      if (c.req.path.startsWith("/api/")) return apiError(c, 500, "internal_error", "サーバーでエラーが発生しました。");
       return c.html(renderPage(template, meta(c.req.url, { title: `エラー | ${SITE_NAME}`, noindex: true })), 500);
     });
 };

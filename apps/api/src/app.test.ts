@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createApp } from "./app";
+import { createMemoryOrigamiRepository } from "./repository";
 import { getOrigamiV2 } from "./mocks/models";
 
 describe("GET /api/models/:id", () => {
@@ -28,7 +29,7 @@ describe("GET /api/models/:id", () => {
 
   it("保存済みの値が不正なら中身を返さず500にする", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const app = createApp({ repository: { findById: async () => ({ id: "broken", name: "壊れた作品", description: "", color: "#ffffff", procedure: { version: 2, size: -1 } }) } });
+    const app = createApp({ repository: createMemoryOrigamiRepository([{ ownerId: null, model: { id: "broken", name: "壊れた作品", description: "", color: "#ffffff", procedure: { version: 2, size: -1 } } }]) });
     const res = await app.request("/api/models/broken");
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({ error: { code: "internal_error" } });
@@ -38,7 +39,7 @@ describe("GET /api/models/:id", () => {
 
   it("取得元の例外は500の共通形式で返す", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const app = createApp({ repository: { findById: async () => { throw new Error("DBに接続できません"); } } });
+    const app = createApp({ repository: { ...createMemoryOrigamiRepository(), findById: async () => { throw new Error("DBに接続できません"); } } });
     const res = await app.request("/api/models/crane");
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: { code: "internal_error", message: "サーバーでエラーが発生しました。" } });

@@ -20,3 +20,6 @@ export const origamiModelSchema = z.object({
 });
 
 export type OrigamiModel = z.infer<typeof origamiModelSchema>;
+
+/** 投稿・更新で受け取る作品。IDと所有者はサーバーで決める */
+export const origamiInputSchema = origamiModelSchema.omit({ id: true });
