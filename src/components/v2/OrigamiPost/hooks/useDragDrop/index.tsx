@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { PointV2 } from "@/types/model-v2";
 import { FoldPhase, FoldProposal, PendingFold } from "../../index";
 import { LayeredBoard } from "../../types";
 import { FinishingRotation } from "../../utils/replayFoldSteps";
@@ -84,7 +84,7 @@ export const useDragDrop: UseDragDrop = ({
   setFoldProposal,
   setPendingFold,
 }) => {
-  const [draggedPoint, setDraggedPoint] = useState<Point | null>(null);
+  const [draggedPoint, setDraggedPoint] = useState<PointV2 | null>(null);
   const [, setIsDragging] = useState(false);
 
   // 全ての板の頂点を集約したスナップポイント

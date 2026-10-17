@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { PointV2 } from "@/types/model-v2";
 import { FoldPhase, FoldProposal, PendingFold } from "../../index";
 import { LayeredBoard } from "../../types";
 import { calculateFoldLine } from "../../utils/calculateFoldLine";
@@ -31,8 +31,8 @@ type UseDropHandler = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   currentBoards: LayeredBoard[];
-  draggedPoint: Point | null;
-  setDraggedPoint: (point: Point | null) => void;
+  draggedPoint: PointV2 | null;
+  setDraggedPoint: (point: PointV2 | null) => void;
   setIsDragging: (isDragging: boolean) => void;
   originalPoint: THREE.Vector3 | null;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;

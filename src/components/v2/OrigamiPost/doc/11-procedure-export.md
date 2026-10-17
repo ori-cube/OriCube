@@ -41,8 +41,7 @@
 
 ## 今後（未実装）
 
-- **v2 閲覧の再生**: `OrigamiDetailV2` を v2 答え形式（軸の列）対応に拡張。`foldProgress` による θ 再生の仕組みは実装済みなので、convolution 分岐の一般化が主な作業
-- **投稿フロー**: 投稿ボタン・モデル名の入力・サムネイル取得などの UI と、`exportProcedureV2` の結果を既存 `POST /api/data` へ送る接続
+- **投稿フロー**: 投稿ボタン・モデル名の入力・サムネイル取得などの UI と、`exportProcedureV2` の結果を v2 の Hono API へ送る接続（[#100](https://github.com/ori-cube/OriCube/issues/100)）
 
 ## 関連ソース
 
