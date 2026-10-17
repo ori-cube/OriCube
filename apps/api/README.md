@@ -22,6 +22,17 @@ pnpm deploy:worker   # 画面をビルドして wrangler deploy（Cloudflare の
 - `index.html` は `ASSETS` バインディングから読み、isolate ごとに1回だけアプリを組み立てる。
 - `APP_ORIGIN` は Cloudflare の環境変数（`vars`）で設定する。
 
+### D1（作品の保存先）
+
+作品は Cloudflare D1 に保存する（`DB` バインディング、ORM は Drizzle）。スキーマは `migrations/*.sql` と `src/db/schema.ts` の両方に書き、`src/d1Repository.test.ts` で一致を確かめる。
+
+```sh
+pnpm --filter @oricube/api db:migrate:local    # wrangler dev のローカル D1 に適用
+pnpm --filter @oricube/api db:migrate:remote   # 本番の D1 に適用（Cloudflare のログインが必要）
+```
+
+初回は `wrangler d1 create oricube` で D1 を作り、表示された `database_id` を `wrangler.jsonc` に設定する。`DB` が無い環境（Node.js・テスト）はメモリ上のモックを使う。作品一覧ができるまでは、D1 に無いIDは鶴などのモックから読む（`withMockFallback`）。
+
 ## Node.js での起動
 
 ```sh
@@ -53,4 +64,4 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 - 他サイトからのフォーム送信は `hono/csrf` で拒否する。JSONの書き込みはクロスオリジンだとプリフライトで止まる（CORSは許可しない）。
 - フロントは `AppType` を type-only import し、`hono/client` で呼ぶ。
 - ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。実行環境ごとの入口は `src/worker.ts`（Cloudflare Workers）と `src/index.ts`（Node.js。CIのスモークテストで使う）。
-- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。DB接続まではメモリ上の実装で、Workers では書き込みが永続化されない。og:image は作品のサムネイル保存ができるまでロゴを使う。
+- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。Workers では D1（`src/d1Repository.ts`）、Node.js とテストではメモリ上の実装を使う。og:image は作品のサムネイル保存ができるまでロゴを使う。
