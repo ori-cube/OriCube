@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { Button, FileButton, TextInput } from "@oricube/design-system";
-import type { OrigamiEditorState } from "@/components/v2/OrigamiPost";
+import type { OrigamiEditorState, OrigamiPostV2Props } from "@/components/v2/OrigamiPost";
 import { OrigamiViewer } from "@/components/v2/OrigamiViewer";
 import { exportProcedureV2 } from "@oricube/engine";
 import { MOCK_DRAFT_KEY, mockModule, parseMockDraft, restoreHistory, saveMockFile, serializeMockDraft, type MockDraft } from "./mockAuthoring";
 import styles from "./MockWorkshop.module.css";
 
-const Editor = dynamic(() => import("@/components/v2/OrigamiPost").then((module) => module.OrigamiPostV2), { ssr: false, loading: () => <p role="status">折り紙を準備しています…</p> });
 const emptyState = (): OrigamiEditorState => ({ steps: [], color: "#ed7070", viewFront: true, busy: false });
 
 export function MockWorkshop() {
+  // WebGLを使う編集画面はブラウザでだけ読み込む（サーバー描画・フレームワークに依存しない）
+  const [Editor, setEditor] = useState<ComponentType<OrigamiPostV2Props> | null>(null);
   const [state, setState] = useState(emptyState);
   const [size, setSize] = useState(100);
   const [name, setName] = useState("鶴");
@@ -33,6 +33,11 @@ export function MockWorkshop() {
     setState({ steps: restoreHistory(next.model.procedure.history), color: next.model.color, viewFront: next.viewFront, busy: false });
     setSize(next.model.procedure.size); setName(next.model.name); setPreview(null);
     setGeneration((value) => value + 1); setError(""); setStorageError(""); setPersistenceReady(true);
+  }, []);
+  useEffect(() => {
+    let active = true;
+    void import("@/components/v2/OrigamiPost").then((module) => { if (active) setEditor(() => module.OrigamiPostV2); });
+    return () => { active = false; };
   }, []);
   useEffect(() => {
     try {
@@ -101,7 +106,7 @@ export function MockWorkshop() {
   return <main id="origami-viewer" className={styles.workshop}>
     {heading}
     <div className={styles.stage} ref={stage}>
-      {ready && <Editor key={generation} initialSteps={state.steps} defaultOrigamiColor={state.color} size={size} cameraPosition={{ x: 0, y: 0, z: (state.viewFront ? 1 : -1) * size * 1.8 / Math.min(width / 600, 1) }} width={width} height={600} autoResize={false} onStateChange={handleStateChange} />}
+      {ready && (Editor ? <Editor key={generation} initialSteps={state.steps} defaultOrigamiColor={state.color} size={size} cameraPosition={{ x: 0, y: 0, z: (state.viewFront ? 1 : -1) * size * 1.8 / Math.min(width / 600, 1) }} width={width} height={600} autoResize={false} onStateChange={handleStateChange} /> : <p role="status">折り紙を準備しています…</p>)}
     </div>
   </main>;
 }
