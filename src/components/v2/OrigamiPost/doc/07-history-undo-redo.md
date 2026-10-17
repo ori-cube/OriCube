@@ -11,7 +11,7 @@ interface FoldHistory {
 }
 ```
 
-`utils/foldHistory/index.ts` にすべて純関数として定義されている:
+`packages/engine/src/utils/foldHistory/index.ts` にすべて純関数として定義されている:
 
 | 関数 | 動作 |
 | --- | --- |
@@ -60,7 +60,7 @@ Undo/Redo のたびに `foldHistory` が変わり、`currentBoards` が初期正
 
 | パス | 役割 |
 | --- | --- |
-| `utils/foldHistory/index.ts` | `FoldHistory` と全履歴操作（純関数） |
-| `utils/replayFoldSteps/index.ts` | 適用済みステップのリプレイ |
+| `packages/engine/src/utils/foldHistory/index.ts` | `FoldHistory` と全履歴操作（純関数） |
+| `packages/engine/src/utils/replayFoldSteps/index.ts` | 適用済みステップのリプレイ |
 | `index.tsx` | `foldHistory` 状態、`completeFold` / `handleUndo` / `handleRedo` |
 | `Toolbar/index.tsx` | Undo / Redo / 裏返しボタン |

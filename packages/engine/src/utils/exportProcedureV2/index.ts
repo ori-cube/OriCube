@@ -8,7 +8,7 @@ import {
   ProcedureV2,
   SegmentV2,
   StepV2,
-} from "@/types/model-v2";
+} from "../../model-v2";
 import {
   FoldLine,
   FoldStep,

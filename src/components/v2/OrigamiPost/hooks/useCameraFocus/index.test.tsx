@@ -3,7 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { useCameraFocus } from "./index";
-import { LayeredBoard } from "../../types";
+import { LayeredBoard } from "@oricube/engine";
 
 // requestAnimationFrameを手動で進められるようにフェイク化する
 let rafCallbacks: FrameRequestCallback[] = [];

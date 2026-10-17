@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { PointV2 } from "@/types/model-v2";
+import { PointV2 } from "@oricube/engine";
 
 type RenderSnapPoint = (props: {
   scene: THREE.Scene;

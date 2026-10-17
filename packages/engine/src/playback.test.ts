@@ -1,9 +1,9 @@
-import type { PointV2, ProcedureV2 } from "@/types/model-v2";
+import type { PointV2, ProcedureV2 } from "./model-v2";
 import { describe, expect, it } from "vitest";
-import { exportProcedureV2 } from "../OrigamiPost/utils/exportProcedureV2";
-import { craneNarrowedLegsSteps } from "../OrigamiPost/utils/replayFoldSteps/craneFixture";
-import { replayFoldSteps } from "../OrigamiPost/utils/replayFoldSteps";
-import { createSquareBoard } from "../OrigamiPost/utils/createSquareBoard";
+import { exportProcedureV2 } from "./utils/exportProcedureV2";
+import { craneNarrowedLegsSteps } from "./utils/replayFoldSteps/craneFixture";
+import { replayFoldSteps } from "./utils/replayFoldSteps";
+import { createSquareBoard } from "./utils/createSquareBoard";
 import { createViewerTimeline, getStepBoards, getViewAngle } from "./playback";
 
 const crane = () => {

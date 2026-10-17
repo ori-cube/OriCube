@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { PointV2 } from "@/types/model-v2";
+import {
+  PointV2,
+  LayeredBoard,
+  FinishingRotation,
+  SnapPoint,
+} from "@oricube/engine";
 import { FoldPhase } from "../../index";
-import { LayeredBoard } from "../../types";
-import { FinishingRotation } from "../../utils/replayFoldSteps";
 import { BOARD_LAYER_OFFSET } from "../../constants";
-import { SnapPoint } from "../../utils/collectSnapPoints";
 import { createBoardMesh } from "../../utils/createBoardMesh";
 import { renderSnapPoint } from "./renderPoint";
 import { removeBoardObjects } from "./removeBoardObjects";

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Board } from "../../types";
+import { Board } from "@oricube/engine";
 import { BOARD_BACK_COLOR } from "../../constants";
 
 /**

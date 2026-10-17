@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as THREE from "three";
 import { createMorphBoardMesh, updateMorphBoardMeshPositions } from "./index";
-import { Board } from "../../types";
+import { Board } from "@oricube/engine";
 
 const createTriangle = (): Board => [
   new THREE.Vector3(0, 0, 0),

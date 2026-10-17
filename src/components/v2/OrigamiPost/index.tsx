@@ -18,12 +18,10 @@ import {
   OrigamiStep,
   PetalFoldStep,
   SquashFoldStep,
-} from "./types";
-import { SquashFoldStepResult } from "./utils/applySquashFoldStep";
-import { PetalFoldStepResult } from "./utils/applyPetalFoldStep";
-import { createSquareBoard } from "./utils/createSquareBoard";
-import { replayFoldStepsDetailed } from "./utils/replayFoldSteps";
-import {
+  SquashFoldStepResult,
+  PetalFoldStepResult,
+  createSquareBoard,
+  replayFoldStepsDetailed,
   FoldHistory,
   EMPTY_FOLD_HISTORY,
   appliedFoldSteps,
@@ -32,11 +30,9 @@ import {
   redoFoldStep,
   canUndo,
   canRedo,
-} from "./utils/foldHistory";
-import {
   serializeOrigamiState,
   SerializedOrigamiState,
-} from "./utils/serializeOrigamiState";
+} from "@oricube/engine";
 import { FoldCountSelector } from "./FoldCountSelector";
 import { Toolbar } from "./Toolbar";
 import { ColorPicker } from "./ColorPicker";

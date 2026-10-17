@@ -1,10 +1,15 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import type { FixBoardV2, PointV2 } from "@/types/model-v2";
+import type { FixBoardV2, PointV2 } from "@oricube/engine";
+import {
+  getFlatStepBoards,
+  getStepBoards,
+  getViewAngle,
+  type ViewerStep,
+} from "@oricube/engine";
 import { createMorphBoardMesh, updateMorphBoardMeshPositions } from "../OrigamiPost/utils/createMorphBoardMesh";
 import { disposeObject3D } from "../OrigamiPost/utils/disposeObject3D";
 import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
-import { getFlatStepBoards, getStepBoards, getViewAngle, type ViewerStep } from "./playback";
 
 export type CameraPreset = "front" | "angled";
 const toVector = (point: PointV2) => new THREE.Vector3(...point);

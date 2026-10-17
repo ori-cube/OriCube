@@ -1,10 +1,14 @@
 import * as THREE from "three";
 import { PendingFold } from "../../index";
-import { FoldStep, LayeredBoard } from "../../types";
+import {
+  FoldStep,
+  LayeredBoard,
+  calculateFoldLineSpan,
+  applyFoldStep,
+  findFoldCandidates,
+} from "@oricube/engine";
 import { BOARD_LAYER_OFFSET } from "../../constants";
-import { calculateFoldLineSpan } from "../../utils/calculateFoldLineSpan";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
-import { applyFoldStep, findFoldCandidates } from "../../utils/applyFoldStep";
 import { createBoardMesh } from "../../utils/createBoardMesh";
 import { removeBoardObjects } from "./removeBoardObjects";
 

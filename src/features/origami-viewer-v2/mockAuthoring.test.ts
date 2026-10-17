@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { exportProcedureV2 } from "@/components/v2/OrigamiPost/utils/exportProcedureV2";
-import type { OrigamiStep } from "@/components/v2/OrigamiPost/types";
+import type { OrigamiStep } from "@oricube/engine";
+import { exportProcedureV2 } from "@oricube/engine";
 import { mockModule, parseMockDraft, restoreHistory, serializeMockDraft, type MockDraft } from "./mockAuthoring";
 
 export const recordedStep: OrigamiStep = { kind: "fold", foldLine: { start: new THREE.Vector3(-50, -50, 0), end: new THREE.Vector3(50, 50, 0) }, dragVertex: new THREE.Vector3(-50, 50, 0), foldCount: 1, viewFront: true, angle: Math.PI / 2 };

@@ -1,6 +1,6 @@
 # 04 折りの実行ロジック
 
-`applyFoldStep`（`utils/applyFoldStep/index.ts`）が「現在の板群 + 1つの `FoldStep` → 折り後の板群」を計算する純関数で、リプレイの中核。折りが成立しない場合は null を返し、呼び出し側は折り全体を不成立として扱う。本ドキュメントは通常の折り（`kind: "fold"`）を対象とし、開いて畳む（`kind: "squash"`、`applySquashFoldStep`）は [09](./09-squash-fold.md)、花弁折り（`kind: "petal"`、`applyPetalFoldStep`）は [10](./10-petal-fold.md) を参照。
+`applyFoldStep`（`packages/engine/src/utils/applyFoldStep/index.ts`）が「現在の板群 + 1つの `FoldStep` → 折り後の板群」を計算する純関数で、リプレイの中核。折りが成立しない場合は null を返し、呼び出し側は折り全体を不成立として扱う。本ドキュメントは通常の折り（`kind: "fold"`）を対象とし、開いて畳む（`kind: "squash"`、`applySquashFoldStep`）は [09](./09-squash-fold.md)、花弁折り（`kind: "petal"`、`applyPetalFoldStep`）は [10](./10-petal-fold.md) を参照。
 
 ## applyFoldStep のパイプライン
 
@@ -79,8 +79,8 @@
 
 | パス | 役割 |
 | --- | --- |
-| `utils/applyFoldStep/index.ts` | 折り1ステップの適用（本ドキュメントのパイプライン全体）。`findFoldCandidates` もここ |
-| `utils/separateBoard/index.ts` | 板の分割。交点パラメータ計算・靴紐公式の面積計算を含む |
-| `utils/isPointLeftOfLine/index.ts` | 外積 z 成分による左/右/線上の3値判定 |
-| `utils/selectMovingBoard/index.ts` | 動く片と固定片の決定 |
-| `utils/rotateBoard/index.ts` | 任意軸周りの頂点回転（純関数） |
+| `packages/engine/src/utils/applyFoldStep/index.ts` | 折り1ステップの適用（本ドキュメントのパイプライン全体）。`findFoldCandidates` もここ |
+| `packages/engine/src/utils/separateBoard/index.ts` | 板の分割。交点パラメータ計算・靴紐公式の面積計算を含む |
+| `packages/engine/src/utils/isPointLeftOfLine/index.ts` | 外積 z 成分による左/右/線上の3値判定 |
+| `packages/engine/src/utils/selectMovingBoard/index.ts` | 動く片と固定片の決定 |
+| `packages/engine/src/utils/rotateBoard/index.ts` | 任意軸周りの頂点回転（純関数） |

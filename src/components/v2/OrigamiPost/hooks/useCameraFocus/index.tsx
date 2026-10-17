@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { LayeredBoard } from "../../types";
-import { computeBoardsCenter } from "../../utils/computeBoardsCenter";
+import { LayeredBoard, computeBoardsCenter } from "@oricube/engine";
 import { easeInOutCubic } from "../../utils/easeInOutCubic";
 
 /** 視点の平行移動アニメーションの所要時間（ミリ秒） */

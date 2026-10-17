@@ -45,16 +45,16 @@ dragVertex を持つ候補板を、候補板同士の共有折り目（`findShar
 
 ## 鶴の完成シーケンス
 
-`craneCompletion.test.ts` が固定化している完成手順: 鶴の基本形＋足細め（[craneFixture](../utils/replayFoldSteps/craneFixture.ts)）→ 首（中割り）→ 尾（中割り）→ 頭（首の新しい先端への中割り）→ 羽の折り下げ（表4枚・裏4枚の通常の折り）。計15手・最終72枚。
+`craneCompletion.test.ts` が固定化している完成手順: 鶴の基本形＋足細め（[craneFixture](../../../../../packages/engine/src/utils/replayFoldSteps/craneFixture.ts)）→ 首（中割り）→ 尾（中割り）→ 頭（首の新しい先端への中割り）→ 羽の折り下げ（表4枚・裏4枚の通常の折り）。計15手・最終72枚。
 
 ## 関連ソース
 
 | パス | 役割 |
 | --- | --- |
-| `utils/applyInsideReverseFoldStep/index.ts` | 適用の中核。連結成分の特定・分割・レイヤー差し込み・`buildInsideReverseFoldStep` |
+| `packages/engine/src/utils/applyInsideReverseFoldStep/index.ts` | 適用の中核。連結成分の特定・分割・レイヤー差し込み・`buildInsideReverseFoldStep` |
 | `hooks/useDragDrop/commenceInsideReverseFold.ts` | 確定処理とアニメーション用シーン差し替え |
 | `hooks/useDragDrop/useDropHandler.tsx` | 発動判定と即実行 / 選択の分岐 |
 | `hooks/useFoldAnimation/index.tsx` | fold / insideReverse 共通のピボット回転分岐 |
 | `FoldCountSelector/index.tsx` | 「中割り折り」の選択肢 |
-| `utils/replayFoldSteps/craneCompletion.test.ts` | 鶴の完成シーケンスの回帰テスト |
-| `types.ts` | `InsideReverseFoldStep` の定義 |
+| `packages/engine/src/utils/replayFoldSteps/craneCompletion.test.ts` | 鶴の完成シーケンスの回帰テスト |
+| `packages/engine/src/types.ts` | `InsideReverseFoldStep` の定義 |

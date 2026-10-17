@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as THREE from "three";
 import { createBoardMesh } from "./index";
-import { Board } from "../../types";
+import { Board } from "@oricube/engine";
 import { BOARD_BACK_COLOR } from "../../constants";
 
 // 反時計回り（表が+Z向き）の三角形

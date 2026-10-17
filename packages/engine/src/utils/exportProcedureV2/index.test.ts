@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { exportProcedureV2 } from "./index";
 import { replayFoldSteps } from "../replayFoldSteps";
 import { createSquareBoard } from "../createSquareBoard";
-import { PointV2, StepV2 } from "@/types/model-v2";
+import { PointV2, StepV2 } from "../../model-v2";
 import { OrigamiStep } from "../../types";
 
 const v = (x: number, y: number): THREE.Vector3 => new THREE.Vector3(x, y, 0);

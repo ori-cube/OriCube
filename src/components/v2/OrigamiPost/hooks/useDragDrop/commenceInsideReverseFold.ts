@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { PendingFold } from "../../index";
-import { LayeredBoard } from "../../types";
-import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import {
+  LayeredBoard,
   applyInsideReverseFoldStep,
   buildInsideReverseFoldStep,
-} from "../../utils/applyInsideReverseFoldStep";
+} from "@oricube/engine";
+import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import { replaceSceneForFolding } from "./commenceFold";
 
 /**

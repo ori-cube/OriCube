@@ -1,14 +1,14 @@
 import * as THREE from "three";
 import { PendingFold } from "../../index";
-import { LayeredBoard } from "../../types";
-import { BOARD_LAYER_OFFSET } from "../../constants";
-import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import {
+  LayeredBoard,
   applyPetalFoldStep,
   buildPetalFoldStep,
   PetalFoldStepResult,
-} from "../../utils/applyPetalFoldStep";
-import { SNAP_ATTRACTION_RADIUS } from "../../utils/snapToNearestSnapPoint";
+  SNAP_ATTRACTION_RADIUS,
+} from "@oricube/engine";
+import { BOARD_LAYER_OFFSET } from "../../constants";
+import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import { createBoardMesh } from "../../utils/createBoardMesh";
 import { createMorphBoardMesh } from "../../utils/createMorphBoardMesh";
 import { removeBoardObjects } from "./removeBoardObjects";

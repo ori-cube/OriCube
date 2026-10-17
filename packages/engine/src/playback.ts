@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { FixBoardV2, MoveBoardV2, PointV2, ProcedureV2, StepV2 } from "@/types/model-v2";
+import type { FixBoardV2, MoveBoardV2, PointV2, ProcedureV2, StepV2 } from "./model-v2";
 
 export type ViewerStep =
   | { kind: "fold"; data: StepV2; fixedBoards: FixBoardV2[]; settledBoards: FixBoardV2[]; settledFlatBoards: FixBoardV2[]; sourceIndex: number; viewFront: boolean; label: string }

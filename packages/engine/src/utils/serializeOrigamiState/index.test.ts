@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { serializeOrigamiState } from ".";
+import { serializeOrigamiState } from "./index";
 import { FoldStep, LayeredBoard, PetalFoldStep } from "../../types";
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);

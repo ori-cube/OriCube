@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { OrigamiPostV2Props } from "@/components/v2/OrigamiPost";
 import type { OrigamiViewerProps } from "@/components/v2/OrigamiViewer";
-import { exportProcedureV2 } from "@/components/v2/OrigamiPost/utils/exportProcedureV2";
+import { exportProcedureV2 } from "@oricube/engine";
 import { MOCK_DRAFT_KEY, serializeMockDraft } from "./mockAuthoring";
 import { MockWorkshop } from "./MockWorkshop";
 

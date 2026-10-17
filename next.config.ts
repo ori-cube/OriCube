@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@oricube/design-system"],
+  transpilePackages: ["@oricube/design-system", "@oricube/engine"],
   images: {
     domains: [
       "pub-2a912ed59cc94e139be4a2d207f42e8f.r2.dev",

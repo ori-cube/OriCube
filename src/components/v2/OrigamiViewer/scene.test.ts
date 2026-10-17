@@ -2,8 +2,7 @@ import * as THREE from "three";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createViewerScene } from "./scene";
 import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
-import type { FixBoardV2 } from "@/types/model-v2";
-import type { ViewerStep } from "./playback";
+import type { FixBoardV2, ViewerStep } from "@oricube/engine";
 
 const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn(), setViewport: vi.fn() }));
 vi.mock("three", async (importOriginal) => {

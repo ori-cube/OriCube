@@ -55,7 +55,7 @@
 
 | パス | 役割 |
 | --- | --- |
-| `utils/applyFoldStep/index.ts` | `isTearingFold`（判定の起点）と `distanceToFoldLine` |
-| `utils/findSharedSourceSegments/index.ts` | 共有境界線分の検出と `mapSourceBoundaryPointToFolded` |
-| `utils/separateBoard/index.ts` | `sourcePolygon` のロックステップ分割（頂点対応の維持） |
-| `types.ts` | `BoardPiece`（`polygon` / `sourcePolygon` の対応関係） |
+| `packages/engine/src/utils/applyFoldStep/index.ts` | `isTearingFold`（判定の起点）と `distanceToFoldLine` |
+| `packages/engine/src/utils/findSharedSourceSegments/index.ts` | 共有境界線分の検出と `mapSourceBoundaryPointToFolded` |
+| `packages/engine/src/utils/separateBoard/index.ts` | `sourcePolygon` のロックステップ分割（頂点対応の維持） |
+| `packages/engine/src/types.ts` | `BoardPiece`（`polygon` / `sourcePolygon` の対応関係） |
