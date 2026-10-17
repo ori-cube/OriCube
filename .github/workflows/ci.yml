@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # packageManager を見て pnpm のキャッシュを自動で使おうとするが、この時点では pnpm がまだ無い
+          package-manager-cache: false
+
+      # package.json の packageManager に指定された pnpm を使う（AGENTS.md）
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Package manager and dependency security
+        run: |
+          pnpm test:package-manager
+          pnpm test:security
+
+      - name: Typecheck
+        run: |
+          pnpm exec tsc --noEmit --incremental false
+          pnpm --filter @oricube/design-system typecheck
+          pnpm --filter @oricube/engine typecheck
+          pnpm --filter @oricube/api typecheck
+          pnpm --filter @oricube/web typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm exec vitest run
+
+      - name: Build v2 (web + api)
+        run: pnpm build:app
+
+      - name: Smoke test v2 server
+        run: pnpm smoke:app
+
+      - name: Build v1 (Next.js)
+        run: pnpm build
+
+      - name: Build Storybook
+        run: pnpm build-storybook

@@ -13,6 +13,7 @@
     "dev:api": "pnpm --filter @oricube/api dev",
     "build:app": "pnpm --filter @oricube/web build && pnpm --filter @oricube/api build",
     "start:app": "pnpm --filter @oricube/api start",
+    "smoke:app": "node scripts/smoke-app.mjs",
     "prod": "dotenv -e .env.production -- next dev",
     "build": "next build",
     "start": "next start",
