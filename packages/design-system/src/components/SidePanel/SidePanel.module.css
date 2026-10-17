@@ -38,6 +38,9 @@
   gap: var(--spacing-sm);
   width: 18rem;
   max-width: calc(100vw - 3.5rem);
+  /* 中身が多いときは画面からはみ出さずにパネル内でスクロールする */
+  max-height: calc(100dvh - 8rem);
+  overflow-y: auto;
   padding: var(--spacing-md);
   border: 1px solid var(--side-panel-border);
   border-inline-end-width: 0;
