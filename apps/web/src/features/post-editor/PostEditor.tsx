@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import { Button, ColorField, FileButton, SidePanel, TextInput } from "@oricube/design-system";
+import { Button, ColorField, SidePanel, TextInput } from "@oricube/design-system";
 import type { OrigamiEditorState, OrigamiPostV2Props } from "../../components/OrigamiPost";
 import { OrigamiViewer } from "../../components/OrigamiViewer";
 import { exportProcedureV2 } from "@oricube/engine";
-import { MOCK_DRAFT_KEY, mockModule, parseMockDraft, restoreHistory, saveMockFile, serializeMockDraft, type MockDraft } from "./mockAuthoring";
-import styles from "./MockWorkshop.module.css";
+import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft } from "./draft";
+import styles from "./PostEditor.module.css";
+
+const UNTITLED = "無題の作品";
 
 const emptyState = (): OrigamiEditorState => ({ steps: [], color: "#ed7070", viewFront: true, busy: false, phase: "idle" });
 
@@ -24,30 +26,29 @@ const cameraDistance = (size: number, width: number, height: number) => {
   return size * height / (2 * Math.tan(Math.PI / 9) * paper);
 };
 
-export function MockWorkshop() {
+export function PostEditor() {
   // WebGLを使う編集画面はブラウザでだけ読み込む（サーバー描画・フレームワークに依存しない）
   const [Editor, setEditor] = useState<ComponentType<OrigamiPostV2Props> | null>(null);
   const [state, setState] = useState(emptyState);
   const [size, setSize] = useState(100);
-  const [name, setName] = useState("鶴");
+  const [name, setName] = useState("");
   const [ready, setReady] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const [generation, setGeneration] = useState(0);
   const [preview, setPreview] = useState<"fold" | "completed" | null>(null);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [storageError, setStorageError] = useState("");
   const stage = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const procedure = useMemo(() => exportProcedureV2({ size, steps: state.steps }), [size, state.steps]);
-  const draft: MockDraft | null = useMemo(() => procedure ? { model: { id: "crane", name: name.trim() || "鶴", description: "UIで折った鶴の手順です。", color: state.color, procedure }, viewFront: state.viewFront } : null, [procedure, name, state.color, state.viewFront]);
+  const draft: Draft | null = useMemo(() => procedure ? { model: { id: "draft", name: name.trim() || UNTITLED, description: "", color: state.color, procedure }, viewFront: state.viewFront } : null, [procedure, name, state.color, state.viewFront]);
   const blocked = !ready || state.busy || !draft;
 
-  const loadDraft = useCallback((next: MockDraft) => {
+  const loadDraft = useCallback((next: Draft) => {
     setState({ steps: restoreHistory(next.model.procedure.history), color: next.model.color, viewFront: next.viewFront, busy: false, phase: "idle" });
-    setSize(next.model.procedure.size); setName(next.model.name); setPreview(null);
-    setGeneration((value) => value + 1); setError(""); setStorageError(""); setPersistenceReady(true);
+    setSize(next.model.procedure.size); setName(next.model.name === UNTITLED ? "" : next.model.name); setPreview(null);
+    setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true);
   }, []);
   useEffect(() => {
     let active = true;
@@ -56,10 +57,10 @@ export function MockWorkshop() {
   }, []);
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(MOCK_DRAFT_KEY);
-      if (saved) { loadDraft(parseMockDraft(saved)); setMessage("保存した手順を復元しました。"); }
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) { loadDraft(parseDraft(saved)); setMessage("前回の続きから再開しました。"); }
       else setPersistenceReady(true);
-    } catch { setStorageError("保存した下書きを読み込めませんでした。上書きを止めています。JSONを読み込むか、「白紙に戻す」で保存を再開できます。"); }
+    } catch { setStorageError("前回の下書きを読み込めませんでした。消えないよう自動保存を止めています。「白紙に戻す」で保存を再開できます。"); }
     setReady(true);
   }, [loadDraft]);
   useEffect(() => {
@@ -71,37 +72,21 @@ export function MockWorkshop() {
   }, [ready, preview]);
   useEffect(() => {
     if (!ready || !persistenceReady || state.busy || !draft) return;
-    try { localStorage.setItem(MOCK_DRAFT_KEY, serializeMockDraft(draft)); setStorageError(""); }
-    catch { setStorageError("ブラウザに保存できませんでした。「JSONを保存」で手順を残してください。"); }
+    try { localStorage.setItem(DRAFT_KEY, serializeDraft(draft)); setStorageError(""); }
+    catch { setStorageError("下書きを自動保存できませんでした。ブラウザの保存領域を確認してください。"); }
   }, [ready, persistenceReady, state.busy, draft]);
 
   const handleStateChange = useCallback((next: OrigamiEditorState) => setState(next), []);
   // 空にした色は反映せず、直前の色を保つ
   const changeColor = (color: string | null) => { if (color !== null) setState((current) => ({ ...current, color })); };
-  const readFile = async (files: FileList | null) => {
-    const file = files?.[0];
-    if (!file) return;
-    try {
-      if (file.size > 5 * 1024 * 1024) throw new Error("5MB以下のJSONを選んでください。");
-      const next = parseMockDraft(await file.text());
-      if (state.steps.length && !window.confirm("現在の手順を、選んだJSONの手順に置き換えますか？")) return;
-      loadDraft(next); setMessage("JSONの手順を読み込みました。");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "JSONを読み込めませんでした。"); }
-  };
   const reset = () => {
     if (state.steps.length && !window.confirm("現在の手順を消して、白紙から折り直しますか？")) return;
-    setState(emptyState()); setSize(100); setName("鶴"); setPreview(null); setGeneration((value) => value + 1); setError(""); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
-  };
-  const save = (module: boolean) => {
-    if (!draft || state.busy) return;
-    try { saveMockFile(module ? "recorded-crane.ts" : "crane.json", module ? mockModule(draft.model) : serializeMockDraft(draft)); setError(""); setMessage(module ? "モック用TSを保存しました。" : "JSONを保存しました。"); }
-    catch { setError("ファイルを保存できませんでした。もう一度お試しください。"); }
+    setState(emptyState()); setSize(100); setName(""); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
   };
   const status = <p className={styles.step} role="status">{ready ? `${state.steps.length}回の折りを記録${state.busy ? "・操作中" : ""}` : "保存した手順を確認しています…"} {message}</p>;
   const alerts = <>
-    {error && <p className={styles.alert} role="alert">{error}</p>}
     {storageError && <p className={styles.alert} role="alert">{storageError}</p>}
-    {!procedure && <p className={styles.alert} role="alert">この手順を書き出せません。最後の操作を元に戻してください。</p>}
+    {!procedure && <p className={styles.alert} role="alert">この手順は保存できません。最後の操作を元に戻してください。</p>}
   </>;
   if (preview && draft) return <div className={styles.preview}>
     <div className={styles.previewBar}>
@@ -119,30 +104,23 @@ export function MockWorkshop() {
   return <main id="origami-viewer" className={styles.workshop} data-fullscreen="">
     <div className={styles.top}>
       <div className={styles.heading}>
-        <h1 className={styles.title}>{name.trim() || "鶴"}のモックを折る</h1>
+        <h1 className={styles.title}>{name.trim() || UNTITLED}</h1>
         {status}
         <p className={styles.description}>{guidance(state)}</p>
         {alerts}
       </div>
-      <SidePanel className={styles.sidePanel} title="作品" triggerLabel="作品の設定と保存">
-        <TextInput label="作品名" value={name} onChange={setName} />
+      <SidePanel className={styles.sidePanel} title="作品" triggerLabel="作品の設定">
+        <TextInput label="作品名" value={name} onChange={setName} placeholder="例：鶴" />
         <ColorField label="折り紙の色" value={state.color} onChange={changeColor} isDisabled={!ready} />
-        <section className={styles.section} aria-labelledby="workshop-preview">
-          <h3 id="workshop-preview" className={styles.sectionTitle}>確認</h3>
+        <section className={styles.section} aria-labelledby="post-preview">
+          <h3 id="post-preview" className={styles.sectionTitle}>確認</h3>
           <Button text="折り方を確認" variant="secondary" onClick={() => setPreview("fold")} disabled={blocked} />
           <Button text="完成形を確認" variant="secondary" onClick={() => setPreview("completed")} disabled={blocked} />
         </section>
-        <section className={styles.section} aria-labelledby="workshop-save">
-          <h3 id="workshop-save" className={styles.sectionTitle}>保存と読み込み</h3>
-          <p className={styles.hint}>確定した手順はこのブラウザに自動保存します。別のブラウザや端末へ移すときはJSONを使います。</p>
-          <Button text="JSONを保存" onClick={() => save(false)} disabled={blocked} />
-          <FileButton text="JSONを読み込む" variant="secondary" acceptedFileTypes={[".json", "application/json"]} onSelect={readFile} disabled={!ready || state.busy} />
-          <Button text="モック用TSを保存" variant="secondary" onClick={() => save(true)} disabled={blocked} />
-        </section>
-        <section className={styles.section} aria-labelledby="workshop-reset">
-          <h3 id="workshop-reset" className={styles.sectionTitle}>やり直し</h3>
+        <section className={styles.section} aria-labelledby="post-reset">
+          <h3 id="post-reset" className={styles.sectionTitle}>やり直し</h3>
           <Button text="白紙に戻す" variant="secondary" onClick={reset} disabled={!ready || state.busy} />
-          <p className={styles.hint}>Ctrl+Z（⌘Z）で元に戻し、Ctrl+Shift+Z（⌘⇧Z）でやり直せます。</p>
+          <p className={styles.hint}>折った手順はこのブラウザに自動で保存され、次に開いたときに続きから折れます。Ctrl+Z（⌘Z）で元に戻し、Ctrl+Shift+Z（⌘⇧Z）でやり直せます。</p>
         </section>
       </SidePanel>
     </div>

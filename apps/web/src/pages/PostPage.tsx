@@ -1,5 +1,5 @@
-import { MockWorkshop } from "../features/mock-workshop/MockWorkshop";
+import { PostEditor } from "../features/post-editor/PostEditor";
 
 export function PostPage() {
-  return <MockWorkshop />;
+  return <PostEditor />;
 }
