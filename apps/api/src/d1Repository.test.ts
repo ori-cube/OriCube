@@ -41,7 +41,7 @@ const input = { name: "D1の鶴", description: "説明", color: "#ed7070", proce
 
 describe("D1のスキーマ", () => {
   it("migrations の列と Drizzle のテーブル定義が一致する", async () => {
-    const { results } = await db.prepare("PRAGMA table_info(models)").all<{ name: string; notnull: number }>();
+    const { results } = (await db.prepare("PRAGMA table_info(models)").all()) as { results: { name: string; notnull: number }[] };
     const fromSql = Object.fromEntries(results.map((column) => [column.name, column.notnull === 1]));
     const fromDrizzle = Object.fromEntries(Object.values(getTableColumns(models)).map((column) => [column.name, column.notNull || column.primary]));
     expect(fromSql).toEqual(fromDrizzle);
