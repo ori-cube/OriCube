@@ -47,8 +47,8 @@ export function OrigamiViewer({ model, startAtEnd = false, fullscreen = false }:
     </div>
     <div className={styles.bottom}>
       {showControls && <>
-        <Button variant="secondary" size="lg" prefixIcon="PreviousIcon" text="前へ" className={[styles.stepButton, styles.previous].join(" ")} disabled={playback.index <= 0} onClick={() => playback.selectStep(playback.index - 1)} />
-        <Button variant="secondary" size="lg" suffixIcon="NextIcon" text="次へ" className={[styles.stepButton, styles.next].join(" ")} disabled={playback.index >= timeline.steps.length - 1} onClick={() => playback.selectStep(playback.index + 1)} />
+        <IconButton variant="floating" size="lg" icon="PreviousIcon" label="前へ" className={styles.previous} isDisabled={playback.index <= 0} onPress={() => playback.selectStep(playback.index - 1)} />
+        <IconButton variant="floating" size="lg" icon="NextIcon" label="次へ" className={styles.next} isDisabled={playback.index >= timeline.steps.length - 1} onPress={() => playback.selectStep(playback.index + 1)} />
       </>}
       <FloatingPanel className={styles.panel}>{showControls ? <section className={styles.controls} aria-label="折り手順の操作">
         <div className={styles.caption}>

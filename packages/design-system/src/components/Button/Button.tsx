@@ -16,7 +16,7 @@ export type ButtonProps = Omit<
   "isDisabled" | "onPress" | "children"
 > & {
   variant?: "primary" | "secondary";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md";
   prefixIcon?: ButtonIconName;
   suffixIcon?: ButtonIconName;
   disabled?: boolean;
@@ -27,7 +27,6 @@ export type ButtonProps = Omit<
 const iconSizes = {
   sm: 16,
   md: 20,
-  lg: 24,
 } as const;
 
 export function Button({

@@ -20,7 +20,7 @@ export function SidePanel({ title, triggerLabel, icon = "MenuIcon", className, c
       {({ isExpanded }) => <>
         <div className={styles.header}>
           {isExpanded && <Heading level={2} className={styles.title}>{title}</Heading>}
-          <IconButton slot="trigger" className={styles.trigger} icon={isExpanded ? "CloseIcon" : icon} label={triggerLabel} />
+          <IconButton slot="trigger" variant={isExpanded ? "secondary" : "floating"} icon={isExpanded ? "CloseIcon" : icon} label={triggerLabel} />
         </div>
         <DisclosurePanel className={styles.panel}>{children}</DisclosurePanel>
       </>}

@@ -21,7 +21,7 @@ const meta = {
     },
     size: {
       control: "radio",
-      options: ["sm", "md", "lg"],
+      options: ["sm", "md"],
     },
     prefixIcon: {
       control: "select",
@@ -60,15 +60,6 @@ export const Secondary: Story = {
 export const Small: Story = {
   args: {
     size: "sm",
-  },
-};
-
-export const Large: Story = {
-  args: {
-    size: "lg",
-    variant: "secondary",
-    suffixIcon: "NextIcon",
-    text: "次へ",
   },
 };
 
