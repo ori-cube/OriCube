@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import {
+  PointV2,
+  LayeredBoard,
+  FinishingRotation,
+  SnapPoint,
+} from "@oricube/engine";
 import { FoldPhase } from "../../index";
-import { LayeredBoard } from "../../types";
-import { FinishingRotation } from "../../utils/replayFoldSteps";
 import { BOARD_LAYER_OFFSET } from "../../constants";
-import { SnapPoint } from "../../utils/collectSnapPoints";
 import { createBoardMesh } from "../../utils/createBoardMesh";
 import { renderSnapPoint } from "./renderPoint";
 import { removeBoardObjects } from "./removeBoardObjects";
@@ -18,7 +20,7 @@ type UseRenderBoards = (props: {
   currentBoards: LayeredBoard[];
   finishingRotations: Map<LayeredBoard, FinishingRotation>;
   snapPoints: SnapPoint[];
-  draggedPoint: Point | null;
+  draggedPoint: PointV2 | null;
   foldPhase: FoldPhase;
 }) => void;
 
@@ -99,7 +101,7 @@ export const useRenderBoards: UseRenderBoards = ({
       return;
     }
     snapPoints.forEach((snapPoint, index) => {
-      const point: Point = [
+      const point: PointV2 = [
         snapPoint.position.x,
         snapPoint.position.y,
         snapPoint.position.z,
@@ -131,7 +133,7 @@ export const useRenderBoards: UseRenderBoards = ({
 };
 
 // 2つの点が同じかどうかを判定
-const isSamePoint = (point1: Point, point2: Point): boolean => {
+const isSamePoint = (point1: PointV2, point2: PointV2): boolean => {
   const tolerance = 0.1;
   return (
     Math.abs(point1[0] - point2[0]) < tolerance &&

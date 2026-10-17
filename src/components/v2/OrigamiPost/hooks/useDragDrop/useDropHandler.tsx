@@ -1,26 +1,23 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
-import { FoldPhase, FoldProposal, PendingFold } from "../../index";
-import { LayeredBoard } from "../../types";
-import { calculateFoldLine } from "../../utils/calculateFoldLine";
-import { calculateFoldLineSpan } from "../../utils/calculateFoldLineSpan";
-import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
-import { disposeObject3D } from "../../utils/disposeObject3D";
-import { applyFoldStep, findFoldCandidates } from "../../utils/applyFoldStep";
 import {
+  PointV2,
+  LayeredBoard,
+  calculateFoldLine,
+  calculateFoldLineSpan,
+  applyFoldStep,
+  findFoldCandidates,
   applySquashFoldStep,
   buildSquashFoldStep,
-} from "../../utils/applySquashFoldStep";
-import {
   applyPetalFoldStep,
   buildPetalFoldStep,
-} from "../../utils/applyPetalFoldStep";
-import {
   applyInsideReverseFoldStep,
   buildInsideReverseFoldStep,
-} from "../../utils/applyInsideReverseFoldStep";
-import { SNAP_ATTRACTION_RADIUS } from "../../utils/snapToNearestSnapPoint";
+  SNAP_ATTRACTION_RADIUS,
+} from "@oricube/engine";
+import { FoldPhase, FoldProposal, PendingFold } from "../../index";
+import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
+import { disposeObject3D } from "../../utils/disposeObject3D";
 import { commenceSquashFold } from "./commenceSquashFold";
 import { commencePetalFold } from "./commencePetalFold";
 import { commenceInsideReverseFold } from "./commenceInsideReverseFold";
@@ -31,8 +28,8 @@ type UseDropHandler = (props: {
   cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>;
   currentBoards: LayeredBoard[];
-  draggedPoint: Point | null;
-  setDraggedPoint: (point: Point | null) => void;
+  draggedPoint: PointV2 | null;
+  setDraggedPoint: (point: PointV2 | null) => void;
   setIsDragging: (isDragging: boolean) => void;
   originalPoint: THREE.Vector3 | null;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;

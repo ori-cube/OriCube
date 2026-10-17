@@ -1,6 +1,6 @@
 # 02 データモデルと履歴リプレイ
 
-型定義はすべて `types.ts` にある。
+型定義はすべて `packages/engine/src/types.ts` にある。
 
 ## 2つの座標空間
 
@@ -71,7 +71,7 @@ const currentBoards = useMemo(
 );
 ```
 
-`replayFoldSteps`（`utils/replayFoldSteps/index.ts`）は初期正方形を `LayeredBoard`（layer=0、`sourcePolygon` は `polygon` のコピー）に包み、各ステップを `kind` で適用関数（`applyFoldStep` / `applySquashFoldStep`）へ振り分けて順に適用するだけの純関数。
+`replayFoldSteps`（`packages/engine/src/utils/replayFoldSteps/index.ts`）は初期正方形を `LayeredBoard`（layer=0、`sourcePolygon` は `polygon` のコピー）に包み、各ステップを `kind` で適用関数（`applyFoldStep` / `applySquashFoldStep`）へ振り分けて順に適用するだけの純関数。
 
 この設計を採る理由:
 
@@ -85,9 +85,9 @@ const currentBoards = useMemo(
 
 | パス | 役割 |
 | --- | --- |
-| `types.ts` | `Board` / `FoldLine` / `BoardPiece` / `LayeredBoard` / `OrigamiStep`（`FoldStep` / `SquashFoldStep`）の定義 |
+| `packages/engine/src/types.ts` | `Board` / `FoldLine` / `BoardPiece` / `LayeredBoard` / `OrigamiStep`（`FoldStep` / `SquashFoldStep`）の定義 |
 | `constants.ts` | `BOARD_LAYER_OFFSET`（レイヤー1つ分の描画Zオフセット） |
-| `utils/replayFoldSteps/index.ts` | 履歴のリプレイによる現在の板群の導出（`kind` による振り分け） |
-| `utils/createSquareBoard/index.ts` | 初期状態の正方形 `Board` の生成 |
-| `utils/applyFoldStep/index.ts` | 通常の折り1ステップの適用（[04](./04-fold-execution.md) 参照） |
-| `utils/applySquashFoldStep/index.ts` | 開いて畳む1ステップの適用（[09](./09-squash-fold.md) 参照） |
+| `packages/engine/src/utils/replayFoldSteps/index.ts` | 履歴のリプレイによる現在の板群の導出（`kind` による振り分け） |
+| `packages/engine/src/utils/createSquareBoard/index.ts` | 初期状態の正方形 `Board` の生成 |
+| `packages/engine/src/utils/applyFoldStep/index.ts` | 通常の折り1ステップの適用（[04](./04-fold-execution.md) 参照） |
+| `packages/engine/src/utils/applySquashFoldStep/index.ts` | 開いて畳む1ステップの適用（[09](./09-squash-fold.md) 参照） |

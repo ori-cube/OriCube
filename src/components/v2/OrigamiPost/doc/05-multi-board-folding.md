@@ -64,8 +64,8 @@ mouseup
 
 | パス | 役割 |
 | --- | --- |
-| `utils/collectSnapPoints/index.ts` | 頂点の集約と `SNAP_MERGE_TOLERANCE` の定義 |
-| `utils/applyFoldStep/index.ts` | `findFoldCandidates`（候補板の視点順ソート） |
+| `packages/engine/src/utils/collectSnapPoints/index.ts` | 頂点の集約と `SNAP_MERGE_TOLERANCE` の定義 |
+| `packages/engine/src/utils/applyFoldStep/index.ts` | `findFoldCandidates`（候補板の視点順ソート） |
 | `hooks/useDragDrop/useDropHandler.tsx` | `collectValidCounts` と即実行 / 選択の分岐 |
 | `hooks/useDragDrop/commenceFold.ts` | 通常の折りの確定処理（両フロー共通） |
 | `hooks/useDragDrop/commenceSquashFold.ts` | 開いて畳むの確定処理 |

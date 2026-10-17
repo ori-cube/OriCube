@@ -12,7 +12,12 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    include: [
+      "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "packages/engine/src/**/*.{test,spec}.ts",
+      "apps/web/src/**/*.{test,spec}.{ts,tsx}",
+      "apps/api/src/**/*.{test,spec}.ts",
+    ],
     exclude: ["node_modules", "dist", ".storybook"],
     coverage: {
       provider: "v8",

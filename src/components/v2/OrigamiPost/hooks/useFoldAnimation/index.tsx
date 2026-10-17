@@ -2,17 +2,15 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { FoldPhase, PendingFold } from "../../index";
-import { determineFoldRotation } from "../../utils/determineFoldRotation";
-import { removeFoldLine } from "../../utils/visualizeFoldLine";
-import { easeInOutCubic } from "../../utils/easeInOutCubic";
 import {
+  determineFoldRotation,
   computeSquashAnimationPositions,
   deriveSquashRotationAxes,
-} from "../../utils/computeSquashAnimationPositions";
-import {
   computePetalAnimationPositions,
   derivePetalRotationAxes,
-} from "../../utils/computePetalAnimationPositions";
+} from "@oricube/engine";
+import { removeFoldLine } from "../../utils/visualizeFoldLine";
+import { easeInOutCubic } from "../../utils/easeInOutCubic";
 import { updateMorphBoardMeshPositions } from "../../utils/createMorphBoardMesh";
 
 /** 折りアニメーションの所要時間（ミリ秒） */

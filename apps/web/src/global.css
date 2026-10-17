@@ -1,0 +1,6 @@
+body {
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-weight: 700;
+  background: var(--background-default);
+  color: var(--text-default);
+}

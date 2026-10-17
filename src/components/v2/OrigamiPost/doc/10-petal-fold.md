@@ -69,7 +69,7 @@
 
 | パス | 役割 |
 | --- | --- |
-| `utils/applyPetalFoldStep/index.ts` | 花弁折り1ステップの適用・構造検出・折り線の正準化・`buildPetalFoldStep` |
-| `utils/computePetalAnimationPositions/index.ts` | 回転軸の導出・頂点ごとの軸分類・途中経過の座標計算 |
+| `packages/engine/src/utils/applyPetalFoldStep/index.ts` | 花弁折り1ステップの適用・構造検出・折り線の正準化・`buildPetalFoldStep` |
+| `packages/engine/src/utils/computePetalAnimationPositions/index.ts` | 回転軸の導出・頂点ごとの軸分類・途中経過の座標計算 |
 | `hooks/useDragDrop/commencePetalFold.ts` | 花弁折りの確定処理（可視化とシーン差し替え） |
 | `FoldCountSelector/index.tsx` | 「花弁折り」の選択肢を含む折り方選択カード |

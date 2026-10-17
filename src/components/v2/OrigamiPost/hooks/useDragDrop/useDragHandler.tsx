@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import {
+  PointV2,
+  LayeredBoard,
+  SnapPoint,
+  snapToNearestSnapPoint,
+  collectAlignmentSnapPoints,
+  computeFoldPreview,
+} from "@oricube/engine";
 import { FoldPhase } from "../../index";
-import { LayeredBoard } from "../../types";
-import { SnapPoint } from "../../utils/collectSnapPoints";
-import { snapToNearestSnapPoint } from "../../utils/snapToNearestSnapPoint";
-import { collectAlignmentSnapPoints } from "../../utils/collectAlignmentSnapPoints";
-import { computeFoldPreview } from "../../utils/computeFoldPreview";
 import { renderDraggedPoint } from "./renderPoint";
 import { renderFoldPreview, removeFoldPreview } from "./renderFoldPreview";
 
@@ -19,7 +21,7 @@ type UseDragHandler = (props: {
   origamiColor: string;
   currentBoards: LayeredBoard[];
   snapPoints: SnapPoint[];
-  setDraggedPoint: (point: Point | null) => void;
+  setDraggedPoint: (point: PointV2 | null) => void;
   setIsDragging: (isDragging: boolean) => void;
   setOriginalPoint: (point: THREE.Vector3 | null) => void;
   foldPhase: FoldPhase;
@@ -74,7 +76,7 @@ export const useDragHandler: UseDragHandler = ({
     if (foldPhase !== "idle") return;
 
     let isDragging = false;
-    let draggedPoint: Point | null = null;
+    let draggedPoint: PointV2 | null = null;
     // ドラッグ中の吸着先（頂点のスナップポイント + ドラッグ頂点に応じた
     // アライメント候補）。ドラッグ開始時に計算する
     let snapTargets: THREE.Vector3[] = [];

@@ -96,8 +96,8 @@
 | `hooks/useDragDrop/useDropHandler.tsx` | mouseup。折り線計算から分岐までの起点 |
 | `hooks/useDragDrop/renderPoint.tsx` | スナップポイント・ドラッグ中の点の描画 |
 | `hooks/useDragDrop/renderFoldPreview.ts` | ドラッグ中の折りプレビュー（折り線と動く片）の描画 |
-| `utils/computeFoldPreview/index.ts` | プレビュー形状（折り線スパンと鏡映後の動く片）の計算 |
-| `utils/snapToNearestSnapPoint/index.ts` | 吸着先への吸着と `SNAP_ATTRACTION_RADIUS` の定義 |
-| `utils/collectAlignmentSnapPoints/index.ts` | 辺の折り込み先（アライメント候補）の列挙 |
-| `utils/calculateFoldLine/index.ts` | 垂直二等分線としての折り線の導出 |
-| `utils/calculateFoldLineSpan/index.ts` | 折り線が板群を横切るスパンの計算 |
+| `packages/engine/src/utils/computeFoldPreview/index.ts` | プレビュー形状（折り線スパンと鏡映後の動く片）の計算 |
+| `packages/engine/src/utils/snapToNearestSnapPoint/index.ts` | 吸着先への吸着と `SNAP_ATTRACTION_RADIUS` の定義 |
+| `packages/engine/src/utils/collectAlignmentSnapPoints/index.ts` | 辺の折り込み先（アライメント候補）の列挙 |
+| `packages/engine/src/utils/calculateFoldLine/index.ts` | 垂直二等分線としての折り線の導出 |
+| `packages/engine/src/utils/calculateFoldLineSpan/index.ts` | 折り線が板群を横切るスパンの計算 |

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { BOARD_LAYER_OFFSET } from "../../constants";
-import { FoldPreview } from "../../utils/computeFoldPreview";
+import { FoldPreview } from "@oricube/engine";
 import { createBoardMesh } from "../../utils/createBoardMesh";
 import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import { disposeObject3D } from "../../utils/disposeObject3D";

@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import { PendingFold } from "../../index";
-import { LayeredBoard } from "../../types";
-import { BOARD_LAYER_OFFSET } from "../../constants";
-import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import {
+  LayeredBoard,
   applySquashFoldStep,
   buildSquashFoldStep,
   SquashFoldStepResult,
-} from "../../utils/applySquashFoldStep";
+} from "@oricube/engine";
+import { BOARD_LAYER_OFFSET } from "../../constants";
+import { visualizeFoldLine } from "../../utils/visualizeFoldLine";
 import { createBoardMesh } from "../../utils/createBoardMesh";
 import { createMorphBoardMesh } from "../../utils/createMorphBoardMesh";
 import { removeBoardObjects } from "./removeBoardObjects";

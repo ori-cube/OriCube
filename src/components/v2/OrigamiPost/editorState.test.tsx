@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { OrigamiPostV2 } from "./index";
-import type { OrigamiStep } from "./types";
+import type { OrigamiStep } from "@oricube/engine";
 
 vi.mock("./hooks", () => ({ useInitScene: () => vi.fn(), useDragDrop: () => ({ confirmFold: vi.fn(), cancelFold: vi.fn() }), useFoldAnimation: vi.fn(), useFlipView: () => ({ flipView: vi.fn(), isFlipping: false }), useViewMode: () => ({ toggleViewMode: vi.fn() }), useCameraFocus: vi.fn() }));
 
