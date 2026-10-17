@@ -12,7 +12,7 @@ vi.mock("./components/OrigamiViewer", () => ({
     return <main aria-label="閲覧">{model.name}・{startAtEnd ? "最終ステップ" : "最初のステップ"}</main>;
   },
 }));
-vi.mock("./features/mock-workshop/MockWorkshop", () => ({ MockWorkshop: () => <main aria-label="作成" /> }));
+vi.mock("./features/post-editor/PostEditor", () => ({ PostEditor: () => <main aria-label="作成" /> }));
 // 画面からAPIまでを通して確かめるため、RPCクライアントの通信先をHonoアプリに直接つなぐ
 vi.mock("./apiClient", async (original) => {
   const [{ app }, { hc }] = await Promise.all([import("@oricube/api"), import("hono/client")]);

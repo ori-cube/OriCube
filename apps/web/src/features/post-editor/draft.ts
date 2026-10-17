@@ -3,8 +3,10 @@ import type { PointV2, OrigamiStep } from "@oricube/engine";
 import { exportProcedureV2 } from "@oricube/engine";
 import type { OrigamiModelV2 } from "@oricube/engine";
 
-export const MOCK_DRAFT_KEY = "oricube.v2.crane-draft";
-export interface MockDraft { model: OrigamiModelV2; viewFront: boolean }
+// 以前の下書きを引き継ぐため、キーは変えない
+export const DRAFT_KEY = "oricube.v2.crane-draft";
+/** ブラウザに自動保存する折りかけの作品。viewFront は編集を再開するときの表裏 */
+export interface Draft { model: OrigamiModelV2; viewFront: boolean }
 
 const record = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const point = (value: unknown): value is PointV2 => Array.isArray(value) && value.length === 3 && value.every((axis) => typeof axis === "number" && Number.isFinite(axis));
@@ -27,11 +29,11 @@ export const restoreHistory = (value: unknown): OrigamiStep[] => {
   });
 };
 
-export const parseMockDraft = (text: string): MockDraft => {
+export const parseDraft = (text: string): Draft => {
   let value: unknown;
   try { value = JSON.parse(text); }
-  catch { throw new Error("JSONの形式が正しくありません。"); }
-  if (!record(value) || !record(value.procedure) || value.procedure.version !== 2) throw new Error("V2の折り紙JSONを選んでください。");
+  catch { throw new Error("下書きの形式が正しくありません。"); }
+  if (!record(value) || !record(value.procedure) || value.procedure.version !== 2) throw new Error("V2の下書きではありません。");
   const size = value.procedure.size;
   if (typeof size !== "number" || !Number.isFinite(size) || size <= 0 || size > 1000) throw new Error("紙のサイズが正しくありません。");
   if (typeof value.name !== "string" || !value.name.trim() || typeof value.color !== "string" || !/^#[0-9a-f]{6}$/i.test(value.color)) throw new Error("作品名・色が正しくありません。");
@@ -39,23 +41,9 @@ export const parseMockDraft = (text: string): MockDraft => {
   const procedure = exportProcedureV2({ size, steps });
   if (!procedure) throw new Error("この手順を再現できません。現在の下書きは変更していません。");
   return {
-    model: { id: "crane", name: value.name, description: typeof value.description === "string" ? value.description : "", color: value.color, procedure },
+    model: { id: "draft", name: value.name, description: typeof value.description === "string" ? value.description : "", color: value.color, procedure },
     viewFront: typeof value.editorViewFront === "boolean" ? value.editorViewFront : steps.at(-1)?.viewFront ?? true,
   };
 };
 
-export const serializeMockDraft = ({ model, viewFront }: MockDraft) => JSON.stringify({ ...model, editorViewFront: viewFront }, null, 2);
-
-export const mockModule = (model: OrigamiModelV2) => `import type { OrigamiModelV2 } from "@oricube/engine";
-
-export const recordedCraneModel = ${JSON.stringify(model, null, 2)} satisfies OrigamiModelV2;
-`;
-
-export const saveMockFile = (filename: string, content: string) => {
-  const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url; link.download = filename;
-  document.body.append(link); link.click(); link.remove();
-  // ブラウザがダウンロードを開始してからBlobを解放する。
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-};
+export const serializeDraft = ({ model, viewFront }: Draft) => JSON.stringify({ ...model, editorViewFront: viewFront }, null, 2);

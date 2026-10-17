@@ -1,0 +1,14 @@
+/* 閲覧画面の下端の操作帯と同じ3列の配置。キャンバスのドラッグを妨げないよう、余白は操作を通す */
+.bottom { position: absolute; inset-inline: 0; bottom: 0; display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "undo panel redo"; align-items: end; gap: var(--spacing-md); padding: var(--spacing-md) var(--editor-gutter, var(--spacing-md)); pointer-events: none; }
+.bottom > * { pointer-events: auto; }
+.undo { grid-area: undo; justify-self: end; align-self: center; }
+.redo { grid-area: redo; justify-self: start; align-self: center; }
+.panel { grid-area: panel; min-width: 0; max-width: 100%; }
+.wide { grid-column: 1 / -1; justify-self: center; width: 46rem; }
+.tools { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--spacing-xs); }
+@media (max-width: 767px) {
+  .bottom { grid-template-columns: 1fr 1fr; grid-template-areas: "undo redo" "panel panel"; gap: var(--spacing-xs); }
+  .undo { justify-self: start; }
+  .redo { justify-self: end; }
+  .panel, .wide { width: 100%; }
+}

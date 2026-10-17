@@ -1,0 +1,3 @@
+.container { position: relative; }
+/* 画面の背景（作業台）を透かす。裏面の白い紙も背景と区別できる */
+.canvas { display: block; touch-action: none; }

@@ -85,6 +85,18 @@ export const WithBothIcons: Story = {
   },
 };
 
+export const Selected: Story = {
+  args: {
+    variant: "secondary",
+    text: "回して確認",
+    selected: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: "回して確認" })).toHaveAttribute("aria-pressed", "true");
+  },
+};
+
 export const Disabled: Story = {
   args: {
     disabled: true,

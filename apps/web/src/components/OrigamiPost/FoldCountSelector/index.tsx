@@ -1,6 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Button, SegmentedControl, Slider } from "@oricube/design-system";
 import { FoldChoice } from "../hooks";
-import styles from "./index.module.scss";
+import styles from "./index.module.css";
+
+type FoldKind = "fold" | "squash" | "petal" | "insideReverse";
+
+const KIND_LABELS: Record<FoldKind, string> = {
+  fold: "枚数を選んで折る",
+  squash: "開いて畳む",
+  petal: "花弁折り",
+  insideReverse: "中割り折り",
+};
 
 interface Props {
   /** 折る枚数の上限（頂点を共有する板の数） */
@@ -25,16 +35,17 @@ interface Props {
 }
 
 /**
- * 折り方（折る枚数・開いて畳む・花弁折り・中割り折り）を選択する
- * フローティングカード
+ * 折り方（折る枚数・開いて畳む・花弁折り・中割り折り）を選択するパネル
  *
  * @description
- * - 折りで頂点が重なり、複数の操作から選べる場合にキャンバス下部へ表示する
- * - 折りが成立しない枚数は選択できない
- * - 開いて畳む・花弁折り・中割り折りが成立する場合は枚数の選択肢に加えて
- *   表示する
+ * - 折りで頂点が重なり、複数の操作から選べる場合に下端の操作帯へ表示する
+ * - 開いて畳む・花弁折り・中割り折りが成立する場合だけ「折り方」を選ばせ、
+ *   通常の折りでは枚数と仕上げ角度を選ぶ
+ * - 折りが成立しない枚数は表示したまま選択できない。重なりがなく1枚しか
+ *   折れない場合は枚数を表示しない
  * - デフォルトは選択できる最小の枚数（枚数が選べない場合は開いて畳む →
  *   花弁折り → 中割り折りの順）
+ * - 表示時に「折る」へフォーカスし、Enterで確定、Escapeで取りやめる
  */
 export function FoldCountSelector({
   maxFoldCount,
@@ -45,104 +56,72 @@ export function FoldCountSelector({
   onConfirm,
   onCancel,
 }: Props) {
-  const [selectedChoice, setSelectedChoice] = useState<FoldChoice>(
-    validCounts[0] ??
-      (squashAvailable ? "squash" : petalAvailable ? "petal" : "insideReverse")
+  const available: Record<FoldKind, boolean> = {
+    fold: validCounts.length > 0,
+    squash: squashAvailable,
+    petal: petalAvailable,
+    insideReverse: insideReverseAvailable,
+  };
+  const kinds = (Object.keys(KIND_LABELS) as FoldKind[]).filter(
+    (kind) => kind === "fold" || available[kind]
   );
+  const [kind, setKind] = useState<FoldKind>(
+    () => kinds.find((candidate) => available[candidate]) ?? "fold"
+  );
+  const [count, setCount] = useState(validCounts[0] ?? 1);
   // 折り角（度）。180度未満は仕上げ角度（枚数選択時のみ有効）
   const [angleDeg, setAngleDeg] = useState(180);
 
+  const choice: FoldChoice = kind === "fold" ? count : kind;
+  const confirmAngle = kind === "fold" ? (angleDeg * Math.PI) / 180 : Math.PI;
   const counts = Array.from({ length: maxFoldCount }, (_, index) => index + 1);
-  const isCountSelected = typeof selectedChoice === "number";
-  const confirmAngle = isCountSelected
-    ? (angleDeg * Math.PI) / 180
-    : Math.PI;
 
   return (
-    <div className={styles.card} role="dialog" aria-label="折り方の選択">
-      <p className={styles.label}>折る枚数</p>
-      <div className={styles.counts}>
-        {counts.map((count) => (
-          <button
-            key={count}
-            type="button"
-            className={
-              count === selectedChoice
-                ? styles.count_button_selected
-                : styles.count_button
-            }
-            disabled={!validCounts.includes(count)}
-            onClick={() => setSelectedChoice(count)}
-          >
-            {count}
-          </button>
-        ))}
-      </div>
-      {squashAvailable && (
-        <button
-          type="button"
-          className={
-            selectedChoice === "squash"
-              ? styles.squash_button_selected
-              : styles.squash_button
-          }
-          onClick={() => setSelectedChoice("squash")}
-        >
-          開いて畳む
-        </button>
+    <section
+      className={styles.selector}
+      role="dialog"
+      aria-label="折り方の選択"
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.stopPropagation();
+        onCancel();
+      }}
+    >
+      {kinds.length > 1 && (
+        <SegmentedControl
+          label="折り方"
+          value={kind}
+          onChange={setKind}
+          items={kinds.map((id) => ({ id, label: KIND_LABELS[id], isDisabled: !available[id] }))}
+        />
       )}
-      {petalAvailable && (
-        <button
-          type="button"
-          className={
-            selectedChoice === "petal"
-              ? styles.squash_button_selected
-              : styles.squash_button
-          }
-          onClick={() => setSelectedChoice("petal")}
-        >
-          花弁折り
-        </button>
-      )}
-      {insideReverseAvailable && (
-        <button
-          type="button"
-          className={
-            selectedChoice === "insideReverse"
-              ? styles.squash_button_selected
-              : styles.squash_button
-          }
-          onClick={() => setSelectedChoice("insideReverse")}
-        >
-          中割り折り
-        </button>
-      )}
-      {isCountSelected && (
-        <label className={styles.angle}>
-          <span className={styles.label}>折り角度 {angleDeg}°</span>
-          <input
-            type="range"
-            min={90}
-            max={180}
-            step={5}
-            value={angleDeg}
-            onChange={(event) => setAngleDeg(Number(event.target.value))}
-            aria-label="折り角度"
+      <div className={styles.row}>
+        {kind === "fold" && maxFoldCount > 1 && (
+          <SegmentedControl
+            label="折る枚数（上から）"
+            value={String(count)}
+            onChange={(value) => setCount(Number(value))}
+            items={counts.map((value) => ({ id: String(value), label: String(value), isDisabled: !validCounts.includes(value) }))}
           />
-        </label>
-      )}
-      <div className={styles.actions}>
-        <button type="button" className={styles.cancel_button} onClick={onCancel}>
-          キャンセル
-        </button>
-        <button
-          type="button"
-          className={styles.confirm_button}
-          onClick={() => onConfirm(selectedChoice, confirmAngle)}
-        >
-          折る
-        </button>
+        )}
+        {kind === "fold" && (
+          <div className={styles.angle}>
+            <Slider
+              label="折り角度"
+              minValue={90}
+              maxValue={180}
+              step={5}
+              value={angleDeg}
+              onChange={setAngleDeg}
+              formatOptions={{ style: "unit", unit: "degree", unitDisplay: "narrow" }}
+            />
+          </div>
+        )}
+        <div className={styles.actions}>
+          <Button variant="secondary" text="キャンセル" onClick={onCancel} />
+          <Button text="折る" autoFocus onClick={() => onConfirm(choice, confirmAngle)} />
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
