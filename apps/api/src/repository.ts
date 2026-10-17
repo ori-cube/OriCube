@@ -46,3 +46,15 @@ export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): Origa
 /** 鶴などのモック（所有者なし）を入れた保存先 */
 export const createMockOrigamiRepository = () =>
   createMemoryOrigamiRepository(models.map((model) => ({ ownerId: null, model })));
+
+/**
+ * 保存先に無い作品はモックから読む
+ *
+ * @description
+ * 作品一覧ができるまで、トップから案内する鶴などのモックをDB接続後も見られるようにする。
+ * モックは所有者がいないため更新・削除できず、書き込みはすべて保存先に行く
+ */
+export const withMockFallback = (primary: OrigamiRepository, mock = createMockOrigamiRepository()): OrigamiRepository => ({
+  ...primary,
+  findById: async (id) => (await primary.findById(id)) ?? mock.findById(id),
+});
