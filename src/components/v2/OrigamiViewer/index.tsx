@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Button, Checkbox, FloatingPanel, IconButton, Pagination, SearchIcon, Slider } from "@oricube/design-system";
 import type { OrigamiModelV2 } from "@/features/origami-viewer-v2/model";
 import { OrigamiCanvas } from "./Canvas";
-import { createViewerTimeline } from "./playback";
+import { createViewerTimeline } from "@oricube/engine";
 import { usePlayback } from "./usePlayback";
 import styles from "./Viewer.module.css";
 

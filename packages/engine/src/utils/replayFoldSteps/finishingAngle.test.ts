@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { replayFoldSteps, replayFoldStepsDetailed } from ".";
+import { replayFoldSteps, replayFoldStepsDetailed } from "./index";
 import { createSquareBoard } from "../createSquareBoard";
 import { FoldStep, OrigamiStep } from "../../types";
 

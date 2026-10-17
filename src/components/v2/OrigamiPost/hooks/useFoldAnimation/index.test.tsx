@@ -3,12 +3,17 @@ import { renderHook } from "@testing-library/react";
 import * as THREE from "three";
 import { useFoldAnimation } from "./index";
 import { PendingFold } from "../../index";
-import { FoldStep, OrigamiStep, PetalFoldStep, SquashFoldStep } from "../../types";
-import { applySquashFoldStep } from "../../utils/applySquashFoldStep";
-import { applyPetalFoldStep } from "../../utils/applyPetalFoldStep";
+import {
+  FoldStep,
+  OrigamiStep,
+  PetalFoldStep,
+  SquashFoldStep,
+  applySquashFoldStep,
+  applyPetalFoldStep,
+  replayFoldSteps,
+  createSquareBoard,
+} from "@oricube/engine";
 import { createMorphBoardMesh } from "../../utils/createMorphBoardMesh";
-import { replayFoldSteps } from "../../utils/replayFoldSteps";
-import { createSquareBoard } from "../../utils/createSquareBoard";
 
 // requestAnimationFrameを手動で進められるようにフェイク化する
 let rafCallbacks: FrameRequestCallback[] = [];

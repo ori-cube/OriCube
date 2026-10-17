@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Button, FileButton, TextInput } from "@oricube/design-system";
 import type { OrigamiEditorState } from "@/components/v2/OrigamiPost";
 import { OrigamiViewer } from "@/components/v2/OrigamiViewer";
-import { exportProcedureV2 } from "@/components/v2/OrigamiPost/utils/exportProcedureV2";
+import { exportProcedureV2 } from "@oricube/engine";
 import { MOCK_DRAFT_KEY, mockModule, parseMockDraft, restoreHistory, saveMockFile, serializeMockDraft, type MockDraft } from "./mockAuthoring";
 import styles from "./MockWorkshop.module.css";
 

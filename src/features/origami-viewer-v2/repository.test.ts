@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createViewerTimeline, getStepBoards } from "@/components/v2/OrigamiViewer/playback";
+import { createViewerTimeline, getStepBoards } from "@oricube/engine";
 import { getOrigamiV2 } from "./repository";
 
 describe("V2閲覧用モック", () => {

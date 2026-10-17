@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import type { PointV2 } from "@/types/model-v2";
-import type { OrigamiStep } from "@/components/v2/OrigamiPost/types";
-import { exportProcedureV2 } from "@/components/v2/OrigamiPost/utils/exportProcedureV2";
+import type { PointV2, OrigamiStep } from "@oricube/engine";
+import { exportProcedureV2 } from "@oricube/engine";
 import type { OrigamiModelV2 } from "./model";
 
 export const MOCK_DRAFT_KEY = "oricube.v2.crane-draft";

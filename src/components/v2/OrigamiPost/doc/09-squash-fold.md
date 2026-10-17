@@ -15,7 +15,7 @@
 
 ## 成立条件 — applySquashFoldStep
 
-`applySquashFoldStep`（`utils/applySquashFoldStep/index.ts`）が「現在の板群 + `SquashFoldStep` → 折り後の板群」を計算する純関数で、以下をすべて満たさない場合は null（不成立）を返す:
+`applySquashFoldStep`（`packages/engine/src/utils/applySquashFoldStep/index.ts`）が「現在の板群 + `SquashFoldStep` → 折り後の板群」を計算する純関数で、以下をすべて満たさない場合は null（不成立）を返す:
 
 1. 候補（V に頂点を持つ板）が2枚以上あり、視点側の先頭2枚をフラップ X・Y とする
 2. **スパイン検出（`detectSpineApex`）**: X と Y の展開図上の共有折り目がちょうど1本で、折り畳み空間で一端が V に一致し、他端 A が折り線 L 上にある（A が L 上にないと平らに畳めない）。V 自体は L 上にない
@@ -86,11 +86,11 @@ X・Y をそれぞれ折り線 L で分割し、4片のうち3片が動く（表
 
 | パス | 役割 |
 | --- | --- |
-| `utils/applySquashFoldStep/index.ts` | 適用の中核。成立条件・4片の変換・`buildSquashFoldStep` / `staysAttached` |
-| `utils/computeSquashAnimationPositions/index.ts` | 頂点ごと軸方式の途中経過座標の計算 |
+| `packages/engine/src/utils/applySquashFoldStep/index.ts` | 適用の中核。成立条件・4片の変換・`buildSquashFoldStep` / `staysAttached` |
+| `packages/engine/src/utils/computeSquashAnimationPositions/index.ts` | 頂点ごと軸方式の途中経過座標の計算 |
 | `utils/createMorphBoardMesh/index.ts` | 頂点を毎フレーム動かせるモーフ板メッシュ |
 | `hooks/useDragDrop/commenceSquashFold.ts` | 確定処理とアニメーション用シーン差し替え |
 | `hooks/useDragDrop/useDropHandler.tsx` | 発動判定と即実行 / 選択の分岐 |
 | `hooks/useFoldAnimation/index.tsx` | squash 分岐（モーフ板の毎フレーム更新） |
 | `FoldCountSelector/index.tsx` | 「開いて畳む」の選択肢 |
-| `types.ts` | `SquashFoldStep` の定義 |
+| `packages/engine/src/types.ts` | `SquashFoldStep` の定義 |

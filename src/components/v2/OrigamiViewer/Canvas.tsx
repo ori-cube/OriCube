@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { FixBoardV2 } from "@/types/model-v2";
+import type { FixBoardV2, ViewerStep } from "@oricube/engine";
 import { createViewerScene, type CameraPreset } from "./scene";
-import type { ViewerStep } from "./playback";
 import styles from "./Canvas.module.css";
 
 export interface OrigamiCanvasProps {

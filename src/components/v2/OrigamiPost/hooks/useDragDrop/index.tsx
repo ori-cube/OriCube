@@ -1,10 +1,12 @@
 import React, { useCallback, useMemo, useState } from "react";
 import * as THREE from "three";
-import { PointV2 } from "@/types/model-v2";
+import {
+  PointV2,
+  LayeredBoard,
+  FinishingRotation,
+  collectSnapPoints,
+} from "@oricube/engine";
 import { FoldPhase, FoldProposal, PendingFold } from "../../index";
-import { LayeredBoard } from "../../types";
-import { FinishingRotation } from "../../utils/replayFoldSteps";
-import { collectSnapPoints } from "../../utils/collectSnapPoints";
 import { removeFoldLine } from "../../utils/visualizeFoldLine";
 import { useRenderBoards } from "./useRenderBoards";
 import { useDragHandler } from "./useDragHandler";

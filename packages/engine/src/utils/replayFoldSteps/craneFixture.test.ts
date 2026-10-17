@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { replayFoldSteps } from ".";
+import { replayFoldSteps } from "./index";
 import { craneNarrowedLegsSteps } from "./craneFixture";
 import { createSquareBoard } from "../createSquareBoard";
 import { applyFoldStep, findFoldCandidates } from "../applyFoldStep";

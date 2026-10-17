@@ -103,12 +103,12 @@ Group の position を折り線上の点に置き、中の板メッシュを逆�
 | `hooks/useDragDrop/useRenderBoards.tsx` | idle 時の板群・スナップポイント描画 |
 | `hooks/useDragDrop/commenceFold.ts` | folding 用のシーン差し替え（ピボット Group 構築） |
 | `hooks/useDragDrop/commenceSquashFold.ts` | 開いて畳む用のシーン差し替え（モーフ板構築） |
-| `utils/determineFoldRotation/index.ts` | 持ち上がる向きから回転軸を決定 |
+| `packages/engine/src/utils/determineFoldRotation/index.ts` | 持ち上がる向きから回転軸を決定 |
 | `hooks/useFoldAnimation/index.tsx` | 180 度折りアニメーション（fold / squash の分岐） |
 | `utils/createMorphBoardMesh/index.ts` | モーフ板の生成と頂点書き換え |
-| `utils/computeSquashAnimationPositions/index.ts` | 開いて畳むの途中経過座標（[09](./09-squash-fold.md)） |
+| `packages/engine/src/utils/computeSquashAnimationPositions/index.ts` | 開いて畳むの途中経過座標（[09](./09-squash-fold.md)） |
 | `hooks/useCameraFocus/index.tsx` | 折り紙の中心への視点追従 |
-| `utils/computeBoardsCenter/index.ts` | 板群のバウンディングボックス中心 |
+| `packages/engine/src/utils/computeBoardsCenter/index.ts` | 板群のバウンディングボックス中心 |
 | `hooks/useFlipView/index.tsx` | 視点の裏返し |
 | `utils/easeInOutCubic/index.ts` | イージング関数（折り・裏返しで共用） |
 | `utils/visualizeFoldLine/index.ts` | 折り線シリンダーの描画・削除 |

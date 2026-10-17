@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { computeFoldPreview } from ".";
+import { computeFoldPreview } from "./index";
 import { LayeredBoard } from "../../types";
 import { findFoldCandidates } from "../applyFoldStep";
 import { createSquareBoard } from "../createSquareBoard";

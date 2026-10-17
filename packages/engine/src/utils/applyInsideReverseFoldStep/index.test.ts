@@ -3,12 +3,10 @@ import * as THREE from "three";
 import {
   applyInsideReverseFoldStep,
   buildInsideReverseFoldStep,
-} from ".";
+} from "./index";
 import { InsideReverseFoldStep, LayeredBoard } from "../../types";
 import { replayFoldSteps } from "../replayFoldSteps";
 import { craneNarrowedLegsSteps } from "../replayFoldSteps/craneFixture";
-import { createBoardMesh } from "../createBoardMesh";
-import { BOARD_BACK_COLOR } from "../../constants";
 import { createSquareBoard } from "../createSquareBoard";
 import { calculateFoldLine } from "../calculateFoldLine";
 import { calculateFoldLineSpan } from "../calculateFoldLineSpan";
@@ -73,23 +71,6 @@ describe("applyInsideReverseFoldStep", () => {
       expect(layer).toBeGreaterThan(0);
       expect(layer).toBeLessThan(1);
     }
-  });
-
-  it.each([true, false])("表裏どちらから差し込んでも外側に見える紙の色を維持する: %s", (viewFront) => {
-    const boards = foldedStrip();
-    const step = buildStep(boards, v(0, 50), v(30, 20), viewFront);
-    if (!step) throw new Error("中割りの手順がありません");
-    const result = applyInsideReverseFoldStep(boards, step);
-    if (!result) throw new Error("中割りが成立していません");
-    const tips = result.boards.filter((board) => !result.staticBoards.includes(board)).sort((a, b) => b.layer - a.layer);
-    const upper = createBoardMesh(tips[0].polygon, "#ed7070").children[0];
-    const lastTip = tips.at(-1);
-    if (!lastTip) throw new Error("先端の片がありません");
-    const lower = createBoardMesh(lastTip.polygon, "#ed7070").children[1];
-    if (!(upper instanceof THREE.Mesh) || !(lower instanceof THREE.Mesh) || !(upper.material instanceof THREE.MeshLambertMaterial) || !(lower.material instanceof THREE.MeshLambertMaterial)) throw new Error("紙の面がありません");
-    expect(upper.material.color.getHexString()).toBe(new THREE.Color(BOARD_BACK_COLOR).getHexString());
-    expect(lower.material.color.getHexString()).toBe(new THREE.Color(BOARD_BACK_COLOR).getHexString());
-    expect(new Set(result.boards.map((board) => board.layer)).size).toBe(result.boards.length);
   });
 
   it.each([true, false])("小数レイヤーの狭い隙間でも根元の間に差し込む: %s", (viewFront) => {

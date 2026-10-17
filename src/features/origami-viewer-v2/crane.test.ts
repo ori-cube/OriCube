@@ -1,12 +1,14 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import type { HistoryStepV2, PointV2 } from "@/types/model-v2";
-import type { OrigamiStep } from "@/components/v2/OrigamiPost/types";
-import { createSquareBoard } from "@/components/v2/OrigamiPost/utils/createSquareBoard";
-import { exportProcedureV2 } from "@/components/v2/OrigamiPost/utils/exportProcedureV2";
-import { applyInsideReverseFoldStep } from "@/components/v2/OrigamiPost/utils/applyInsideReverseFoldStep";
-import { replayFoldStepsDetailed } from "@/components/v2/OrigamiPost/utils/replayFoldSteps";
-import { createViewerTimeline, getStepBoards } from "@/components/v2/OrigamiViewer/playback";
+import type { HistoryStepV2, PointV2, OrigamiStep } from "@oricube/engine";
+import {
+  createSquareBoard,
+  exportProcedureV2,
+  applyInsideReverseFoldStep,
+  replayFoldStepsDetailed,
+  createViewerTimeline,
+  getStepBoards,
+} from "@oricube/engine";
 import { craneProcedure } from "./mocks/crane";
 
 const vector = (point: PointV2) => new THREE.Vector3(...point);

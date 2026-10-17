@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import * as THREE from "three";
-import { PointV2 } from "@/types/model-v2";
+import {
+  PointV2,
+  LayeredBoard,
+  SnapPoint,
+  snapToNearestSnapPoint,
+  collectAlignmentSnapPoints,
+  computeFoldPreview,
+} from "@oricube/engine";
 import { FoldPhase } from "../../index";
-import { LayeredBoard } from "../../types";
-import { SnapPoint } from "../../utils/collectSnapPoints";
-import { snapToNearestSnapPoint } from "../../utils/snapToNearestSnapPoint";
-import { collectAlignmentSnapPoints } from "../../utils/collectAlignmentSnapPoints";
-import { computeFoldPreview } from "../../utils/computeFoldPreview";
 import { renderDraggedPoint } from "./renderPoint";
 import { renderFoldPreview, removeFoldPreview } from "./renderFoldPreview";
 

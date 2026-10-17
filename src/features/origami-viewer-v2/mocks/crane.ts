@@ -1,4 +1,4 @@
-import type { ProcedureV2 } from "@/types/model-v2";
+import type { ProcedureV2 } from "@oricube/engine";
 
 export const craneProcedure: ProcedureV2 = {
   version: 2,
