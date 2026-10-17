@@ -1,7 +1,8 @@
 import type { OrigamiModelV2 } from "./model";
+import { DEFAULT_ORIGAMI_V2_ID } from "./constants";
 import { craneProcedure } from "./mocks/crane";
 
-export const DEFAULT_ORIGAMI_V2_ID = "crane";
+export { DEFAULT_ORIGAMI_V2_ID };
 
 const models: OrigamiModelV2[] = [
   {

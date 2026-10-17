@@ -2,14 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "react-router";
 import { Button } from "@oricube/design-system";
 import { OrigamiViewer } from "@/components/v2/OrigamiViewer";
-import { getOrigamiV2 } from "@/features/origami-viewer-v2/repository";
+import { apiClient, fetchOrigami } from "../apiClient";
 import { NotFoundPage } from "./NotFoundPage";
 
 export function ViewPage() {
   const { id = "" } = useParams();
   const [searchParams] = useSearchParams();
   const startAtEnd = searchParams.get("step") === "last";
-  const query = useQuery({ queryKey: ["origami", id], queryFn: () => getOrigamiV2(id) });
+  const query = useQuery({ queryKey: ["origami", id], queryFn: () => fetchOrigami(apiClient, id) });
 
   if (query.isPending) return <main id="origami-viewer" style={{ padding: "2rem" }}><p role="status">折り紙を読み込んでいます…</p></main>;
   if (query.isError) {
