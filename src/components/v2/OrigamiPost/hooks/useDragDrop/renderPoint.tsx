@@ -1,9 +1,9 @@
 import * as THREE from "three";
-import { Point } from "@/types/model";
+import { PointV2 } from "@/types/model-v2";
 
 type RenderSnapPoint = (props: {
   scene: THREE.Scene;
-  point: Point;
+  point: PointV2;
   name: string;
   color?: number;
   scale?: number;

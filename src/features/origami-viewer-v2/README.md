@@ -8,7 +8,7 @@
 - `/v2/view/blank-paper`（手順がない作品）
 - `/v2/view/unknown`（作品がない場合の404）
 
-V1 の `[slug]` ページと `OrigamiDetail`、旧データ形式を使う Storybook の `v2/OrigamiDetail` は変更していない。新しい表示部品は `v2/OrigamiViewer`。モック作成専用の `/v2/post` からUIで折った手順も確認できる。
+V1 の `[slug]` ページと `OrigamiDetail` は変更していない。v2 の表示部品は `v2/OrigamiViewer`。モック作成専用の `/v2/post` からUIで折った手順も確認できる。
 
 ## API に差し替える箇所
 
