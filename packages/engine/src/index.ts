@@ -9,6 +9,7 @@ export * from "./model-v2";
 export * from "./origamiModel";
 export * from "./types";
 export * from "./playback";
+export * from "./thumbnail";
 export * from "./validateProcedureV2";
 export * from "./utils/applyFoldStep";
 export * from "./utils/applyInsideReverseFoldStep";

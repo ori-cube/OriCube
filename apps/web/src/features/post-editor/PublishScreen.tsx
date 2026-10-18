@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Button, TextArea, TextInput } from "@oricube/design-system";
 import { createViewerTimeline, type FixBoardV2, type OrigamiModelV2, type PresentationV2 } from "@oricube/engine";
 import { apiClient } from "../../apiClient";
+import { useAuthState } from "../../auth/AuthContext";
 import { OrigamiCanvas, type OrigamiCanvasHandle } from "../../components/OrigamiViewer/Canvas";
 import { THUMBNAIL_SIZE, submitErrorMessage, submitOrigami, type PendingSubmission } from "./publish";
 import styles from "./PostEditor.module.css";
@@ -69,6 +70,8 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   const thumbnailUrl = useMemo(() => thumbnail ? URL.createObjectURL(thumbnail) : null, [thumbnail]);
   useEffect(() => () => { if (thumbnailUrl) URL.revokeObjectURL(thumbnailUrl); }, [thumbnailUrl]);
 
+  const auth = useAuthState();
+  const queryClient = useQueryClient();
   const submit = useMutation({
     mutationFn: (image: Blob) => submitOrigami({
       client: apiClient,
@@ -77,7 +80,13 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
       previous: pending.current,
       onPending: (next) => { pending.current = next; },
     }),
-    onSuccess: () => { pending.current = null; },
+    onSuccess: async (id) => {
+      pending.current = null;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["origami", id] }),
+        queryClient.invalidateQueries({ queryKey: ["origami-list"] }),
+      ]);
+    },
   });
 
   const capture = async () => {
@@ -145,8 +154,15 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
           </div>
           {captureError && <p className={styles.alert} role="alert">{captureError}</p>}
         </section>
-        <Button type="submit" text={submit.isPending ? "投稿しています…" : "投稿する"} disabled={submit.isPending} />
-        {submit.isError && <p className={styles.alert} role="alert">{submitErrorMessage(submit.error)}</p>}
+        {auth.status === "signedOut" || auth.status === "loading"
+          // 下書きはブラウザに保存済み。ログイン後は作成画面へ戻り、もう一度投稿へ進む（戻っただけで公開しない）
+          ? <>
+            <Button text="ログインして投稿" onClick={() => auth.signIn("/post")} disabled={auth.status === "loading"} />
+            <p className={styles.hint}>下書きはこのブラウザに保存されています。ログイン後に作成画面へ戻ったら、もう一度「投稿へ進む」から投稿してください。</p>
+          </>
+          // ログインの設定がない環境（ローカル）でも、開発用の API（pnpm dev:api）なら開発ユーザーとして投稿できる
+          : <Button type="submit" text={submit.isPending ? "投稿しています…" : "投稿する"} disabled={submit.isPending} />}
+        {submit.isError && <p className={styles.alert} role="alert">{submitErrorMessage(submit.error, auth.status)}</p>}
       </form>
     </main>
   </div>;

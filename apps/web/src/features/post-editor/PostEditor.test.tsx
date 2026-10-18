@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { createApp } from "@oricube/api";
 import type { OrigamiCanvasHandle, OrigamiCanvasProps } from "../../components/OrigamiViewer/Canvas";
+import { AuthContext, unavailableAuth, type AuthState } from "../../auth/AuthContext";
 import * as THREE from "three";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
@@ -90,9 +91,11 @@ describe("投稿画面", () => {
 });
 
 describe("投稿", () => {
-  const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider>;
+  let auth: AuthState = unavailableAuth;
+  const wrapper = ({ children }: { children: ReactNode }) => <AuthContext.Provider value={auth}><QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider></AuthContext.Provider>;
   let app: ReturnType<typeof createApp>;
   beforeEach(() => {
+    auth = unavailableAuth;
     app = createApp({ auth: { authenticate: async () => "user_a" } });
     capture.mockResolvedValue(new Blob([new Uint8Array(8)], { type: "image/png" }));
     // 同一オリジンの fetch と同じく Origin を付けてメモリ上の API へ送る
@@ -137,14 +140,34 @@ describe("投稿", () => {
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0回の折りを記録"));
   });
 
-  it("未ログインなら下書きが残ることを伝える", async () => {
+  it("未ログインなら投稿せず、ログインして作成画面へ戻る", async () => {
+    const signIn = vi.fn();
+    auth = { status: "signedOut", signIn, signOut: vi.fn() };
+    await openPublish();
+    expect(screen.queryByRole("button", { name: "投稿する" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ログインして投稿" }));
+    expect(signIn).toHaveBeenCalledWith("/post");
+  });
+
+  it("ログイン中にセッションが切れていたら、もう一度ログインするよう伝える", async () => {
+    auth = { status: "signedIn", signIn: vi.fn(), signOut: vi.fn() };
     app = createApp();
     await openPublish();
     fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
     fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
     await screen.findByRole("img", { name: "撮影したサムネイル" });
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("ログインが必要です。折った手順はこのブラウザに保存されています。");
+    expect(await screen.findByRole("alert")).toHaveTextContent("もう一度ログインしてから投稿してください");
+  });
+
+  it("ログインの設定がない環境で投稿できなければ、下書きが残ることを伝える", async () => {
+    app = createApp();
+    await openPublish();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("この環境では投稿できません。折った手順はこのブラウザに保存されています。");
     fireEvent.click(screen.getByRole("button", { name: "折る画面に戻る" }));
     expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
   });

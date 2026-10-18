@@ -24,6 +24,17 @@ pnpm deploy:worker   # 画面をビルドして wrangler deploy（Cloudflare の
 - `index.html` は `ASSETS` バインディングから読み、isolate ごとに1回だけアプリを組み立てる。
 - `APP_ORIGIN` は Cloudflare の環境変数（`vars`）で設定する。
 
+### D1（作品の保存先）
+
+作品は Cloudflare D1 に保存する（`DB` バインディング、ORM は Drizzle）。スキーマは `migrations/*.sql` と `src/db/schema.ts` の両方に書き、`src/d1Repository.test.ts` で一致を確かめる。
+
+```sh
+pnpm --filter @oricube/api db:migrate:local    # wrangler dev のローカル D1 に適用
+pnpm --filter @oricube/api db:migrate:remote   # 本番の D1 に適用（Cloudflare のログインが必要）
+```
+
+初回は `wrangler d1 create oricube` で D1 を作り、表示された `database_id` を `wrangler.jsonc` に設定する。`DB` が無い環境（Node.js・テスト）はメモリ上のモックを使う。作品一覧ができるまでは、D1 に無いIDは鶴などのモックから読む（`withMockFallback`）。
+
 ## Node.js での起動
 
 ```sh
@@ -41,7 +52,7 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 | パス | 内容 |
 | --- | --- |
-| `GET /api/models` | 公開済みの作品の一覧（新しい順、`?limit=` 既定30・最大100）。`{ items: [{ id, name, color, thumbnailUrl }] }` |
+| `GET /api/models` | 公開済みの作品の一覧（新しい順・1ページ24件）。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、撮影したサムネイルの URL（`thumbnailUrl`、無ければ null）と完成形の図（`createProcedureThumbnail`）を付ける |
 | `GET /api/models/:id` | 作品の取得。保存済みの値も `origamiModelSchema` で検証してから返す。公開前（pending）は404 |
 | `POST /api/models` | 作品の投稿（ログイン必須）。本文は作品と `thumbnail: { contentType, size }`。IDはサーバーで採番し、所有者はClerkで検証したユーザーID。`pending` で作り、サムネイルのアップロード先（`thumbnailUpload`）を返す |
 | `POST /api/models/:id/thumbnail-upload` | 公開前の作品のアップロード先を作り直す（ログイン必須・所有者のみ。期限切れ・撮り直し） |
@@ -56,10 +67,12 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 - APIのエラーは `{ "error": { "code", "message" } }` の形で返す（`invalid_request` 400・`unauthorized` 401・`forbidden` 403・`not_found` 404・`conflict` 409・`payload_too_large` 413・`internal_error` 500）。
 - ログインは Clerk のセッション（同一オリジンの Cookie）を `src/auth.ts` で検証する。`CLERK_SECRET_KEY`・`CLERK_PUBLISHABLE_KEY` が無い環境では未ログイン扱いになり、書き込みAPIは401を返す。Workers ではシークレットを `wrangler secret put CLERK_SECRET_KEY` で設定する。
+- 画面側は `VITE_CLERK_PUBLISHABLE_KEY`（`apps/web` のビルド時の環境変数）があるときだけログインを有効にする。ログイン画面は Clerk が提供するページへ移動し、画面に Clerk の部品は埋め込まない。未ログインで投稿画面の「ログインして投稿」を押すとログイン画面へ移り、ログイン後は作成画面へ戻る（下書きはブラウザに保存済み。戻っただけでは投稿しない）。
 - 他サイトからのフォーム送信は `hono/csrf` で拒否する。JSONの書き込みはクロスオリジンだとプリフライトで止まる（CORSは許可しない）。
 - フロントは `AppType` を type-only import し、`hono/client` で呼ぶ。
 - ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。実行環境ごとの入口は `src/worker.ts`（Cloudflare Workers）と `src/index.ts`（Node.js。CIのスモークテストで使う）。
-- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。DB接続まではメモリ上の実装で、Workers では書き込みが永続化されない。
+- 一覧の検索とページ分割は、保存先から公開済みの作品を全件読んでAPI側で行う。作品数が増えたら `OrigamiRepository` 側の検索・ページ分割へ移す。
+- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。Workers では D1（`src/d1Repository.ts`）、Node.js とテストではメモリ上の実装を使う。D1 の列は `migrations/` に番号順で追加する（`0002` で公開状態・サムネイル・見せる向きを追加）。
 
 ## サムネイル
 
@@ -72,6 +85,6 @@ DBと画像の保存先は単一トランザクションにならないため、
 3. `POST /api/models/:id/publish` で、申告どおりの画像が置かれたことを確かめて `published` にする
 
 - 公開前の作品は取得・一覧・作品ページに出さない。画面は途中で失敗しても、同じ内容の再試行では作品を作り直さない（重複を残さない）
-- 保存先は `ThumbnailStorage`（`src/storage.ts`）。R2 に接続するまではメモリ上の実装で、アップロード先は `/api/mock-storage/uploads/:token`（10分で期限切れ。形式とサイズが申告と違えば拒否）、画像は `/api/mock-storage/objects/*` で返す
-- 作品ページの og:image はサムネイル、無い作品（モック）はロゴ
+- 保存先は `ThumbnailStorage`（`src/storage.ts`）。R2 に接続するまではメモリ上の実装で、アップロード先は `/api/mock-storage/uploads/:token`（10分で期限切れ。形式とサイズが申告と違えば拒否）、画像は `/api/mock-storage/objects/*` で返す。Workers でもメモリ上の実装のため、画像は isolate ごとに消える
+- 一覧は撮影した画像があればそれを、無い作品（モックなど）は手順から作る完成形の図を表示する。作品ページの og:image はサムネイル、無い作品はロゴ
 - 未対応: R2 の presigned URL の発行と公開URL、`pending` のまま残った作品・画像の定期的な掃除、公開後のサムネイルの差し替え

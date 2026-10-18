@@ -88,10 +88,12 @@ describe("submitOrigami", () => {
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id });
   });
 
-  it("未ログインならログインが必要と案内する", async () => {
+  it("ログインしていなければ、ログイン状態に合わせて案内する", async () => {
     app = createApp();
     const error = await submitOrigami({ client: client(), input, thumbnail: image(), previous: null, onPending: () => {} }).catch((reason: unknown) => reason);
     expect(error).toMatchObject({ status: 401, code: "unauthorized" });
-    expect(submitErrorMessage(error)).toContain("ログインが必要");
+    // ログイン中なら期限切れ、ログインの設定がない環境ならこの環境では投稿できないと伝える
+    expect(submitErrorMessage(error, "signedIn")).toContain("もう一度ログイン");
+    expect(submitErrorMessage(error, "unavailable")).toContain("この環境では投稿できません");
   });
 });

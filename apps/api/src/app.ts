@@ -3,18 +3,40 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
+import { createProcedureThumbnail, createViewerTimeline } from "@oricube/engine";
 import { z } from "zod";
 import { anonymousVerifier, type AuthVerifier } from "./auth";
 import { apiError, handleApiError } from "./errors";
 import { createMockOrigamiRepository, type OrigamiRecord, type OrigamiRepository } from "./repository";
-import { modelIdSchema, origamiCreateSchema, origamiInputSchema, origamiModelSchema, thumbnailSpecSchema, type OrigamiSummary } from "./schema";
+import { modelIdSchema, origamiCreateSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema, thumbnailSpecSchema, type OrigamiModel } from "./schema";
 import { createMemoryThumbnailStorage, thumbnailKey, type ThumbnailStorage } from "./storage";
 
 /** リクエスト本文の上限。作品データの上限（engine の PROCEDURE_V2_LIMITS）と合わせて見直す */
 const MAX_BODY_BYTES = 1024 * 1024;
+/** 一覧の1ページの件数 */
+export const MODELS_PAGE_SIZE = 24;
 
-/** 一覧で一度に返す作品数の上限 */
-const MAX_LIST_LIMIT = 100;
+/** 検索語の比較用に、全角・半角と大文字・小文字の違いをそろえる */
+const normalize = (value: string) => value.normalize("NFKC").toLowerCase();
+
+/**
+ * 一覧で返す作品の要約。手順の本体は含めず、完成形のサムネイルを付ける
+ *
+ * @description
+ * thumbnailUrl は投稿時に撮影した画像（無い作品は null）。thumbnail は手順から作る完成形の図で、画像が無い作品の表示に使う
+ */
+const toSummary = (model: OrigamiModel, thumbnailUrl: string | null) => {
+  const timeline = createViewerTimeline(model.procedure, model.presentation);
+  return {
+    id: model.id,
+    name: model.name,
+    description: model.description,
+    color: model.color,
+    stepCount: timeline.steps.length,
+    thumbnail: createProcedureThumbnail(model.procedure, timeline),
+    thumbnailUrl,
+  };
+};
 
 export interface AppOptions {
   repository?: OrigamiRepository;
@@ -27,6 +49,9 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
   const idParam = zValidator("param", z.object({ id: modelIdSchema }), (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品IDの形式が正しくありません。");
   });
+  const listQuery = zValidator("query", origamiListQuerySchema, (result, c) => {
+    if (!result.success) return apiError(c, 400, "invalid_request", "検索条件が正しくありません。");
+  });
   const modelBody = zValidator("json", origamiInputSchema, (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品の内容が正しくありません。");
   });
@@ -35,9 +60,6 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
   });
   const thumbnailBody = zValidator("json", thumbnailSpecSchema, (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "サムネイルの形式が正しくありません。");
-  });
-  const listQuery = zValidator("query", z.object({ limit: z.coerce.number().int().min(1).max(MAX_LIST_LIMIT).default(30) }), (result, c) => {
-    if (!result.success) return apiError(c, 400, "invalid_request", "一覧の取得条件が正しくありません。");
   });
   /** ログインを必須にし、検証済みのユーザーIDを userId に入れる */
   const requireUser = createMiddleware<{ Variables: { userId: string } }>(async (c, next) => {
@@ -71,14 +93,19 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
 
   return api
     .get("/models", listQuery, async (c) => {
-      const records = await repository.listPublished({ limit: c.req.valid("query").limit });
-      const items = records.flatMap((record): OrigamiSummary[] => {
-        const { id } = record.model as { id: string };
-        const model = parseStored(id, record);
-        if (!model) return [];
-        return [{ id: model.id, name: model.name, color: model.color, thumbnailUrl: record.thumbnail ? storage.publicUrl(record.thumbnail.key) : null }];
+      const { q, page } = c.req.valid("query");
+      const keyword = q ? normalize(q) : "";
+      // 公開済みの作品だけを並べる。壊れた作品があっても一覧全体は返せるよう、検証できない作品は除いて記録する
+      const models = (await repository.list()).flatMap((record) => {
+        const model = origamiModelSchema.safeParse(record.model);
+        if (model.success) return [{ model: model.data, thumbnailUrl: record.thumbnail ? storage.publicUrl(record.thumbnail.key) : null }];
+        console.error("一覧から形式が正しくない作品を除きました", model.error.issues);
+        return [];
       });
-      return c.json({ items }, 200);
+      const matched = keyword ? models.filter(({ model }) => normalize(`${model.name}\n${model.description}`).includes(keyword)) : models;
+      const totalPages = Math.max(1, Math.ceil(matched.length / MODELS_PAGE_SIZE));
+      const items = matched.slice((page - 1) * MODELS_PAGE_SIZE, page * MODELS_PAGE_SIZE).map(({ model, thumbnailUrl }) => toSummary(model, thumbnailUrl));
+      return c.json({ items, total: matched.length, page, totalPages }, 200);
     })
     .get("/models/:id", idParam, async (c) => {
       const { id } = c.req.valid("param");

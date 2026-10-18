@@ -11,5 +11,14 @@
     "binding": "ASSETS",
     "run_worker_first": ["/*", "!/assets/*"]
   },
+  // 作品の保存先。database_id は `wrangler d1 create oricube` の結果に置き換える
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "oricube",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": { "enabled": true }
 }
