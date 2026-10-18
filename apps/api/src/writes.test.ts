@@ -84,3 +84,21 @@ describe("PUT・DELETE /api/models/:id", () => {
     expect((await send(app, "DELETE", "/api/models/crane", { user: "user_a" })).status).toBe(403);
   });
 });
+
+describe("公開範囲", () => {
+  it("限定公開の作品はURLで見られるが、一覧と検索には出ない", async () => {
+    const app = createApp({ auth });
+    const res = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, name: "ひみつの鶴", visibility: "unlisted" } });
+    const { id } = (await res.json()) as { id: string };
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, visibility: "unlisted" });
+    const list = (await (await app.request("/api/models?q=ひみつ")).json()) as { items: unknown[]; total: number };
+    expect(list.total).toBe(0);
+  });
+
+  it("公開範囲を省略すると公開にし、不正な値は400にする", async () => {
+    const app = createApp({ auth });
+    const { id } = (await (await send(app, "POST", "/api/models", { user: "user_a", body: input })).json()) as { id: string };
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ visibility: "public" });
+    expect((await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, visibility: "private" } })).status).toBe(400);
+  });
+});

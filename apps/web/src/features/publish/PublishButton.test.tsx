@@ -64,3 +64,18 @@ describe("PublishButton", () => {
     expect(screen.getByText(/この環境では投稿できません/)).toBeInTheDocument();
   });
 });
+
+describe("PublishButton の公開範囲", () => {
+  it("限定公開を選んで投稿すると、一覧に載らない作品として保存される", async () => {
+    api.user = "user_a";
+    renderButton({ status: "signedIn", signIn: vi.fn(), signOut: vi.fn() });
+    expect(screen.getByText("作品一覧と検索に載り、誰でも見られます。")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "限定公開" }));
+    expect(screen.getByText(/URLを知っている人だけ/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    const viewed = await screen.findByText(/^表示: [0-9a-f-]{36}$/);
+    const id = viewed.textContent?.replace("表示: ", "") ?? "";
+    const { apiClient } = await import("../../apiClient");
+    expect(await (await apiClient.api.models[":id"].$get({ param: { id } })).json()).toMatchObject({ visibility: "unlisted" });
+  });
+});

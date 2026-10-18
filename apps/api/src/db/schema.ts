@@ -17,8 +17,14 @@ export const models = sqliteTable(
     color: text("color").notNull(),
     procedure: text("procedure", { mode: "json" }).notNull(),
     stepDescriptions: text("step_descriptions", { mode: "json" }).$type<string[]>(),
+    visibility: text("visibility", { enum: ["public", "unlisted"] }).notNull().default("public"),
+    formatVersion: integer("format_version").notNull().default(2),
+    engineVersion: text("engine_version").notNull().default("unknown"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (table) => [index("models_owner_id_idx").on(table.ownerId)]
+  (table) => [
+    index("models_owner_id_idx").on(table.ownerId),
+    index("models_visibility_created_at_idx").on(table.visibility, table.createdAt),
+  ]
 );

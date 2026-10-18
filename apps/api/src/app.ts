@@ -76,7 +76,9 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
         console.error("一覧から形式が正しくない作品を除きました", model.error.issues);
         return [];
       });
-      const matched = keyword ? models.filter((model) => normalize(`${model.name}\n${model.description}`).includes(keyword)) : models;
+      // 限定公開の作品は一覧・検索に出さない（URLを知っている人だけが見る）
+      const listed = models.filter((model) => model.visibility === "public");
+      const matched = keyword ? listed.filter((model) => normalize(`${model.name}\n${model.description}`).includes(keyword)) : listed;
       const totalPages = Math.max(1, Math.ceil(matched.length / MODELS_PAGE_SIZE));
       const items = matched.slice((page - 1) * MODELS_PAGE_SIZE, page * MODELS_PAGE_SIZE).map(toSummary);
       return c.json({ items, total: matched.length, page, totalPages }, 200);

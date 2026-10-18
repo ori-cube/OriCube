@@ -64,6 +64,14 @@ describe("画面の配信", () => {
     expect(await res.json()).toMatchObject({ error: { code: "forbidden" } });
   });
 
+  it("限定公開の作品ページは検索結果に出さない", async () => {
+    const unlisted = createServerApp({ template, repository: createMemoryOrigamiRepository([{ ownerId: "user_a", model: { id: "secret", name: "ひみつの鶴", description: "", color: "#ffffff", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [] }, visibility: "unlisted" } }]) });
+    const res = await unlisted.request("/view/secret");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain(`<meta name="robots" content="noindex" />`);
+    expect(await (await html("/view/crane")).body).not.toContain("noindex");
+  });
+
   it("保存済みの値が不正な作品ページは500にする", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const broken = createServerApp({ template, repository: createMemoryOrigamiRepository([{ ownerId: null, model: { id: "broken" } }]) });

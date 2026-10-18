@@ -31,6 +31,8 @@ pnpm --filter @oricube/api db:migrate:local    # wrangler dev のローカル D1
 pnpm --filter @oricube/api db:migrate:remote   # 本番の D1 に適用（Cloudflare のログインが必要）
 ```
 
+保存契約（#100）: 下書きはブラウザ内だけに置き、サーバーには投稿した作品だけを保存する。公開範囲は `public`（一覧・検索に載る）か `unlisted`（URLを知っている人だけ。作品ページは `noindex`）。再編集は同じIDで上書きし、過去の版は残さない。保存時にデータ形式（`format_version`）とエンジンの版（`engine_version`、`@oricube/engine` の `ENGINE_VERSION`）を記録する。削除は行ごと消す。
+
 初回は `wrangler d1 create oricube` で D1 を作り、表示された `database_id` を `wrangler.jsonc` に設定する。`DB` が無い環境（Node.js・テスト）はメモリ上のモックを使う。作品一覧ができるまでは、D1 に無いIDは鶴などのモックから読む（`withMockFallback`）。
 
 ## Node.js での起動
@@ -50,7 +52,7 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 | パス | 内容 |
 | --- | --- |
-| `GET /api/models` | 作品の一覧（新しい順・1ページ24件）。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、完成形のサムネイル（`createProcedureThumbnail`）を付ける |
+| `GET /api/models` | 公開（`public`）の作品の一覧（新しい順・1ページ24件）。限定公開は載らない。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、完成形のサムネイル（`createProcedureThumbnail`）を付ける |
 | `GET /api/models/:id` | 作品の取得。保存済みの値も `origamiModelSchema` で検証してから返す |
 | `POST /api/models` | 作品の投稿（ログイン必須）。IDはサーバーで採番し、所有者はClerkで検証したユーザーID |
 | `PUT /api/models/:id` | 作品の更新（ログイン必須・所有者のみ） |
