@@ -92,11 +92,23 @@ export type HistoryStepV2 =
       foldLine: SegmentV2;
       dragVertex: PointV2;
       viewFront: boolean;
+    }
+  | {
+      /** 裏返し（version 3 以降）。viewFront は裏返した後の表裏 */
+      kind: "flip";
+      viewFront: boolean;
     };
 
 /** v2投稿データ（Model.procedureとして保存する形式） */
 export interface ProcedureV2 {
-  version: 2;
+  /**
+   * データ形式の版
+   *
+   * @description
+   * - 2: 裏返しを保存しない。閲覧時は折りの表裏（viewFront）の変化から推定する
+   * - 3: 裏返しを history に手順として保存する。steps は折りだけで、history の折りと同じ順に対応する
+   */
+  version: 2 | 3;
   /** 折る前の正方形の一辺 */
   size: number;
   /** 各ステップの答えデータ（閲覧側はθ回転で再生するだけ） */

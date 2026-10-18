@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType }
 import { Button, ColorField, SidePanel, TextInput } from "@oricube/design-system";
 import type { OrigamiEditorState, OrigamiPostV2Props } from "../../components/OrigamiPost";
 import { OrigamiViewer } from "../../components/OrigamiViewer";
-import { exportProcedureV2 } from "@oricube/engine";
+import { exportProcedureV2, isFoldStep } from "@oricube/engine";
 import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft } from "./draft";
 import styles from "./PostEditor.module.css";
 import { PublishButton } from "../publish/PublishButton";
@@ -18,7 +18,7 @@ const guidance = (state: OrigamiEditorState) => {
   if (state.phase === "selecting") return "折り方を選んで「折る」を押します";
   if (state.phase === "folding") return "折っています…";
   if (state.phase === "viewing") return "ドラッグで回して確認できます";
-  return state.steps.length ? "次に折る頂点をドラッグします" : "頂点をドラッグして、重ねたい位置で離すと折れます";
+  return state.steps.some(isFoldStep) ? "次に折る頂点をドラッグします" : "頂点をドラッグして、重ねたい位置で離すと折れます";
 };
 
 // 紙が上下の見出し・操作帯に隠れない大きさに収まるカメラの距離（視野角40度）
@@ -84,7 +84,7 @@ export function PostEditor() {
     if (state.steps.length && !window.confirm("現在の手順を消して、白紙から折り直しますか？")) return;
     setState(emptyState()); setSize(100); setName(""); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
   };
-  const status = <p className={styles.step} role="status">{ready ? `${state.steps.length}回の折りを記録${state.busy ? "・操作中" : ""}` : "保存した手順を確認しています…"} {message}</p>;
+  const status = <p className={styles.step} role="status">{ready ? `${state.steps.filter(isFoldStep).length}回の折りを記録${state.busy ? "・操作中" : ""}` : "保存した手順を確認しています…"} {message}</p>;
   const alerts = <>
     {storageError && <p className={styles.alert} role="alert">{storageError}</p>}
     {!procedure && <p className={styles.alert} role="alert">この手順は保存できません。最後の操作を元に戻してください。</p>}

@@ -99,7 +99,7 @@ describe("exportProcedureV2", () => {
     expect(procedure).not.toBeNull();
     if (!procedure) return;
 
-    expect(procedure.version).toBe(2);
+    expect(procedure.version).toBe(3);
     expect(procedure.size).toBe(40);
     expect(procedure.steps.map((step) => step.kind)).toEqual([
       "fold",
@@ -109,7 +109,9 @@ describe("exportProcedureV2", () => {
       "petal",
     ]);
     expect(procedure.finalBoards).toHaveLength(14);
-    expect(procedure.history).toHaveLength(5);
+    // 裏側から折った2か所の前に裏返しを補う
+    expect(procedure.history.filter((step) => step.kind !== "flip")).toHaveLength(5);
+    expect(procedure.history.filter((step) => step.kind === "flip")).toHaveLength(2);
   });
 
   it("各ステップをθ=πまで再生すると、リプレイの次の状態と一致する", () => {
@@ -193,7 +195,8 @@ describe("exportProcedureV2", () => {
     expect(foldHistory.dragVertex).toEqual([-20, 20, 0]);
     expect(foldHistory.foldLine.start).toEqual([-20, -20, 0]);
 
-    const petalHistory = procedure.history[4];
+    // 裏返しを除いた折りの履歴は、答えデータと同じ順に並ぶ
+    const petalHistory = procedure.history.filter((step) => step.kind !== "flip")[4];
     expect(petalHistory.kind).toBe("petal");
     expect(petalHistory.viewFront).toBe(true);
   });

@@ -37,8 +37,9 @@ describe("V2閲覧用タイムライン", () => {
       }
     }
   });
-  it("最初から裏面を見る手順にも裏返しを表示し、履歴が空でも折りは再生できる", () => {
-    const procedure = crane();
+  it("version 2 は最初から裏面を見る手順にも裏返しを推定し、履歴が空でも折りは再生できる", () => {
+    const exported = crane();
+    const procedure: ProcedureV2 = { ...exported, version: 2, history: exported.history.filter((step) => step.kind !== "flip") };
     procedure.history[0].viewFront = false;
     expect(createViewerTimeline(procedure).steps[0].kind).toBe("flip");
     procedure.history = [];
