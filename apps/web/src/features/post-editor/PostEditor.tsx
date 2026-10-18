@@ -7,6 +7,7 @@ import { OrigamiViewer } from "../../components/OrigamiViewer";
 import { exportProcedureV2 } from "@oricube/engine";
 import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft } from "./draft";
 import styles from "./PostEditor.module.css";
+import { PublishButton } from "../publish/PublishButton";
 
 const UNTITLED = "無題の作品";
 
@@ -116,6 +117,10 @@ export function PostEditor() {
           <h3 id="post-preview" className={styles.sectionTitle}>確認</h3>
           <Button text="折り方を確認" variant="secondary" onClick={() => setPreview("fold")} disabled={blocked} />
           <Button text="完成形を確認" variant="secondary" onClick={() => setPreview("completed")} disabled={blocked} />
+        </section>
+        <section className={styles.section} aria-labelledby="post-publish">
+          <h3 id="post-publish" className={styles.sectionTitle}>投稿</h3>
+          <PublishButton model={draft?.model ?? null} disabled={blocked} />
         </section>
         <section className={styles.section} aria-labelledby="post-reset">
           <h3 id="post-reset" className={styles.sectionTitle}>やり直し</h3>
