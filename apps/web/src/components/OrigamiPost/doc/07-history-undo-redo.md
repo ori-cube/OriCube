@@ -54,7 +54,9 @@ Undo/Redo のたびに `foldHistory` が変わり、`currentBoards` が初期正
 
 ## UI — Toolbar
 
-キャンバス左上の縦ツールバーに Undo / Redo / 裏返しボタンを表示する。活性条件は `index.tsx` が計算して渡す: `foldPhase === "idle" && !isFlipping && canUndo(foldHistory)`（Redo も同様）。
+キャンバス下端の操作帯に表示する。閲覧画面の「前へ」「次へ」と同じ位置に元に戻す・やり直すを大きな丸ボタンで置き、中央のパネルに裏返す・回して確認を置く。活性条件は `index.tsx` が計算して渡す: `foldPhase === "idle" && !isFlipping && canUndo(foldHistory)`（Redo も同様）。
+
+キーボードでは Ctrl+Z（⌘Z）で元に戻し、Ctrl+Shift+Z（⌘⇧Z）・Ctrl+Y でやり直す。入力欄にフォーカスがある間は入力欄の取り消しを優先し、ボタンと同じく idle 以外・裏返し中は受け付けない。
 
 ## 関連ソース
 

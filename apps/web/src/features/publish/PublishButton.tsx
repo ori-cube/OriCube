@@ -35,6 +35,18 @@ interface Props {
  */
 export function PublishButton({ model, disabled = false, returnTo = "/post" }: Props) {
   const auth = useAuthState();
+  if (auth.status === "unavailable") return <p>ログインの設定がないため、この環境では投稿できません。</p>;
+  if (auth.status !== "signedIn") {
+    return <div>
+      <Button text="ログインして投稿" onClick={() => auth.signIn(returnTo)} disabled={disabled || auth.status === "loading"} />
+      <p>下書きはこのブラウザに保存されています。ログイン後にこの画面へ戻り、もう一度「投稿する」を押してください。</p>
+    </div>;
+  }
+  return <SignedInPublishButton model={model} disabled={disabled} />;
+}
+
+/** ログイン中だけ描画する。投稿と画面遷移のフックはここに閉じる */
+function SignedInPublishButton({ model, disabled }: { model: OrigamiModelV2 | null; disabled: boolean }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const publish = useMutation({
@@ -53,13 +65,6 @@ export function PublishButton({ model, disabled = false, returnTo = "/post" }: P
     },
   });
 
-  if (auth.status === "unavailable") return <p>ログインの設定がないため、この環境では投稿できません。</p>;
-  if (auth.status !== "signedIn") {
-    return <div>
-      <Button text="ログインして投稿" onClick={() => auth.signIn(returnTo)} disabled={disabled || auth.status === "loading"} />
-      <p>下書きはこのブラウザに保存されています。ログイン後にこの画面へ戻り、もう一度「投稿する」を押してください。</p>
-    </div>;
-  }
   const failure = publish.error instanceof PublishError ? publish.error.reason : publish.error ? "failed" : null;
   return <div>
     <Button text={publish.isPending ? "投稿しています…" : "投稿する"} onClick={() => model && publish.mutate(model)} disabled={disabled || !model || publish.isPending} />

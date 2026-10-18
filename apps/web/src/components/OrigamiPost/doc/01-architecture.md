@@ -19,8 +19,9 @@ OrigamiPostV2 (index.tsx)
 │                       （通常: ピボットGroup回転 / 開いて畳む: モーフ板の頂点書き換え）
 ├── useFlipView         視点を垂直軸周りに180度回す「裏返し」
 ├── useCameraFocus      折るたびに移動する紙の中心へ回転の中心とカメラを追従
-├── Toolbar/            Undo・Redo・裏返しボタン
-└── FoldCountSelector/  折り方（枚数・開いて畳む）の選択カード（selectingフェーズのみ表示）
+├── Toolbar/            下端の操作帯（元に戻す・やり直す・裏返す・回して確認）
+└── FoldCountSelector/  折り方（枚数・開いて畳む・花弁折り・中割り折り・角度）の選択パネル
+                        （selectingフェーズのみ、操作帯の中央に表示）
 ```
 
 計算の中核はフックではなく `utils/` の純関数群にある。フックは「イベント検出 → 純関数の呼び出し → シーン更新・状態遷移」の接着だけを担う。
@@ -91,5 +92,5 @@ scene                                scene
 | `hooks/useFoldAnimation/index.tsx` | 折りアニメーション |
 | `hooks/useFlipView/index.tsx` | 視点の裏返し |
 | `hooks/useCameraFocus/index.tsx` | 折り紙の中心への視点追従 |
-| `Toolbar/index.tsx` | Undo / Redo / 裏返しボタン |
-| `FoldCountSelector/index.tsx` | 折り方（枚数・開いて畳む）の選択カード |
+| `Toolbar/index.tsx` | 下端の操作帯（元に戻す・やり直す・裏返す・回して確認） |
+| `FoldCountSelector/index.tsx` | 折り方（枚数・開いて畳む・花弁折り・中割り折り・角度）の選択パネル |

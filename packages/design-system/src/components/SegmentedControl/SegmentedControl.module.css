@@ -1,0 +1,35 @@
+.field { display: grid; gap: var(--spacing-xxs); min-width: 0; }
+.label { color: var(--text-default); font-size: 0.875rem; font-weight: 600; }
+/* 選択肢が多いときは折り返す。各項目は44px四方を確保する */
+.group { display: flex; flex-wrap: wrap; width: fit-content; max-width: 100%; gap: var(--spacing-xxs); padding: var(--spacing-xxs); border-radius: calc(var(--border-radius-md) + var(--spacing-xxs)); background: var(--background-subtle); }
+.item {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding-inline: var(--spacing-sm);
+  border: var(--border-width-md) solid transparent;
+  border-radius: var(--border-radius-md);
+  background: transparent;
+  color: var(--text-default);
+  font: inherit;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.item[data-hovered] { background: var(--background-secondary-action-hover); }
+.item[data-pressed] { background: var(--background-secondary-action-pressed); }
+.item[data-selected] { background: var(--background-primary-action-enabled); color: var(--text-primary-action); }
+.item[data-selected][data-hovered] { background: var(--background-primary-action-hover); }
+.item[data-focus-visible] { outline: var(--border-width-lg) solid var(--border-bold); outline-offset: 2px; }
+/* 選べない項目も並びを保ったまま表示し、ほかの部品と同じく薄くする */
+.item[data-disabled] { opacity: 0.4; cursor: not-allowed; }
+@media (forced-colors: active) {
+  .group { outline: 1px solid CanvasText; }
+  .item[data-selected] { background: Highlight; color: HighlightText; }
+  .item[data-disabled] { color: GrayText; }
+  .item[data-focus-visible] { outline-color: Highlight; }
+}

@@ -35,8 +35,7 @@ import {
 } from "@oricube/engine";
 import { FoldCountSelector } from "./FoldCountSelector";
 import { Toolbar } from "./Toolbar";
-import { ColorPicker } from "./ColorPicker";
-import styles from "./index.module.scss";
+import styles from "./index.module.css";
 
 /**
  * 折り操作のフェーズ
@@ -117,14 +116,16 @@ export interface OrigamiEditorState {
   color: string;
   busy: boolean;
   viewFront: boolean;
+  /** 折り操作のフェーズ（画面の案内文の切り替えに使う） */
+  phase: FoldPhase;
 }
 
 export interface OrigamiPostV2Props {
   initialSteps?: OrigamiStep[];
   autoResize?: boolean;
   onStateChange?: (state: OrigamiEditorState) => void;
-  /** 折り紙の表面の初期色（裏面はBOARD_BACK_COLORの固定色） */
-  defaultOrigamiColor?: string;
+  /** 折り紙の表面の色（裏面はBOARD_BACK_COLORの固定色）。色の選択は呼び出し側が置く */
+  color?: string;
   /** 折り紙のサイズ */
   size?: number;
   /** カメラの初期位置 */
@@ -145,7 +146,7 @@ export interface OrigamiPostV2Props {
  *   リプレイ（replayFoldSteps）で導出する
  * - カメラの回転・ズーム機能
  *
- * @param props.defaultOrigamiColor - 折り紙の表面の初期色（デフォルト: "#4A90E2"）
+ * @param props.color - 折り紙の表面の色（デフォルト: "#4A90E2"）
  * @param props.size - 折り紙のサイズ（デフォルト: 100）
  * @param props.cameraPosition - カメラの初期位置（デフォルト: {x: 0, y: 0, z: 150}）
  * @param props.width - カンバスの幅（デフォルト: window.innerWidth - 320）
@@ -155,7 +156,7 @@ export function OrigamiPostV2({
   initialSteps = [],
   autoResize = true,
   onStateChange,
-  defaultOrigamiColor = "#4A90E2",
+  color: origamiColor = "#4A90E2",
   size = 100,
   cameraPosition = { x: 0, y: 0, z: 150 },
   width = window.innerWidth - 320,
@@ -170,13 +171,6 @@ export function OrigamiPostV2({
 
   // 折り操作のフェーズ（idle以外ではドラッグ&ドロップを無効化）
   const [foldPhase, setFoldPhase] = useState<FoldPhase>("idle");
-
-  // 折り紙の表面の色（ユーザーがカラーピッカーで変更できる）
-  const [origamiColor, setOrigamiColor] = useState(defaultOrigamiColor);
-
-  const handleOrigamiColorChange = (color: string | null) => {
-    if (color !== null) setOrigamiColor(color);
-  };
 
   // 折り手順の履歴（唯一の状態源。Undo/Redoは適用済みステップ数の操作）
   const [foldHistory, setFoldHistory] =
@@ -238,6 +232,25 @@ export function OrigamiPostV2({
     setFoldHistory(redoFoldStep);
   }, [foldPhase]);
 
+  // Ctrl+Z（⌘Z）で元に戻し、Ctrl+Shift+Z（⌘⇧Z）・Ctrl+Yでやり直す。
+  // 文字入力中は入力欄の取り消しを優先する
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable='true']")) return;
+      const key = event.key.toLowerCase();
+      const redo = key === "y" || (key === "z" && event.shiftKey);
+      if (key !== "z" && !redo) return;
+      event.preventDefault();
+      if (isFlippingRef.current) return;
+      if (redo) handleRedo();
+      else handleUndo();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
   // シーンの初期化
   const requestRender = useInitScene({
     canvasRef,
@@ -290,6 +303,8 @@ export function OrigamiPostV2({
 
   // 折り紙を裏返す視点回転
   const { flipView, isFlipping } = useFlipView({ cameraRef, controlsRef, requestRender });
+  const isFlippingRef = useRef(isFlipping);
+  isFlippingRef.current = isFlipping;
 
   // ビューモード（確認用の回転視点）
   const { toggleViewMode } = useViewMode({
@@ -300,16 +315,18 @@ export function OrigamiPostV2({
   });
 
   useEffect(() => {
-    onStateChange?.({ steps: currentSteps, color: origamiColor, busy: foldPhase !== "idle" || isFlipping, viewFront: (cameraRef.current?.position.z ?? 1) >= 0 });
+    onStateChange?.({ steps: currentSteps, color: origamiColor, busy: foldPhase !== "idle" || isFlipping, viewFront: (cameraRef.current?.position.z ?? 1) >= 0, phase: foldPhase });
   }, [onStateChange, currentSteps, origamiColor, foldPhase, isFlipping]);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} style={{ width, height }}>
       <canvas
         ref={canvasRef}
         id="origami-canvas"
         className={styles.canvas}
         style={{ width, height }}
+        role="img"
+        aria-label="折り紙。頂点をドラッグして折ります"
       />
       <Toolbar
         canUndo={foldPhase === "idle" && !isFlipping && canUndo(foldHistory)}
@@ -323,22 +340,19 @@ export function OrigamiPostV2({
         onRedo={handleRedo}
         onFlip={flipView}
         onToggleViewMode={toggleViewMode}
-      />
-      <ColorPicker
-        color={origamiColor}
-        onColorChange={handleOrigamiColorChange}
-      />
-      {foldPhase === "selecting" && foldProposal && (
-        <FoldCountSelector
-          maxFoldCount={foldProposal.maxFoldCount}
-          validCounts={foldProposal.validCounts}
-          squashAvailable={foldProposal.squashAvailable}
-          petalAvailable={foldProposal.petalAvailable}
-          insideReverseAvailable={foldProposal.insideReverseAvailable}
-          onConfirm={confirmFold}
-          onCancel={cancelFold}
-        />
-      )}
+      >
+        {foldPhase === "selecting" && foldProposal ? (
+          <FoldCountSelector
+            maxFoldCount={foldProposal.maxFoldCount}
+            validCounts={foldProposal.validCounts}
+            squashAvailable={foldProposal.squashAvailable}
+            petalAvailable={foldProposal.petalAvailable}
+            insideReverseAvailable={foldProposal.insideReverseAvailable}
+            onConfirm={confirmFold}
+            onCancel={cancelFold}
+          />
+        ) : null}
+      </Toolbar>
     </div>
   );
 }

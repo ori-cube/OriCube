@@ -20,6 +20,8 @@ export type ButtonProps = Omit<
   prefixIcon?: ButtonIconName;
   suffixIcon?: ButtonIconName;
   disabled?: boolean;
+  /** 押したままの状態を持つ切り替えボタンにする。状態は aria-pressed で伝える */
+  selected?: boolean;
   onClick?: (event: PressEvent) => void;
   text: string;
 };
@@ -35,6 +37,7 @@ export function Button({
   prefixIcon,
   suffixIcon,
   disabled,
+  selected,
   onClick,
   className,
   text,
@@ -47,6 +50,7 @@ export function Button({
     <AriaButton
       {...props}
       isDisabled={disabled}
+      aria-pressed={selected}
       onPress={onClick}
       className={composeRenderProps(className, (userClassName) =>
         [

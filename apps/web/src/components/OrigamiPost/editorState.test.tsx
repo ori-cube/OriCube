@@ -9,16 +9,24 @@ vi.mock("./hooks", () => ({ useInitScene: () => vi.fn(), useDragDrop: () => ({ c
 it("復元した手順をUndo/Redoし、確定済みの履歴と色を外へ通知する", () => {
   const step: OrigamiStep = { kind: "fold", foldLine: { start: new THREE.Vector3(-50, -50, 0), end: new THREE.Vector3(50, 50, 0) }, dragVertex: new THREE.Vector3(-50, 50, 0), foldCount: 1, viewFront: true };
   const changed = vi.fn();
-  render(<OrigamiPostV2 initialSteps={[step]} onStateChange={changed} width={800} height={600} />);
-  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step], busy: false }));
+  const { rerender } = render(<OrigamiPostV2 initialSteps={[step]} onStateChange={changed} width={800} height={600} />);
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step], busy: false, phase: "idle" }));
   fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
   expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [] }));
   fireEvent.click(screen.getByRole("button", { name: "やり直す" }));
   expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step] }));
-  const colorInput = screen.getByRole("textbox", { name: "折り紙の色" });
-  changed.mockClear();
-  fireEvent.change(colorInput, { target: { value: "#44aabb" } });
-  expect(changed).not.toHaveBeenCalled();
-  fireEvent.blur(colorInput);
+  rerender(<OrigamiPostV2 initialSteps={[step]} onStateChange={changed} width={800} height={600} color="#44AABB" />);
   expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step], color: "#44AABB" }));
+});
+
+it("Ctrl+Z・Ctrl+Shift+Zで元に戻し・やり直し、文字入力中は反応しない", () => {
+  const step: OrigamiStep = { kind: "fold", foldLine: { start: new THREE.Vector3(-50, -50, 0), end: new THREE.Vector3(50, 50, 0) }, dragVertex: new THREE.Vector3(-50, 50, 0), foldCount: 1, viewFront: true };
+  const changed = vi.fn();
+  render(<><input aria-label="作品名" /><OrigamiPostV2 initialSteps={[step]} onStateChange={changed} width={800} height={600} /></>);
+  fireEvent.keyDown(screen.getByRole("textbox", { name: "作品名" }), { key: "z", ctrlKey: true });
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step] }));
+  fireEvent.keyDown(window, { key: "z", ctrlKey: true });
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [] }));
+  fireEvent.keyDown(window, { key: "Z", metaKey: true, shiftKey: true });
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ steps: [step] }));
 });

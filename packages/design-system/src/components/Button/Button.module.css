@@ -48,6 +48,15 @@
   background-color: var(--background-secondary-action-pressed);
 }
 
+/* 切り替えボタンがオンのときは主要操作と同じ塗りにする */
+.button[aria-pressed="true"] {
+  background-color: var(--background-primary-action-enabled);
+  border-color: transparent;
+  color: var(--text-primary-action);
+}
+.button[aria-pressed="true"][data-hovered] {
+  background-color: var(--background-primary-action-hover);
+}
 .sm {
   --button-padding-x: var(--spacing-sm);
   --button-padding-x-with-icon: var(--spacing-xs);
