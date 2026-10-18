@@ -23,6 +23,8 @@ export interface OrigamiCanvasProps {
 export interface OrigamiCanvasHandle {
   /** 今の視点で、ビュー中央の正方形と同じ範囲を画像にする。3D表示が使えなければ失敗する */
   capture(options: CaptureOptions): Promise<Blob>;
+  /** 作品を画面内で回す（ラジアン、正で反時計回り）。resetKey が変わると元に戻る */
+  rotateModel(angle: number): void;
 }
 
 export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFinalBoards = finalBoards, finalViewFront, cameraPreset = "front", resetKey = 0, zoom = 1, label }, ref) {
@@ -32,6 +34,7 @@ export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>
   const [failed, setFailed] = useState(false);
   useImperativeHandle(ref, () => ({
     capture: (options) => sceneRef.current && !failed ? sceneRef.current.capture(options) : Promise.reject(new Error("3D表示を読み込めていません")),
+    rotateModel: (angle) => sceneRef.current?.rotateModel(angle),
   }), [failed]);
   useEffect(() => {
     const canvas = canvasRef.current;

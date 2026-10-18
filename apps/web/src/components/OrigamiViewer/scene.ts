@@ -38,7 +38,10 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   controls.minDistance = size * 0.8;
   controls.maxDistance = size * 8;
   const root = new THREE.Group();
-  scene.add(root, new THREE.AmbientLight(0xffffff, 2));
+  // 作品の置き方。rotateModel で画面内に回した向きを持ち、カメラはその周りを回る
+  const pose = new THREE.Group();
+  pose.add(root);
+  scene.add(pose, new THREE.AmbientLight(0xffffff, 2));
   const light = new THREE.DirectionalLight(0xffffff, 1.5);
   light.position.set(size, size, size * 2);
   scene.add(light);
@@ -190,6 +193,18 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
       spherical.phi = THREE.MathUtils.clamp(spherical.phi + vertical, 0.05, Math.PI - 0.05);
       camera.position.copy(new THREE.Vector3().setFromSpherical(spherical).add(controls.target));
       controls.update();
+      render();
+    },
+    /**
+     * 作品を、今見ている方向を軸に画面内で回す（正の角度で反時計回り）
+     *
+     * @description
+     * カメラは上下が固定のため、斜めに置かれた作品（対角線で折る鶴など）を立てるのに使う。
+     * カメラではなく作品を回すので、立てたあとの左右のドラッグは立てた作品の周りを回る
+     */
+    rotateModel: (angle: number) => {
+      const axis = camera.position.clone().sub(controls.target).normalize();
+      pose.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(axis, angle));
       render();
     },
     setCamera: (nextPreset: CameraPreset) => { preset = nextPreset; resetCamera(); },

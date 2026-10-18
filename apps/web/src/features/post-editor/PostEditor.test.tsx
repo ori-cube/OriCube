@@ -22,8 +22,9 @@ vi.mock("../../components/OrigamiPost", () => ({ OrigamiPostV2: function Editor(
 } }));
 vi.mock("../../components/OrigamiViewer", () => ({ OrigamiViewer: function Preview({ model, startAtEnd }: OrigamiViewerProps) { return <div aria-label="プレビュー">{startAtEnd ? "完成形" : "折り方"}・{model.procedure.steps.length}回</div>; } }));
 const capture = vi.hoisted(() => vi.fn());
+const rotateModel = vi.hoisted(() => vi.fn());
 vi.mock("../../components/OrigamiViewer/Canvas", () => ({ OrigamiCanvas: forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function Camera({ label }, ref) {
-  useImperativeHandle(ref, () => ({ capture }));
+  useImperativeHandle(ref, () => ({ capture, rotateModel }));
   return <div role="img" aria-label={label} />;
 }) }));
 const openPanel = () => fireEvent.click(screen.getByRole("button", { name: "作品の設定" }));
@@ -145,6 +146,14 @@ describe("投稿", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("ログインが必要です。折った手順はこのブラウザに保存されています。");
     fireEvent.click(screen.getByRole("button", { name: "折る画面に戻る" }));
     expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
+  });
+
+  it("傾いた作品を画面内で15°ずつ回せる", async () => {
+    await openPublish();
+    fireEvent.click(screen.getByRole("button", { name: "左に回す" }));
+    expect(rotateModel).toHaveBeenLastCalledWith(Math.PI / 12);
+    fireEvent.click(screen.getByRole("button", { name: "右に回す" }));
+    expect(rotateModel).toHaveBeenLastCalledWith(-Math.PI / 12);
   });
 
   it("撮影できなければ再試行を案内する", async () => {

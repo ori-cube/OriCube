@@ -33,6 +33,9 @@ const step: ViewerStep = {
   },
 };
 
+/** 作品の置き方（pose）の下にある、板をまとめたグループ */
+const paperOf = (scene: THREE.Scene) => scene.children.find((child) => child instanceof THREE.Group)?.children[0];
+
 describe("V2閲覧シーン", () => {
   it("上下を切り取らず、ビュー全体を描画範囲とカメラの縦横比に使う", () => {
     const container = document.createElement("div");
@@ -57,7 +60,7 @@ describe("V2閲覧シーン", () => {
     const renderedScene: unknown = renderer.render.mock.calls.at(-1)?.[0];
     expect(renderedScene).toBeInstanceOf(THREE.Scene);
     if (!(renderedScene instanceof THREE.Scene)) throw new Error("Sceneが描画されていません");
-    const paper = renderedScene.children.find((child) => child instanceof THREE.Group);
+    const paper = paperOf(renderedScene);
     const board = paper?.children[0];
     const mesh = board?.children[0];
     if (!(mesh instanceof THREE.Mesh)) throw new Error("紙が描画されていません");
@@ -100,7 +103,7 @@ describe("V2閲覧シーン", () => {
     scene.setProgress(0);
     const rendered: unknown = renderer.render.mock.calls.at(-1)?.[0];
     if (!(rendered instanceof THREE.Scene)) throw new Error("Sceneがありません");
-    const paper = rendered.children.find((child) => child instanceof THREE.Group);
+    const paper = paperOf(rendered);
     const board = paper?.children[0];
     const mesh = board?.children[0];
     if (!(mesh instanceof THREE.Mesh)) throw new Error("羽の面がありません");
@@ -150,6 +153,25 @@ describe("V2閲覧シーン", () => {
     canvas.toBlob = (callback: BlobCallback) => callback(null);
     const scene = createViewerScene(canvas, document.createElement("div"), 100);
     await expect(scene.capture({ size: 640, background: "#ffffff" })).rejects.toThrow("サムネイル");
+    scene.dispose();
+  });
+
+  it("作品を見ている方向を軸に画面内で回し、カメラの上下は変えない", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    scene.setContent(undefined, [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }], "#ed7070", true);
+    scene.setProgress(1);
+    const [rendered, camera] = renderer.render.mock.calls.at(-1) ?? [];
+    if (!(rendered instanceof THREE.Scene) || !(camera instanceof THREE.PerspectiveCamera)) throw new Error("描画されていません");
+    const pose = rendered.children.find((child) => child instanceof THREE.Group);
+    if (!pose) throw new Error("作品がありません");
+    // 正面（+Z）から見て反時計回りに90°回すと、+X の向きが +Y になる
+    scene.rotateModel(Math.PI / 2);
+    pose.updateMatrixWorld();
+    const direction = new THREE.Vector3(1, 0, 0).applyQuaternion(pose.quaternion);
+    expect(direction.x).toBeCloseTo(0);
+    expect(direction.y).toBeCloseTo(1);
+    expect(camera.up.toArray()).toEqual([0, 1, 0]);
+    expect(renderer.render.mock.calls.at(-1)?.[0]).toBe(rendered);
     scene.dispose();
   });
 });

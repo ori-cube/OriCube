@@ -36,6 +36,9 @@ export const fitZoom = (size: number, boards: FixBoardV2[]) => {
   return Math.min(4, Math.max(1, visible * 0.75 / (2 * radius || 1)));
 };
 
+/** 画面内で回す1回の角度 */
+const ROTATE_STEP = Math.PI / 12;
+
 // 撮影の背景は作業台と同じ色にする。OGP など透過を扱えない表示先があるため塗りつぶす
 const thumbnailBackground = () =>
   getComputedStyle(document.documentElement).getPropertyValue("--background-subtle").trim() || "#f5f5f5";
@@ -112,6 +115,10 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
           label={`${name.trim() || model.name}の完成形。ドラッグまたは矢印キーで回して、サムネイルの向きを決めます。`}
         />
         <div className={styles.cameraFrame} aria-hidden />
+        <div className={styles.rotate} role="group" aria-label="作品を画面内で回す">
+          <Button text="左に回す" variant="secondary" size="sm" onClick={() => canvas.current?.rotateModel(ROTATE_STEP)} disabled={submit.isPending} />
+          <Button text="右に回す" variant="secondary" size="sm" onClick={() => canvas.current?.rotateModel(-ROTATE_STEP)} disabled={submit.isPending} />
+        </div>
       </div>
       <form className={styles.publishForm} aria-label="投稿の内容" onSubmit={(event) => { event.preventDefault(); publish(); }}>
         <h1 className={styles.publishTitle}>投稿する</h1>
@@ -121,7 +128,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
           <h2 id="publish-thumbnail" className={styles.sectionTitle}>サムネイル</h2>
           {thumbnailUrl
             ? <img className={styles.thumbnail} src={thumbnailUrl} alt="撮影したサムネイル" width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
-            : <p className={styles.hint}>まだ撮影していません。ドラッグや矢印キーで完成形を回し、ホイールやピンチで大きさを変えられます。</p>}
+            : <p className={styles.hint}>まだ撮影していません。ドラッグや矢印キーで周りから見る向きを変え、作品が傾いて見えるときは「左に回す」「右に回す」（15°ずつ）で立てます。ホイールやピンチで大きさを変えられます。</p>}
           <div className={styles.previewActions}>
             <Button text={thumbnail ? "撮り直す" : "この向きで撮影"} variant="secondary" onClick={() => void capture()} disabled={submit.isPending} />
             <Button text="向きをリセット" variant="secondary" onClick={() => setResetKey((value) => value + 1)} disabled={submit.isPending} />
