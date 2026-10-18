@@ -12,10 +12,10 @@ import {
   useCameraFocus,
 } from "./hooks";
 import {
+  EditorStep,
   FoldStep,
   InsideReverseFoldStep,
   LayeredBoard,
-  OrigamiStep,
   PetalFoldStep,
   SquashFoldStep,
   SquashFoldStepResult,
@@ -30,6 +30,7 @@ import {
   redoFoldStep,
   canUndo,
   canRedo,
+  isFoldStep,
   serializeOrigamiState,
   SerializedOrigamiState,
 } from "@oricube/engine";
@@ -112,7 +113,8 @@ export type PendingFold =
     };
 
 export interface OrigamiEditorState {
-  steps: OrigamiStep[];
+  /** 適用済みの折り操作と裏返し */
+  steps: EditorStep[];
   color: string;
   busy: boolean;
   viewFront: boolean;
@@ -121,7 +123,7 @@ export interface OrigamiEditorState {
 }
 
 export interface OrigamiPostV2Props {
-  initialSteps?: OrigamiStep[];
+  initialSteps?: EditorStep[];
   autoResize?: boolean;
   onStateChange?: (state: OrigamiEditorState) => void;
   /** 折り紙の表面の色（裏面はBOARD_BACK_COLORの固定色）。色の選択は呼び出し側が置く */
@@ -203,7 +205,7 @@ export function OrigamiPostV2({
     window.dumpOrigami = () => {
       const state = serializeOrigamiState(
         currentBoards,
-        appliedFoldSteps(foldHistory)
+        appliedFoldSteps(foldHistory).filter(isFoldStep)
       );
       console.log(JSON.stringify(state, null, 2));
       return state;
@@ -221,35 +223,6 @@ export function OrigamiPostV2({
     setFoldPhase("idle");
   }, [pendingFold]);
 
-  // Undo / Redo（折りの入力待ち中のみ受け付ける）
-  const handleUndo = useCallback(() => {
-    if (foldPhase !== "idle") return;
-    setFoldHistory(undoFoldStep);
-  }, [foldPhase]);
-
-  const handleRedo = useCallback(() => {
-    if (foldPhase !== "idle") return;
-    setFoldHistory(redoFoldStep);
-  }, [foldPhase]);
-
-  // Ctrl+Z（⌘Z）で元に戻し、Ctrl+Shift+Z（⌘⇧Z）・Ctrl+Yでやり直す。
-  // 文字入力中は入力欄の取り消しを優先する
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || !(event.ctrlKey || event.metaKey) || event.altKey) return;
-      const target = event.target;
-      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable='true']")) return;
-      const key = event.key.toLowerCase();
-      const redo = key === "y" || (key === "z" && event.shiftKey);
-      if (key !== "z" && !redo) return;
-      event.preventDefault();
-      if (isFlippingRef.current) return;
-      if (redo) handleRedo();
-      else handleUndo();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleUndo, handleRedo]);
 
   // シーンの初期化
   const requestRender = useInitScene({
@@ -306,6 +279,47 @@ export function OrigamiPostV2({
   const isFlippingRef = useRef(isFlipping);
   isFlippingRef.current = isFlipping;
 
+  // Undo / Redo（折りの入力待ち中のみ受け付ける）
+  // 裏返しを戻す・やり直すときは、視点も一緒に裏返す
+  const handleUndo = useCallback(() => {
+    if (foldPhase !== "idle" || isFlippingRef.current || !canUndo(foldHistory)) return;
+    if (foldHistory.steps[foldHistory.index - 1].kind === "flip") flipView();
+    setFoldHistory(undoFoldStep);
+  }, [foldPhase, foldHistory, flipView]);
+
+  const handleRedo = useCallback(() => {
+    if (foldPhase !== "idle" || isFlippingRef.current || !canRedo(foldHistory)) return;
+    if (foldHistory.steps[foldHistory.index].kind === "flip") flipView();
+    setFoldHistory(redoFoldStep);
+  }, [foldPhase, foldHistory, flipView]);
+
+  // 裏返しは閲覧時にも手順として再生するため、履歴に積む
+  const handleFlip = useCallback(() => {
+    if (foldPhase !== "idle" || isFlippingRef.current) return;
+    const viewFront = (cameraRef.current?.position.z ?? 1) >= 0;
+    flipView();
+    setFoldHistory((prev) => pushFoldStep(prev, { kind: "flip", viewFront: !viewFront }));
+  }, [foldPhase, flipView]);
+
+  // Ctrl+Z（⌘Z）で元に戻し、Ctrl+Shift+Z（⌘⇧Z）・Ctrl+Yでやり直す。
+  // 文字入力中は入力欄の取り消しを優先する
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable='true']")) return;
+      const key = event.key.toLowerCase();
+      const redo = key === "y" || (key === "z" && event.shiftKey);
+      if (key !== "z" && !redo) return;
+      event.preventDefault();
+      if (isFlippingRef.current) return;
+      if (redo) handleRedo();
+      else handleUndo();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
   // ビューモード（確認用の回転視点）
   const { toggleViewMode } = useViewMode({
     cameraRef,
@@ -338,7 +352,7 @@ export function OrigamiPostV2({
         isViewing={foldPhase === "viewing"}
         onUndo={handleUndo}
         onRedo={handleRedo}
-        onFlip={flipView}
+        onFlip={handleFlip}
         onToggleViewMode={toggleViewMode}
       >
         {foldPhase === "selecting" && foldProposal ? (

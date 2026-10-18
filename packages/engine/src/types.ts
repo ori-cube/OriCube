@@ -149,3 +149,22 @@ export type OrigamiStep =
   | SquashFoldStep
   | PetalFoldStep
   | InsideReverseFoldStep;
+
+/**
+ * 裏返し（紙を表裏で返して見る操作）の履歴要素
+ *
+ * @description
+ * 板の形状は変えず、閲覧時に紙を裏返す手順として再生する。
+ * 折りと折りの間の往復や、最後の折りの後の裏返しも手順として残す
+ */
+export interface FlipStep {
+  kind: "flip";
+  /** 裏返した後に表側（+Z側）から見ているか */
+  viewFront: boolean;
+}
+
+/** 投稿画面の履歴の1要素（折り操作と裏返し） */
+export type EditorStep = OrigamiStep | FlipStep;
+
+/** 板の形状を変える折り操作か（裏返しでないか） */
+export const isFoldStep = (step: EditorStep): step is OrigamiStep => step.kind !== "flip";

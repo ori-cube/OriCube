@@ -59,7 +59,33 @@ const historyStep = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("squash"), ...gesture }),
   z.object({ kind: z.literal("petal"), ...gesture }),
   z.object({ kind: z.literal("insideReverse"), ...gesture }),
+  z.object({ kind: z.literal("flip"), viewFront: z.boolean() }),
 ]);
+
+type HistoryEntry = z.infer<typeof historyStep>;
+
+/**
+ * 履歴と答えデータの対応を確かめる
+ *
+ * @description
+ * - version 2: 裏返しを持たず、履歴と答えデータが1対1
+ * - version 3: 履歴の折りが答えデータと同じ順に対応し、裏返しは必ず表裏を変え、各折りの表裏は直前の表裏と一致する
+ */
+const historyMatchesSteps = ({ version, history, steps }: { version: 2 | 3; history: HistoryEntry[]; steps: unknown[] }) => {
+  if (version === 2) return history.length === steps.length && history.every((entry) => entry.kind !== "flip");
+  let viewFront = true;
+  let folds = 0;
+  for (const entry of history) {
+    if (entry.kind === "flip") {
+      if (entry.viewFront === viewFront) return false;
+      viewFront = entry.viewFront;
+    } else {
+      if (entry.viewFront !== viewFront) return false;
+      folds += 1;
+    }
+  }
+  return folds === steps.length;
+};
 
 /**
  * v2投稿データ（ProcedureV2）の実行時スキーマ
@@ -67,20 +93,18 @@ const historyStep = z.discriminatedUnion("kind", [
  * @description
  * - 型共有は実行時検証の代わりにならないため、APIの取り込み・DBからの読み出しで使う
  * - 頂点数と回転軸の列の対応、有限座標、紙のサイズ、手順数・板数の上限を検証する
- * - 履歴（history）は答えデータ（steps）と1対1に対応する
+ * - 履歴（history）の折りは答えデータ（steps）と同じ順に対応する（裏返しの扱いは version による）
  */
 export const procedureV2Schema = z
   .object({
-    version: z.literal(2),
+    version: z.union([z.literal(2), z.literal(3)]),
     size: finite.gt(0).max(PROCEDURE_V2_LIMITS.maxSize),
     steps: z.array(step).max(PROCEDURE_V2_LIMITS.maxSteps),
     finalBoards: boards(fixBoard),
-    history: z.array(historyStep).max(PROCEDURE_V2_LIMITS.maxSteps),
+    // 裏返しも履歴に入るため、折りの上限の2倍まで受け付ける
+    history: z.array(historyStep).max(PROCEDURE_V2_LIMITS.maxSteps * 2),
   })
-  .refine(
-    (procedure) => procedure.history.length === procedure.steps.length,
-    "手順と履歴の数が一致しません"
-  );
+  .refine(historyMatchesSteps, "手順と履歴の対応が正しくありません");
 
 /** 検証して ProcedureV2 を返す。不正な場合は null */
 export const parseProcedureV2 = (value: unknown): ProcedureV2 | null => {

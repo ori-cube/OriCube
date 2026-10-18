@@ -10,6 +10,8 @@ import {
   StepV2,
 } from "../../model-v2";
 import {
+  EditorStep,
+  isFoldStep,
   FoldLine,
   FoldStep,
   InsideReverseFoldStep,
@@ -38,7 +40,7 @@ import { VertexAxis } from "../vertexAxes";
  * ジェスチャ履歴をv2投稿データ（答え形式＋履歴）へエクスポートする
  *
  * @param props.size - 折る前の正方形の一辺
- * @param props.steps - ジェスチャ履歴（適用可能と検証済みのもの）
+ * @param props.steps - ジェスチャ履歴（折りと裏返し。適用可能と検証済みのもの）
  * @returns v2投稿データ。履歴に適用できないステップがある場合はnull
  *
  * @description
@@ -49,12 +51,17 @@ import { VertexAxis } from "../vertexAxes";
  *   投稿時に見た動きと保存データの再生が一致する
  * - ジェスチャ履歴も一緒に保存し、将来の再編集やソルバ改良時の
  *   再エクスポートを可能にする
+ * - 裏返しは history に手順として残す（version 3）。カメラを回して裏から
+ *   折った場合など、折りの表裏が直前の表裏と違うときは、その折りの前に
+ *   裏返しを補い、history の表裏と各折りの表裏を常に一致させる
  */
 export const exportProcedureV2 = (props: {
   size: number;
-  steps: OrigamiStep[];
+  steps: EditorStep[];
 }): ProcedureV2 | null => {
-  const { size, steps } = props;
+  const { size } = props;
+  const history = normalizeFlips(props.steps);
+  const steps = history.filter(isFoldStep);
 
   const initialBoard = createSquareBoard(size);
   let boards: LayeredBoard[] = [
@@ -74,12 +81,31 @@ export const exportProcedureV2 = (props: {
   }
 
   return {
-    version: 2,
+    version: 3,
     size,
     steps: exportedSteps,
     finalBoards: boards.map(toFixBoard),
-    history: steps.map(serializeHistoryStep),
+    history: history.map(serializeHistoryStep),
   };
+};
+
+/**
+ * 裏返しを表裏の変化と一致させる
+ *
+ * @description
+ * 表から始め、表裏を変えない裏返しは除き、表裏が直前と違う折りの前には裏返しを補う
+ */
+const normalizeFlips = (steps: EditorStep[]): EditorStep[] => {
+  const normalized: EditorStep[] = [];
+  let viewFront = true;
+  for (const step of steps) {
+    if (step.viewFront !== viewFront) {
+      normalized.push({ kind: "flip", viewFront: step.viewFront });
+      viewFront = step.viewFront;
+    }
+    if (isFoldStep(step)) normalized.push(step);
+  }
+  return normalized;
 };
 
 /**
@@ -263,8 +289,10 @@ const exportInsideReverseStep = (
 /**
  * ジェスチャ履歴の1要素を保存形式へ変換する
  */
-const serializeHistoryStep = (step: OrigamiStep): HistoryStepV2 => {
+const serializeHistoryStep = (step: EditorStep): HistoryStepV2 => {
   switch (step.kind) {
+    case "flip":
+      return { kind: "flip", viewFront: step.viewFront };
     case "fold":
       return {
         kind: "fold",

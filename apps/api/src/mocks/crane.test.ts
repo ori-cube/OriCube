@@ -12,12 +12,13 @@ import {
 import { craneProcedure } from "./crane";
 
 const vector = (point: PointV2) => new THREE.Vector3(...point);
-const gesture = (step: HistoryStepV2): OrigamiStep => ({
+type FoldHistoryStep = Exclude<HistoryStepV2, { kind: "flip" }>;
+const gesture = (step: FoldHistoryStep): OrigamiStep => ({
   ...step,
   foldLine: { start: vector(step.foldLine.start), end: vector(step.foldLine.end) },
   dragVertex: vector(step.dragVertex),
 });
-const history = craneProcedure.history.map(gesture);
+const history = craneProcedure.history.filter((step): step is FoldHistoryStep => step.kind !== "flip").map(gesture);
 const displayedBoards = (count: number) => {
   const { boards, finishingRotations } = replayFoldStepsDetailed(createSquareBoard(100), history.slice(0, count));
   return boards.map((board) => {
@@ -30,8 +31,16 @@ const displayedBoards = (count: number) => {
 const containsPoint = (count: number, point: PointV2) => displayedBoards(count).some((board) => board.polygon.some((vertex) => vertex.distanceTo(vector(point)) < 1e-6));
 
 describe("鶴の完成形の回帰", () => {
-  it("静的モックが投稿側から再エクスポートした答えデータと一致する", () => {
-    expect(JSON.stringify(exportProcedureV2({ size: 100, steps: history }))).toBe(JSON.stringify(craneProcedure));
+  it("静的モック（version 2）と投稿側から再エクスポートした答えデータ（version 3）が同じ折り方を表す", () => {
+    const exported = exportProcedureV2({ size: 100, steps: history });
+    if (!exported) throw new Error("鶴の手順を書き出せません");
+    expect(exported.version).toBe(3);
+    expect(JSON.stringify(exported.steps)).toBe(JSON.stringify(craneProcedure.steps));
+    expect(JSON.stringify(exported.finalBoards)).toBe(JSON.stringify(craneProcedure.finalBoards));
+    expect(JSON.stringify(exported.history.filter((step) => step.kind !== "flip"))).toBe(JSON.stringify(craneProcedure.history));
+    // version 2 は表裏の変化から推定し、version 3 は保存した裏返しを再生する。どちらも同じ手順の並びになる
+    const kinds = (procedure: typeof craneProcedure) => createViewerTimeline(procedure).steps.map((step) => `${step.kind}:${step.viewFront}`);
+    expect(kinds(exported)).toEqual(kinds(craneProcedure));
   });
   it("UIで記録した尾・首・頭の位置と両翼の仕上げ角度を保つ", () => {
     expect(containsPoint(11, [4.241352874050861, -26.79849817701443, 0])).toBe(true);
