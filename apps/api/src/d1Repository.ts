@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { ENGINE_VERSION } from "@oricube/engine";
 import { models } from "./db/schema";
 import type { OrigamiRecord, OrigamiRepository } from "./repository";
 
@@ -15,6 +16,7 @@ const toRecord = (row: typeof models.$inferSelect): OrigamiRecord => ({
     color: row.color,
     procedure: row.procedure,
     ...(row.stepDescriptions ? { stepDescriptions: row.stepDescriptions } : {}),
+    visibility: row.visibility,
   },
 });
 
@@ -37,6 +39,9 @@ export const createD1OrigamiRepository = (database: D1Database): OrigamiReposito
         color: model.color,
         procedure: model.procedure,
         stepDescriptions: model.stepDescriptions ?? null,
+        visibility: model.visibility,
+        formatVersion: model.procedure.version,
+        engineVersion: ENGINE_VERSION,
         createdAt: now,
         updatedAt: now,
       });
@@ -50,6 +55,9 @@ export const createD1OrigamiRepository = (database: D1Database): OrigamiReposito
           color: model.color,
           procedure: model.procedure,
           stepDescriptions: model.stepDescriptions ?? null,
+          visibility: model.visibility,
+          formatVersion: model.procedure.version,
+          engineVersion: ENGINE_VERSION,
           updatedAt: new Date(),
         })
         .where(eq(models.id, id));

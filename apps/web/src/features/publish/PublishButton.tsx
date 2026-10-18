@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { Button } from "@oricube/design-system";
+import { Button, SegmentedControl } from "@oricube/design-system";
 import type { OrigamiModelV2 } from "@oricube/engine";
 import { apiClient } from "../../apiClient";
 import { useAuthState } from "../../auth/AuthContext";
@@ -45,13 +46,26 @@ export function PublishButton({ model, disabled = false, returnTo = "/post" }: P
   return <SignedInPublishButton model={model} disabled={disabled} />;
 }
 
+type Visibility = "public" | "unlisted";
+
+const visibilityItems: { id: Visibility; label: string }[] = [
+  { id: "public", label: "公開" },
+  { id: "unlisted", label: "限定公開" },
+];
+
+const visibilityHints: Record<Visibility, string> = {
+  public: "作品一覧と検索に載り、誰でも見られます。",
+  unlisted: "作品一覧と検索には載らず、URLを知っている人だけが見られます。",
+};
+
 /** ログイン中だけ描画する。投稿と画面遷移のフックはここに閉じる */
 function SignedInPublishButton({ model, disabled }: { model: OrigamiModelV2 | null; disabled: boolean }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [visibility, setVisibility] = useState<Visibility>("public");
   const publish = useMutation({
     mutationFn: async ({ id: _id, ...input }: OrigamiModelV2) => {
-      const res = await apiClient.api.models.$post({ json: input });
+      const res = await apiClient.api.models.$post({ json: { ...input, visibility } });
       // 401・403 はミドルウェア（ログイン検証・CSRF）が返すため RPC の型には現れない
       const status: number = res.status;
       if (status === 401) throw new PublishError("unauthorized");
@@ -70,6 +84,8 @@ function SignedInPublishButton({ model, disabled }: { model: OrigamiModelV2 | nu
 
   const failure = publish.error instanceof PublishError ? publish.error.reason : publish.error ? "failed" : null;
   return <div>
+    <SegmentedControl label="公開範囲" items={visibilityItems} value={visibility} onChange={setVisibility} />
+    <p>{visibilityHints[visibility]}</p>
     <Button text={publish.isPending ? "投稿しています…" : "投稿する"} onClick={() => model && publish.mutate(model)} disabled={disabled || !model || publish.isPending} />
     {failure && <p role="alert">{failureMessages[failure]}</p>}
   </div>;

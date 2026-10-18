@@ -11,6 +11,7 @@ export * from "./types";
 export * from "./playback";
 export * from "./thumbnail";
 export * from "./validateProcedureV2";
+export * from "./version";
 export * from "./utils/applyFoldStep";
 export * from "./utils/applyInsideReverseFoldStep";
 export * from "./utils/applyPetalFoldStep";

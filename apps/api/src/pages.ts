@@ -91,6 +91,8 @@ export const createServerApp = ({ template, repository = createMockOrigamiReposi
       return c.html(renderPage(template, meta(c.req.url, {
         title: `${model.data.name}の折り方 | ${SITE_NAME}`,
         description: model.data.description || DEFAULT_DESCRIPTION,
+        // 限定公開の作品は検索結果に出さない
+        noindex: model.data.visibility === "unlisted",
       })));
     })
     .get("/", (c) => c.html(renderPage(template, meta(c.req.url))))
