@@ -39,6 +39,7 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 | パス | 内容 |
 | --- | --- |
+| `GET /api/models` | 作品の一覧（新しい順・1ページ24件）。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、完成形のサムネイル（`createProcedureThumbnail`）を付ける |
 | `GET /api/models/:id` | 作品の取得。保存済みの値も `origamiModelSchema` で検証してから返す |
 | `POST /api/models` | 作品の投稿（ログイン必須）。IDはサーバーで採番し、所有者はClerkで検証したユーザーID |
 | `PUT /api/models/:id` | 作品の更新（ログイン必須・所有者のみ） |
@@ -53,4 +54,5 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 - 他サイトからのフォーム送信は `hono/csrf` で拒否する。JSONの書き込みはクロスオリジンだとプリフライトで止まる（CORSは許可しない）。
 - フロントは `AppType` を type-only import し、`hono/client` で呼ぶ。
 - ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。実行環境ごとの入口は `src/worker.ts`（Cloudflare Workers）と `src/index.ts`（Node.js。CIのスモークテストで使う）。
+- 一覧の検索とページ分割はメモリ上で行う。DB接続時に `OrigamiRepository` の検索・ページ分割へ移し、サムネイルは保存済みの画像に置き換える。
 - 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。DB接続まではメモリ上の実装で、Workers では書き込みが永続化されない。og:image は作品のサムネイル保存ができるまでロゴを使う。
