@@ -12,12 +12,11 @@ export interface OrigamiRecord {
  * 作品の保存先
  *
  * @description
- * DB（Neon + Hyperdrive、#100）に接続するまではメモリ上の実装を使う。
- * Workers では isolate ごとのメモリなので、書き込みは永続化されない
+ * Workers では D1（d1Repository.ts）、Node.js とテストではメモリ上の実装を使う
  */
 export interface OrigamiRepository {
   findById(id: string): Promise<OrigamiRecord | null>;
-  /** 新しい順のすべての作品。DB接続時に検索・ページ分割を保存先へ移す */
+  /** 新しい順のすべての作品。作品数が増えたら検索・ページ分割を保存先へ移す */
   list(): Promise<OrigamiRecord[]>;
   create(record: { ownerId: string; model: OrigamiModel }): Promise<void>;
   update(id: string, model: OrigamiModel): Promise<void>;
@@ -55,3 +54,20 @@ export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): Origa
 /** 鶴などのモック（所有者なし）を入れた保存先 */
 export const createMockOrigamiRepository = () =>
   createMemoryOrigamiRepository(models.map((model) => ({ ownerId: null, model })));
+
+/**
+ * 保存先に無い作品はモックから読む
+ *
+ * @description
+ * 鶴などのモックをDB接続後も見られるようにし、一覧では保存先の作品のあとに並べる。
+ * モックは所有者がいないため更新・削除できず、書き込みはすべて保存先に行く
+ */
+export const withMockFallback = (primary: OrigamiRepository, mock = createMockOrigamiRepository()): OrigamiRepository => ({
+  ...primary,
+  findById: async (id) => (await primary.findById(id)) ?? mock.findById(id),
+  list: async () => {
+    const [stored, mocks] = await Promise.all([primary.list(), mock.list()]);
+    const ids = new Set(stored.map((record) => (record.model as { id: string }).id));
+    return [...stored, ...mocks.filter((record) => !ids.has((record.model as { id: string }).id))];
+  },
+});

@@ -22,6 +22,17 @@ pnpm deploy:worker   # 画面をビルドして wrangler deploy（Cloudflare の
 - `index.html` は `ASSETS` バインディングから読み、isolate ごとに1回だけアプリを組み立てる。
 - `APP_ORIGIN` は Cloudflare の環境変数（`vars`）で設定する。
 
+### D1（作品の保存先）
+
+作品は Cloudflare D1 に保存する（`DB` バインディング、ORM は Drizzle）。スキーマは `migrations/*.sql` と `src/db/schema.ts` の両方に書き、`src/d1Repository.test.ts` で一致を確かめる。
+
+```sh
+pnpm --filter @oricube/api db:migrate:local    # wrangler dev のローカル D1 に適用
+pnpm --filter @oricube/api db:migrate:remote   # 本番の D1 に適用（Cloudflare のログインが必要）
+```
+
+初回は `wrangler d1 create oricube` で D1 を作り、表示された `database_id` を `wrangler.jsonc` に設定する。`DB` が無い環境（Node.js・テスト）はメモリ上のモックを使う。作品一覧ができるまでは、D1 に無いIDは鶴などのモックから読む（`withMockFallback`）。
+
 ## Node.js での起動
 
 ```sh
@@ -51,8 +62,9 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 - APIのエラーは `{ "error": { "code", "message" } }` の形で返す（`invalid_request` 400・`unauthorized` 401・`forbidden` 403・`not_found` 404・`payload_too_large` 413・`internal_error` 500）。
 - ログインは Clerk のセッション（同一オリジンの Cookie）を `src/auth.ts` で検証する。`CLERK_SECRET_KEY`・`CLERK_PUBLISHABLE_KEY` が無い環境では未ログイン扱いになり、書き込みAPIは401を返す。Workers ではシークレットを `wrangler secret put CLERK_SECRET_KEY` で設定する。
+- 画面側は `VITE_CLERK_PUBLISHABLE_KEY`（`apps/web` のビルド時の環境変数）があるときだけログインを有効にする。ログイン画面は Clerk が提供するページへ移動し、画面に Clerk の部品は埋め込まない。未ログインで「投稿」を押すとログイン画面へ移り、ログイン後は作成画面へ戻る（下書きはブラウザに保存済み。戻っただけでは投稿しない）。
 - 他サイトからのフォーム送信は `hono/csrf` で拒否する。JSONの書き込みはクロスオリジンだとプリフライトで止まる（CORSは許可しない）。
 - フロントは `AppType` を type-only import し、`hono/client` で呼ぶ。
 - ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。実行環境ごとの入口は `src/worker.ts`（Cloudflare Workers）と `src/index.ts`（Node.js。CIのスモークテストで使う）。
-- 一覧の検索とページ分割はメモリ上で行う。DB接続時に `OrigamiRepository` の検索・ページ分割へ移し、サムネイルは保存済みの画像に置き換える。
-- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。DB接続まではメモリ上の実装で、Workers では書き込みが永続化されない。og:image は作品のサムネイル保存ができるまでロゴを使う。
+- 一覧の検索とページ分割は、保存先から全件を読んでAPI側で行う。作品数が増えたら `OrigamiRepository` 側の検索・ページ分割へ移し、サムネイルは保存済みの画像に置き換える。
+- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。Workers では D1（`src/d1Repository.ts`）、Node.js とテストではメモリ上の実装を使う。og:image は作品のサムネイル保存ができるまでロゴを使う。
