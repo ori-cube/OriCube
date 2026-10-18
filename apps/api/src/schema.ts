@@ -23,3 +23,9 @@ export type OrigamiModel = z.infer<typeof origamiModelSchema>;
 
 /** 投稿・更新で受け取る作品。IDと所有者はサーバーで決める */
 export const origamiInputSchema = origamiModelSchema.omit({ id: true });
+
+/** 一覧の検索条件。page は1始まり */
+export const origamiListQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+});

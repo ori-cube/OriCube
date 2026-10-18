@@ -74,6 +74,20 @@ describe("APIとD1", () => {
     expect((await app.request(`/api/models/${id}`, { method: "DELETE", headers: headers("user_a") })).status).toBe(204);
   });
 
+  it("一覧はD1の作品を新しい順に並べ、そのあとにモックを並べる", async () => {
+    const repository = createD1OrigamiRepository(db);
+    await repository.create({ ownerId: "user_a", model: { id: "d1-old", ...input, name: "古い作品" } });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await repository.create({ ownerId: "user_a", model: { id: "d1-new", ...input, name: "新しい作品" } });
+    const app = createApp({ repository: withMockFallback(repository), auth });
+    const body = (await (await app.request("/api/models")).json()) as { items: { id: string }[] };
+    expect(body.items.map((item) => item.id)).toEqual(["d1-new", "d1-old", "crane", "blank-paper"]);
+    const searched = (await (await app.request(`/api/models?q=${encodeURIComponent("古い")}`)).json()) as { items: { id: string }[] };
+    expect(searched.items.map((item) => item.id)).toEqual(["d1-old"]);
+    await repository.delete("d1-old");
+    await repository.delete("d1-new");
+  });
+
   it("D1に無い鶴のモックは読めるが、変更できない", async () => {
     const app = createApp({ repository: withMockFallback(createD1OrigamiRepository(db)), auth });
     expect(await (await app.request("/api/models/crane")).json()).toMatchObject({ id: "crane", name: "鶴" });

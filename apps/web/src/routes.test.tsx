@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { RouterProvider, createMemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { AppType } from "@oricube/api";
@@ -29,14 +29,22 @@ const renderAt = (path: string) => {
 };
 
 describe("v2のルーティング", () => {
-  it("トップと/viewは鶴の閲覧ページへ移動する", async () => {
+  it("トップは作品の一覧を表示し、/viewはトップへ移動する", async () => {
     for (const path of ["/", "/view"]) {
       const router = renderAt(path);
-      expect(await screen.findByLabelText("閲覧", undefined, { timeout: LOAD_TIMEOUT })).toHaveTextContent("鶴・最初のステップ");
-      expect(router.state.location.pathname).toBe("/view/crane");
+      expect(await screen.findByRole("heading", { level: 1, name: "折り紙を見る" }, { timeout: LOAD_TIMEOUT })).toBeInTheDocument();
+      expect(await screen.findByRole("link", { name: /鶴/ })).toHaveAttribute("href", "/view/crane");
+      expect(router.state.location.pathname).toBe("/");
       router.dispose();
       document.body.innerHTML = "";
     }
+  });
+
+  it("一覧の作品から閲覧ページへ移動する", async () => {
+    const router = renderAt("/");
+    fireEvent.click(await screen.findByRole("link", { name: /鶴/ }, { timeout: LOAD_TIMEOUT }));
+    expect(await screen.findByLabelText("閲覧", undefined, { timeout: LOAD_TIMEOUT })).toHaveTextContent("鶴・最初のステップ");
+    expect(router.state.location.pathname).toBe("/view/crane");
   });
 
   it("?step=lastで最終ステップから表示する", async () => {

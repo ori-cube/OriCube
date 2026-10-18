@@ -60,7 +60,10 @@ function SignedInPublishButton({ model, disabled }: { model: OrigamiModelV2 | nu
       return res.json();
     },
     onSuccess: async ({ id }) => {
-      await queryClient.invalidateQueries({ queryKey: ["origami", id] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["origami", id] }),
+        queryClient.invalidateQueries({ queryKey: ["origami-list"] }),
+      ]);
       navigate(`/view/${id}`);
     },
   });

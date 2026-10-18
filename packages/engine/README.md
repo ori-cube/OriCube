@@ -12,6 +12,7 @@
 | `src/types.ts` | 編集中の板・折り線・折り操作の型 |
 | `src/utils/*` | 折りの適用・リプレイ・履歴・吸着・答え形式へのエクスポート |
 | `src/playback.ts` | 答え形式から閲覧用タイムラインと各時点の板を求める |
+| `src/thumbnail.ts` | 完成形を正面から平行投影した一覧用のサムネイル |
 
 ```sh
 pnpm --filter @oricube/engine typecheck

@@ -3,14 +3,33 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
+import { createProcedureThumbnail, createViewerTimeline } from "@oricube/engine";
 import { z } from "zod";
 import { anonymousVerifier, type AuthVerifier } from "./auth";
 import { apiError, handleApiError } from "./errors";
 import { createMockOrigamiRepository, type OrigamiRepository } from "./repository";
-import { modelIdSchema, origamiInputSchema, origamiModelSchema } from "./schema";
+import { modelIdSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema, type OrigamiModel } from "./schema";
 
 /** リクエスト本文の上限。作品データの上限（engine の PROCEDURE_V2_LIMITS）と合わせて見直す */
 const MAX_BODY_BYTES = 1024 * 1024;
+/** 一覧の1ページの件数 */
+export const MODELS_PAGE_SIZE = 24;
+
+/** 検索語の比較用に、全角・半角と大文字・小文字の違いをそろえる */
+const normalize = (value: string) => value.normalize("NFKC").toLowerCase();
+
+/** 一覧で返す作品の要約。手順の本体は含めず、完成形のサムネイルを付ける */
+const toSummary = (model: OrigamiModel) => {
+  const timeline = createViewerTimeline(model.procedure);
+  return {
+    id: model.id,
+    name: model.name,
+    description: model.description,
+    color: model.color,
+    stepCount: timeline.steps.length,
+    thumbnail: createProcedureThumbnail(model.procedure, timeline),
+  };
+};
 
 interface AppOptions {
   repository?: OrigamiRepository;
@@ -20,6 +39,9 @@ interface AppOptions {
 export const createApp = ({ repository = createMockOrigamiRepository(), auth = anonymousVerifier }: AppOptions = {}) => {
   const idParam = zValidator("param", z.object({ id: modelIdSchema }), (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品IDの形式が正しくありません。");
+  });
+  const listQuery = zValidator("query", origamiListQuerySchema, (result, c) => {
+    if (!result.success) return apiError(c, 400, "invalid_request", "検索条件が正しくありません。");
   });
   const modelBody = zValidator("json", origamiInputSchema, (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品の内容が正しくありません。");
@@ -44,6 +66,21 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
     // セッションは同一オリジンの Cookie。フォーム送信による他サイトからの書き込みを Origin で拒否する
     // （JSON はクロスオリジンだとプリフライトで止まり、CORS は許可していない）
     .use(csrf())
+    .get("/models", listQuery, async (c) => {
+      const { q, page } = c.req.valid("query");
+      const keyword = q ? normalize(q) : "";
+      // 壊れた作品があっても一覧全体は返せるよう、検証できない作品は除いて記録する
+      const models = (await repository.list()).flatMap((record) => {
+        const model = origamiModelSchema.safeParse(record.model);
+        if (model.success) return [model.data];
+        console.error("一覧から形式が正しくない作品を除きました", model.error.issues);
+        return [];
+      });
+      const matched = keyword ? models.filter((model) => normalize(`${model.name}\n${model.description}`).includes(keyword)) : models;
+      const totalPages = Math.max(1, Math.ceil(matched.length / MODELS_PAGE_SIZE));
+      const items = matched.slice((page - 1) * MODELS_PAGE_SIZE, page * MODELS_PAGE_SIZE).map(toSummary);
+      return c.json({ items, total: matched.length, page, totalPages }, 200);
+    })
     .get("/models/:id", idParam, async (c) => {
       const { id } = c.req.valid("param");
       const record = await repository.findById(id);
