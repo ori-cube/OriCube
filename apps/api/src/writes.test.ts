@@ -16,16 +16,16 @@ const send = (app: ReturnType<typeof createApp>, method: string, path: string, {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 interface Created { id: string; status: string; thumbnailUpload: { url: string; method: string; headers: Record<string, string> } }
-const createPending = async (app: ReturnType<typeof createApp>, user = "user_a") => {
-  const res = await send(app, "POST", "/api/models", { user, body: { ...input, thumbnail } });
+const createPending = async (app: ReturnType<typeof createApp>, user = "user_a", overrides: Record<string, unknown> = {}) => {
+  const res = await send(app, "POST", "/api/models", { user, body: { ...input, thumbnail, ...overrides } });
   expect(res.status).toBe(201);
   return (await res.json()) as Created;
 };
 const upload = (app: ReturnType<typeof createApp>, target: Created["thumbnailUpload"], body: Uint8Array = image) =>
   app.request(target.url, { method: target.method, headers: target.headers, body });
 /** 投稿・サムネイルのアップロード・公開までを行う */
-const create = async (app: ReturnType<typeof createApp>, user = "user_a") => {
-  const { id, thumbnailUpload } = await createPending(app, user);
+const create = async (app: ReturnType<typeof createApp>, user = "user_a", overrides: Record<string, unknown> = {}) => {
+  const { id, thumbnailUpload } = await createPending(app, user, overrides);
   expect((await upload(app, thumbnailUpload)).status).toBe(200);
   expect((await send(app, "POST", `/api/models/${id}/publish`, { user })).status).toBe(200);
   return id;
@@ -197,5 +197,22 @@ describe("サムネイルのアップロードと公開", () => {
     const url = items.find((item) => item.id === id)?.thumbnailUrl ?? "";
     expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_a" })).status).toBe(204);
     expect((await app.request(url)).status).toBe(404);
+  });
+});
+
+describe("公開範囲", () => {
+  it("限定公開の作品はURLで見られるが、一覧と検索には出ない", async () => {
+    const app = createApp({ auth });
+    const id = await create(app, "user_a", { name: "ひみつの鶴", visibility: "unlisted" });
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, visibility: "unlisted" });
+    const list = (await (await app.request("/api/models?q=ひみつ")).json()) as { items: unknown[]; total: number };
+    expect(list.total).toBe(0);
+  });
+
+  it("公開範囲を省略すると公開にし、不正な値は400にする", async () => {
+    const app = createApp({ auth });
+    const id = await create(app);
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ visibility: "public" });
+    expect((await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, visibility: "private" } })).status).toBe(400);
   });
 });

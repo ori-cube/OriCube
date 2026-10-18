@@ -31,7 +31,7 @@ const samePolygon = (left: PointV2[], right: PointV2[]) =>
  * 閲覧ステップを作る
  *
  * @description
- * 表裏が変わる折りの前に裏返しを入れる。presentation があれば、最後に完成形の向きへ回すステップを足す
+ * 裏返しを入れて折りの手順を並べる（version 3 は保存した裏返し、version 2 は表裏の変化から推定）。presentation があれば、最後に完成形の向きへ回すステップを足す
  * （折る途中は折ったときの向きのまま見せる）。finalRotation は完成形を表示するときの回転
  */
 export const createViewerTimeline = (procedure: ProcedureV2, presentation?: PresentationV2) => {
@@ -42,13 +42,19 @@ export const createViewerTimeline = (procedure: ProcedureV2, presentation?: Pres
     layer: board.layer, polygon: poses.find((pose) => pose.flat.layer === board.layer && samePolygon(pose.flat.polygon, board.polygon))?.displayed ?? board.polygon,
   });
 
-  procedure.steps.forEach((data, sourceIndex) => {
-    const nextFront = procedure.history[sourceIndex]?.viewFront ?? viewFront;
-    const fixedBoards = data.fixBoards.map(posedBoard);
-    if (nextFront !== viewFront) {
-      steps.push({ kind: "flip", flatBoards: [...data.fixBoards, ...data.moveBoards], boards: [...fixedBoards, ...data.moveBoards.map(posedBoard)], viewFront, label: nextFront ? "裏返して表側を向ける" : "裏返して裏側を向ける" });
-    }
+  /** 次の折りの直前（折りが残っていなければ完成形）の平らな板。裏返しはこの形のまま回す */
+  const flatBoardsBefore = (foldIndex: number): FixBoardV2[] => {
+    const next = procedure.steps[foldIndex];
+    return next ? [...next.fixBoards, ...next.moveBoards] : procedure.finalBoards;
+  };
+  const pushFlip = (nextFront: boolean, foldIndex: number) => {
+    const flatBoards = flatBoardsBefore(foldIndex);
+    steps.push({ kind: "flip", flatBoards, boards: flatBoards.map(posedBoard), viewFront, label: nextFront ? "裏返して表側を向ける" : "裏返して裏側を向ける" });
     viewFront = nextFront;
+  };
+
+  const pushFold = (data: StepV2, sourceIndex: number) => {
+    const fixedBoards = data.fixBoards.map(posedBoard);
     const movedPoses = data.moveBoards.map((board) => ({
       flat: rotateMovingBoard(board, Math.PI), displayed: rotateMovingBoard(board, data.targetAngle ?? Math.PI),
     }));
@@ -63,7 +69,29 @@ export const createViewerTimeline = (procedure: ProcedureV2, presentation?: Pres
     });
     poses = flatBoards.map((flat, index) => ({ flat, displayed: settledBoards[index].polygon }));
     steps.push({ kind: "fold", data, fixedBoards, settledBoards, settledFlatBoards: flatBoards, sourceIndex, viewFront, label: labels[data.kind] });
-  });
+  };
+
+  if (procedure.version >= 3) {
+    // 保存した裏返しをそのまま再生する（折りの間の往復や最後の折りの後の裏返しも含む）
+    let foldIndex = 0;
+    for (const entry of procedure.history) {
+      if (entry.kind === "flip") {
+        if (entry.viewFront !== viewFront) pushFlip(entry.viewFront, foldIndex);
+        continue;
+      }
+      const data = procedure.steps[foldIndex];
+      if (!data) break;
+      pushFold(data, foldIndex);
+      foldIndex += 1;
+    }
+  } else {
+    // version 2 は裏返しを保存していないため、折りの表裏の変化から推定する
+    procedure.steps.forEach((data, sourceIndex) => {
+      const nextFront = procedure.history[sourceIndex]?.viewFront ?? viewFront;
+      if (nextFront !== viewFront) pushFlip(nextFront, sourceIndex);
+      pushFold(data, sourceIndex);
+    });
+  }
   const finalBoards = procedure.finalBoards.map(posedBoard);
   const finalRotation = presentation?.rotation ?? IDENTITY;
   if (presentation && steps.length) {

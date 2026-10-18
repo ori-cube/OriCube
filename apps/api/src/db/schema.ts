@@ -24,8 +24,15 @@ export const models = sqliteTable(
     thumbnailContentType: text("thumbnail_content_type", { enum: ["image/png", "image/webp"] }),
     thumbnailSize: integer("thumbnail_size"),
     presentation: text("presentation", { mode: "json" }).$type<PresentationV2>(),
+    visibility: text("visibility", { enum: ["public", "unlisted"] }).notNull().default("public"),
+    formatVersion: integer("format_version").notNull().default(2),
+    engineVersion: text("engine_version").notNull().default("unknown"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (table) => [index("models_owner_id_idx").on(table.ownerId), index("models_status_created_at_idx").on(table.status, table.createdAt)]
+  (table) => [
+    index("models_owner_id_idx").on(table.ownerId),
+    index("models_visibility_created_at_idx").on(table.visibility, table.createdAt),
+    index("models_status_created_at_idx").on(table.status, table.createdAt),
+  ]
 );

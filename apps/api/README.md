@@ -33,6 +33,8 @@ pnpm --filter @oricube/api db:migrate:local    # wrangler dev のローカル D1
 pnpm --filter @oricube/api db:migrate:remote   # 本番の D1 に適用（Cloudflare のログインが必要）
 ```
 
+保存契約（#100）: 下書きはブラウザ内だけに置き、サーバーには投稿した作品だけを保存する。公開範囲は `public`（一覧・検索に載る）か `unlisted`（URLを知っている人だけ。作品ページは `noindex`）。再編集は同じIDで上書きし、過去の版は残さない。保存時にデータ形式（`format_version`）とエンジンの版（`engine_version`、`@oricube/engine` の `ENGINE_VERSION`）を記録する。削除は行ごと消す（サムネイルの画像も消す）。公開範囲とは別に、投稿はサムネイルを確かめるまで公開前（`pending`）で、公開範囲に関わらず取得・一覧・作品ページに出さない（下のサムネイル）。
+
 初回は `wrangler d1 create oricube` で D1 を作り、表示された `database_id` を `wrangler.jsonc` に設定する。`DB` が無い環境（Node.js・テスト）はメモリ上のモックを使う。作品一覧ができるまでは、D1 に無いIDは鶴などのモックから読む（`withMockFallback`）。
 
 ## Node.js での起動
@@ -52,7 +54,7 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 | パス | 内容 |
 | --- | --- |
-| `GET /api/models` | 公開済みの作品の一覧（新しい順・1ページ24件）。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、撮影したサムネイルの URL（`thumbnailUrl`、無ければ null）と完成形の図（`createProcedureThumbnail`）を付ける |
+| `GET /api/models` | 公開（`public`）かつ公開済み（`published`）の作品の一覧（新しい順・1ページ24件）。限定公開と公開前の作品は載らない。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、撮影したサムネイルの URL（`thumbnailUrl`、無ければ null）と完成形の図（`createProcedureThumbnail`）を付ける |
 | `GET /api/models/:id` | 作品の取得。保存済みの値も `origamiModelSchema` で検証してから返す。公開前（pending）は404 |
 | `POST /api/models` | 作品の投稿（ログイン必須）。本文は作品と `thumbnail: { contentType, size }`。IDはサーバーで採番し、所有者はClerkで検証したユーザーID。`pending` で作り、サムネイルのアップロード先（`thumbnailUpload`）を返す |
 | `POST /api/models/:id/thumbnail-upload` | 公開前の作品のアップロード先を作り直す（ログイン必須・所有者のみ。期限切れ・撮り直し） |
@@ -72,7 +74,7 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 - フロントは `AppType` を type-only import し、`hono/client` で呼ぶ。
 - ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。実行環境ごとの入口は `src/worker.ts`（Cloudflare Workers）と `src/index.ts`（Node.js。CIのスモークテストで使う）。
 - 一覧の検索とページ分割は、保存先から公開済みの作品を全件読んでAPI側で行う。作品数が増えたら `OrigamiRepository` 側の検索・ページ分割へ移す。
-- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。Workers では D1（`src/d1Repository.ts`）、Node.js とテストではメモリ上の実装を使う。D1 の列は `migrations/` に番号順で追加する（`0002` で公開状態・サムネイル・見せる向きを追加）。
+- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。Workers では D1（`src/d1Repository.ts`）、Node.js とテストではメモリ上の実装を使う。D1 の列は `migrations/` に番号順で追加する（`0003` で公開状態・サムネイル・見せる向きを追加）。
 
 ## サムネイル
 

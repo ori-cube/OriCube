@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { ENGINE_VERSION } from "@oricube/engine";
 import { models } from "./db/schema";
 import type { OrigamiRecord, OrigamiRepository } from "./repository";
 import type { OrigamiModel } from "./schema";
@@ -20,6 +21,7 @@ const toRecord = (row: typeof models.$inferSelect): OrigamiRecord => ({
     color: row.color,
     procedure: row.procedure,
     ...(row.stepDescriptions ? { stepDescriptions: row.stepDescriptions } : {}),
+    visibility: row.visibility,
     ...(row.presentation ? { presentation: row.presentation } : {}),
   },
 });
@@ -31,6 +33,10 @@ const modelColumns = (model: OrigamiModel) => ({
   procedure: model.procedure,
   stepDescriptions: model.stepDescriptions ?? null,
   presentation: model.presentation ?? null,
+  visibility: model.visibility,
+  // 保存時のデータ形式とエンジンの版。エンジン更新で過去作品が変わらないよう記録する
+  formatVersion: model.procedure.version,
+  engineVersion: ENGINE_VERSION,
 });
 
 /** Cloudflare D1 に作品を保存する */

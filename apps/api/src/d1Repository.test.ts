@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { getTableColumns } from "drizzle-orm";
+import { ENGINE_VERSION } from "@oricube/engine";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getPlatformProxy } from "wrangler";
 import { createApp } from "./app";
@@ -38,7 +39,7 @@ afterAll(async () => {
 });
 
 const auth: AuthVerifier = { authenticate: async (request) => request.headers.get("x-test-user") };
-const input = { name: "D1の鶴", description: "説明", color: "#ed7070", procedure: craneProcedure, stepDescriptions: ["半分に折る"] };
+const input = { name: "D1の鶴", description: "説明", color: "#ed7070", procedure: craneProcedure, stepDescriptions: ["半分に折る"], visibility: "public" as const };
 
 describe("D1のスキーマ", () => {
   it("migrations の列と Drizzle のテーブル定義が一致する", async () => {
@@ -75,6 +76,14 @@ describe("createD1OrigamiRepository", () => {
     expect(await repository.findById("d1-pending")).toMatchObject({ status: "published", thumbnail: replaced, model: { name: "D1の鶴", presentation } });
     expect((await repository.list()).map((record) => (record.model as { id: string }).id)).toContain("d1-pending");
     await repository.delete("d1-pending");
+  });
+});
+
+describe("保存時の版", () => {
+  it("公開範囲・データ形式・エンジンの版を記録する", async () => {
+    await createD1OrigamiRepository(db).create({ ownerId: "user_a", status: "published", thumbnail: null, model: { id: "versioned", ...input, visibility: "unlisted" } });
+    const row = await db.prepare("SELECT visibility, format_version, engine_version FROM models WHERE id = ?").bind("versioned").first();
+    expect(row).toEqual({ visibility: "unlisted", format_version: 2, engine_version: ENGINE_VERSION });
   });
 });
 

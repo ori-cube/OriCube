@@ -47,7 +47,11 @@ export interface OrigamiInput {
   procedure: OrigamiModelV2["procedure"];
   stepDescriptions?: string[];
   presentation?: OrigamiModelV2["presentation"];
+  /** 公開範囲。省略すると公開 */
+  visibility?: Visibility;
 }
+/** 公開範囲。public は一覧・検索に載り、unlisted はURLを知っている人だけが見られる */
+export type Visibility = "public" | "unlisted";
 export type ThumbnailContentType = "image/png" | "image/webp";
 export interface ThumbnailUpload { url: string; method: "PUT"; headers: Record<string, string>; expiresAt: string }
 export interface PendingOrigami { id: string; thumbnailUpload: ThumbnailUpload }

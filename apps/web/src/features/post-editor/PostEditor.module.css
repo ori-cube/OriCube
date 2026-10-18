@@ -30,6 +30,7 @@
 .rotate { position: absolute; inset-inline: 0; bottom: var(--spacing-sm); display: flex; justify-content: center; gap: var(--spacing-xs); pointer-events: none; }
 .rotate > * { pointer-events: auto; }
 .publishForm { display: grid; align-content: start; gap: var(--spacing-md); padding: var(--spacing-lg); overflow-y: auto; border-inline-start: 1px solid color-mix(in srgb, var(--text-default) 12%, transparent); background: var(--background-default); }
+.visibility { display: grid; gap: var(--spacing-xxs); }
 .publishTitle { font-size: 1.25rem; font-weight: 600; line-height: 1.5; }
 .thumbnail { width: 10rem; height: auto; aspect-ratio: 1; border-radius: var(--border-radius-sm); border: 1px solid color-mix(in srgb, var(--text-default) 12%, transparent); }
 .published { display: grid; justify-items: start; gap: var(--spacing-md); max-width: 32rem; margin-inline: auto; padding: var(--spacing-xxl) var(--spacing-lg); }

@@ -7,7 +7,7 @@ describe("GET /api/models/:id", () => {
   it("検証済みの作品を返す", async () => {
     const res = await createApp().request("/api/models/crane");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual(await getOrigamiV2("crane"));
+    expect(await res.json()).toEqual({ ...(await getOrigamiV2("crane")), visibility: "public" });
   });
 
   it("手順がない作品も返す", async () => {
@@ -87,7 +87,7 @@ describe("GET /api/models", () => {
 
   it("投稿した作品を新しい順に先頭へ並べる", async () => {
     const repository = seed(2);
-    const model = { name: "新作", description: "", color: "#ffffff", procedure: { version: 2 as const, size: 100, steps: [], history: [], finalBoards: [] } };
+    const model = { name: "新作", description: "", color: "#ffffff", procedure: { version: 2 as const, size: 100, steps: [], history: [], finalBoards: [] }, visibility: "public" as const };
     await repository.create({ ownerId: "user_1", status: "published", thumbnail: null, model: { id: "new1", ...model } });
     await repository.create({ ownerId: "user_1", status: "published", thumbnail: null, model: { id: "new2", ...model } });
     await repository.delete("m0");

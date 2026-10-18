@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Board, LayeredBoard, OrigamiStep } from "../../types";
+import { Board, EditorStep, LayeredBoard, OrigamiStep, isFoldStep } from "../../types";
 import { applyFoldStep } from "../applyFoldStep";
 import { applySquashFoldStep } from "../applySquashFoldStep";
 import { applyPetalFoldStep } from "../applyPetalFoldStep";
@@ -51,7 +51,7 @@ export interface ReplayResult {
  */
 export const replayFoldSteps = (
   initialBoard: Board,
-  steps: OrigamiStep[]
+  steps: EditorStep[]
 ): LayeredBoard[] => replayFoldStepsDetailed(initialBoard, steps).boards;
 
 /**
@@ -68,7 +68,7 @@ export const replayFoldSteps = (
  */
 export const replayFoldStepsDetailed = (
   initialBoard: Board,
-  steps: OrigamiStep[]
+  steps: EditorStep[]
 ): ReplayResult => {
   // 初期状態では折り畳み空間と展開図空間が一致する
   let boards: LayeredBoard[] = [
@@ -80,7 +80,8 @@ export const replayFoldStepsDetailed = (
   ];
   let finishingRotations = new Map<LayeredBoard, FinishingRotation>();
 
-  for (const step of steps) {
+  // 裏返しは板の形状を変えないため、折り操作だけを適用する
+  for (const step of steps.filter(isFoldStep)) {
     const result = applyStep(boards, step);
     if (!result) return { boards, finishingRotations };
 

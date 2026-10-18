@@ -10,6 +10,8 @@ export const modelIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/, "作品ID
  * @description
  * 保存済みの値もこのスキーマで検証してから返す（型共有は実行時検証の代わりにならない）
  */
+export const visibilitySchema = z.enum(["public", "unlisted"]);
+
 export const origamiModelSchema = z.object({
   id: modelIdSchema,
   name: z.string().min(1).max(100),
@@ -17,6 +19,8 @@ export const origamiModelSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   procedure: procedureV2Schema,
   stepDescriptions: z.array(z.string().max(1000)).max(200).optional(),
+  /** 公開範囲。public は一覧・検索に載り、unlisted はURLを知っている人だけが見られる */
+  visibility: visibilitySchema.default("public"),
   /** 完成形を見せる向き（engine の PresentationV2）。無ければ折ったときの向きで表示する */
   presentation: z.object({
     rotation: z.tuple([z.number(), z.number(), z.number(), z.number()]).refine(isUnitQuaternion, "回転は単位クォータニオンで指定してください"),

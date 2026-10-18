@@ -6,10 +6,12 @@ Undo/Redo は「板の状態を巻き戻す」のではなく、「適用する�
 
 ```typescript
 interface FoldHistory {
-  steps: OrigamiStep[]; // 折り操作の全履歴（通常の折り | 開いて畳む）
-  index: number;        // 適用済みのステップ数（0 <= index <= steps.length）
+  steps: EditorStep[]; // 折り操作と裏返しの全履歴（EditorStep = OrigamiStep | FlipStep）
+  index: number;       // 適用済みのステップ数（0 <= index <= steps.length）
 }
 ```
+
+裏返し（`{ kind: "flip", viewFront }`）も1手として積み、元に戻す・やり直すの対象にする。裏返しを戻す・やり直すときは視点も `useFlipView` で裏返す。リプレイ（`replayFoldSteps`）は裏返しを読み飛ばす。
 
 `packages/engine/src/utils/foldHistory/index.ts` にすべて純関数として定義されている:
 

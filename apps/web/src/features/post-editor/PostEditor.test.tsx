@@ -203,6 +203,21 @@ describe("投稿", () => {
     expect(rotateModel).toHaveBeenLastCalledWith(-Math.PI / 12);
   });
 
+  it("限定公開を選んで投稿すると、一覧に載らない作品として保存される", async () => {
+    await openPublish();
+    expect(screen.getByText("作品一覧と検索に載り、誰でも見られます。")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "限定公開" }));
+    expect(screen.getByText(/URLを知っている人だけ/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "ひみつの鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    const href = (await screen.findByRole("link", { name: "作品ページを見る" })).getAttribute("href") ?? "";
+    expect(await (await app.request(`/api/models/${href.replace("/view/", "")}`)).json()).toMatchObject({ visibility: "unlisted" });
+    const list = (await (await app.request("/api/models?q=ひみつ")).json()) as { total: number };
+    expect(list.total).toBe(0);
+  });
+
   it("撮影できなければ再試行を案内する", async () => {
     capture.mockRejectedValue(new Error("WebGL"));
     await openPublish();

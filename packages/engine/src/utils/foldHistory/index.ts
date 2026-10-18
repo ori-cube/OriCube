@@ -1,4 +1,4 @@
-import { OrigamiStep } from "../../types";
+import { EditorStep } from "../../types";
 
 /**
  * Undo/Redo可能な折り手順の履歴
@@ -9,8 +9,8 @@ import { OrigamiStep } from "../../types";
  * - 板の形状は適用済みステップ（appliedFoldSteps）のリプレイで導出する
  */
 export interface FoldHistory {
-  /** 折り操作の全履歴 */
-  steps: OrigamiStep[];
+  /** 折り操作と裏返しの全履歴 */
+  steps: EditorStep[];
   /** 適用済みのステップ数（0 <= index <= steps.length） */
   index: number;
 }
@@ -21,7 +21,7 @@ export const EMPTY_FOLD_HISTORY: FoldHistory = { steps: [], index: 0 };
 /**
  * 適用済みの折り手順（リプレイの入力）を返す
  */
-export const appliedFoldSteps = (history: FoldHistory): OrigamiStep[] =>
+export const appliedFoldSteps = (history: FoldHistory): EditorStep[] =>
   history.steps.slice(0, history.index);
 
 /**
@@ -32,7 +32,7 @@ export const appliedFoldSteps = (history: FoldHistory): OrigamiStep[] =>
  */
 export const pushFoldStep = (
   history: FoldHistory,
-  step: OrigamiStep
+  step: EditorStep
 ): FoldHistory => ({
   steps: [...history.steps.slice(0, history.index), step],
   index: history.index + 1,

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { Button, TextArea, TextInput } from "@oricube/design-system";
+import { Button, SegmentedControl, TextArea, TextInput } from "@oricube/design-system";
 import { createViewerTimeline, type FixBoardV2, type OrigamiModelV2, type PresentationV2 } from "@oricube/engine";
-import { apiClient } from "../../apiClient";
+import { apiClient, type Visibility } from "../../apiClient";
 import { useAuthState } from "../../auth/AuthContext";
 import { OrigamiCanvas, type OrigamiCanvasHandle } from "../../components/OrigamiViewer/Canvas";
 import { THUMBNAIL_SIZE, submitErrorMessage, submitOrigami, type PendingSubmission } from "./publish";
@@ -42,6 +42,16 @@ export const fitZoom = (size: number, boards: FixBoardV2[]) => {
 /** 回していない向き（q と -q は同じ回転） */
 const isIdentity = (rotation: PresentationV2["rotation"]) => Math.abs(rotation[3]) > 1 - 1e-9;
 
+const visibilityItems: { id: Visibility; label: string }[] = [
+  { id: "public", label: "公開" },
+  { id: "unlisted", label: "限定公開" },
+];
+
+const visibilityHints: Record<Visibility, string> = {
+  public: "作品一覧と検索に載り、誰でも見られます。",
+  unlisted: "作品一覧と検索には載らず、URLを知っている人だけが見られます。",
+};
+
 /** 画面内で回す1回の角度 */
 const ROTATE_STEP = Math.PI / 12;
 
@@ -67,6 +77,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   const [thumbnail, setThumbnail] = useState<Blob | null>(null);
   const [captureError, setCaptureError] = useState("");
   const [nameError, setNameError] = useState("");
+  const [visibility, setVisibility] = useState<Visibility>("public");
   const thumbnailUrl = useMemo(() => thumbnail ? URL.createObjectURL(thumbnail) : null, [thumbnail]);
   useEffect(() => () => { if (thumbnailUrl) URL.revokeObjectURL(thumbnailUrl); }, [thumbnailUrl]);
 
@@ -75,7 +86,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   const submit = useMutation({
     mutationFn: (image: Blob) => submitOrigami({
       client: apiClient,
-      input: { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, ...(model.presentation ? { presentation: model.presentation } : {}) },
+      input: { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, visibility, ...(model.presentation ? { presentation: model.presentation } : {}) },
       thumbnail: image,
       previous: pending.current,
       onPending: (next) => { pending.current = next; },
@@ -143,6 +154,10 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
         <h1 className={styles.publishTitle}>投稿する</h1>
         <TextInput label="作品名" required value={name} onChange={(value) => { onNameChange(value); setNameError(""); }} placeholder="例：鶴" errorMessage={nameError || undefined} />
         <TextArea label="説明" value={description} onChange={onDescriptionChange} placeholder="例：羽を広げた鶴です。" rows={3} />
+        <div className={styles.visibility}>
+          <SegmentedControl label="公開範囲" items={visibilityItems} value={visibility} onChange={setVisibility} />
+          <p className={styles.hint}>{visibilityHints[visibility]}</p>
+        </div>
         <section className={styles.section} aria-labelledby="publish-thumbnail">
           <h2 id="publish-thumbnail" className={styles.sectionTitle}>サムネイル</h2>
           {thumbnailUrl
