@@ -1,12 +1,30 @@
 import { models } from "./mocks/models";
-import type { OrigamiModel } from "./schema";
+import type { OrigamiModel, ThumbnailSpec } from "./schema";
+
+/**
+ * 作品の公開状態
+ *
+ * @description
+ * DBと画像の保存先は単一トランザクションにならないため、投稿は pending で作り、
+ * サムネイルのアップロードを確かめてから published にする（#100 の画像保存）
+ */
+export type OrigamiStatus = "pending" | "published";
+
+/** 作品のサムネイル。キーはサーバーが決め、形式とサイズは投稿時に申告された値 */
+export interface ThumbnailRecord extends ThumbnailSpec {
+  key: string;
+}
 
 /** 保存済みの作品と、その所有者（Clerk のユーザーID。モックは null で誰も編集できない） */
 export interface OrigamiRecord {
   ownerId: string | null;
+  status: OrigamiStatus;
+  thumbnail: ThumbnailRecord | null;
   /** 未検証の値として扱い、呼び出し側でスキーマ検証する */
   model: unknown;
 }
+
+export type OrigamiRecordPatch = Partial<Pick<OrigamiRecord, "status" | "thumbnail">> & { model?: OrigamiModel };
 
 /**
  * 作品の保存先
@@ -16,34 +34,36 @@ export interface OrigamiRecord {
  */
 export interface OrigamiRepository {
   findById(id: string): Promise<OrigamiRecord | null>;
-  /** 新しい順のすべての作品。作品数が増えたら検索・ページ分割を保存先へ移す */
+  /** 公開済みの作品を新しい順に返す。作品数が増えたら検索・ページ分割を保存先へ移す */
   list(): Promise<OrigamiRecord[]>;
-  create(record: { ownerId: string; model: OrigamiModel }): Promise<void>;
-  update(id: string, model: OrigamiModel): Promise<void>;
+  create(record: { ownerId: string; status: OrigamiStatus; thumbnail: ThumbnailRecord | null; model: OrigamiModel }): Promise<void>;
+  update(id: string, patch: OrigamiRecordPatch): Promise<void>;
   delete(id: string): Promise<void>;
 }
 
-export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): OrigamiRepository => {
+type SeedRecord = Pick<OrigamiRecord, "ownerId" | "model"> & Partial<OrigamiRecord>;
+
+export const createMemoryOrigamiRepository = (seed: SeedRecord[] = []): OrigamiRepository => {
   const records = new Map<string, OrigamiRecord & { order: number }>();
-  // seed は渡した順に並べ、投稿した作品はその前に新しい順で並べる
+  // seed は渡した順に並べ、投稿した作品はその前に新しい順で並べる。seed は既定で公開済み・サムネイルなし
   let lastOrder = 0;
   seed.forEach((record, index) => {
     const { id } = record.model as { id: string };
-    records.set(id, { ...record, order: -index });
+    records.set(id, { status: "published", thumbnail: null, ...record, order: -index });
   });
-  const toRecord = ({ ownerId, model }: OrigamiRecord): OrigamiRecord => ({ ownerId, model });
+  const toRecord = ({ ownerId, status, thumbnail, model }: OrigamiRecord): OrigamiRecord => ({ ownerId, status, thumbnail, model });
   return {
     findById: async (id) => {
       const record = records.get(id);
       return record ? toRecord(record) : null;
     },
-    list: async () => [...records.values()].sort((left, right) => right.order - left.order).map(toRecord),
-    create: async ({ ownerId, model }) => {
-      records.set(model.id, { ownerId, model, order: ++lastOrder });
+    list: async () => [...records.values()].filter((record) => record.status === "published").sort((left, right) => right.order - left.order).map(toRecord),
+    create: async (record) => {
+      records.set(record.model.id, { ...record, order: ++lastOrder });
     },
-    update: async (id, model) => {
+    update: async (id, patch) => {
       const record = records.get(id);
-      if (record) records.set(id, { ...record, model });
+      if (record) records.set(id, { ...record, ...patch });
     },
     delete: async (id) => {
       records.delete(id);
@@ -51,7 +71,7 @@ export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): Origa
   };
 };
 
-/** 鶴などのモック（所有者なし）を入れた保存先 */
+/** 鶴などのモック（所有者なし・公開済み・サムネイルなし）を入れた保存先 */
 export const createMockOrigamiRepository = () =>
   createMemoryOrigamiRepository(models.map((model) => ({ ownerId: null, model })));
 

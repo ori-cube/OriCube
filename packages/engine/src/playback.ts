@@ -1,9 +1,13 @@
 import * as THREE from "three";
-import type { FixBoardV2, MoveBoardV2, PointV2, ProcedureV2, StepV2 } from "./model-v2";
+import type { FixBoardV2, MoveBoardV2, PointV2, PresentationV2, ProcedureV2, QuaternionV2, StepV2 } from "./model-v2";
 
 export type ViewerStep =
   | { kind: "fold"; data: StepV2; fixedBoards: FixBoardV2[]; settledBoards: FixBoardV2[]; settledFlatBoards: FixBoardV2[]; sourceIndex: number; viewFront: boolean; label: string }
-  | { kind: "flip"; boards: FixBoardV2[]; flatBoards: FixBoardV2[]; viewFront: boolean; label: string };
+  | { kind: "flip"; boards: FixBoardV2[]; flatBoards: FixBoardV2[]; viewFront: boolean; label: string }
+  /** 折り終えた形を、完成形を見せる向き（PresentationV2）へ回す */
+  | { kind: "present"; boards: FixBoardV2[]; flatBoards: FixBoardV2[]; viewFront: boolean; rotation: QuaternionV2; label: string };
+
+const IDENTITY: QuaternionV2 = [0, 0, 0, 1];
 
 const labels: Record<StepV2["kind"], string> = {
   fold: "折る", squash: "開いて畳む", petal: "花弁折り", insideReverse: "中割り折り",
@@ -23,7 +27,14 @@ type BoardPose = { flat: FixBoardV2; displayed: PointV2[] };
 const samePolygon = (left: PointV2[], right: PointV2[]) =>
   left.length === right.length && left.every((point, index) => point.every((value, axis) => Math.abs(value - right[index][axis]) < 1e-6));
 
-export const createViewerTimeline = (procedure: ProcedureV2) => {
+/**
+ * 閲覧ステップを作る
+ *
+ * @description
+ * 裏返しを入れて折りの手順を並べる（version 3 は保存した裏返し、version 2 は表裏の変化から推定）。presentation があれば、最後に完成形の向きへ回すステップを足す
+ * （折る途中は折ったときの向きのまま見せる）。finalRotation は完成形を表示するときの回転
+ */
+export const createViewerTimeline = (procedure: ProcedureV2, presentation?: PresentationV2) => {
   const steps: ViewerStep[] = [];
   let viewFront = true;
   let poses: BoardPose[] = [];
@@ -81,11 +92,16 @@ export const createViewerTimeline = (procedure: ProcedureV2) => {
       pushFold(data, sourceIndex);
     });
   }
-  return { steps, finalBoards: procedure.finalBoards.map(posedBoard), finalViewFront: viewFront };
+  const finalBoards = procedure.finalBoards.map(posedBoard);
+  const finalRotation = presentation?.rotation ?? IDENTITY;
+  if (presentation && steps.length) {
+    steps.push({ kind: "present", boards: finalBoards, flatBoards: procedure.finalBoards, viewFront, rotation: finalRotation, label: "完成形の向きに整える" });
+  }
+  return { steps, finalBoards, finalViewFront: viewFront, finalRotation };
 };
 
 export const getStepBoards = (step: ViewerStep, progress: number): FixBoardV2[] => {
-  if (step.kind === "flip") return step.boards;
+  if (step.kind !== "fold") return step.boards;
   if (progress >= 1) return step.settledBoards;
   const angle = Math.max(0, Math.min(progress, 1)) * (step.data.targetAngle ?? Math.PI);
   return [...step.fixedBoards, ...step.data.moveBoards.map((board) => ({ polygon: rotateMovingBoard(board, angle), layer: board.layer }))];
@@ -95,4 +111,11 @@ export const getViewAngle = (step: ViewerStep, progress: number) =>
   (step.viewFront ? 0 : Math.PI) + (step.kind === "flip" ? Math.PI * Math.max(0, Math.min(progress, 1)) : 0);
 
 export const getFlatStepBoards = (step: ViewerStep, settled: boolean): FixBoardV2[] =>
-  step.kind === "flip" ? step.flatBoards : settled ? step.settledFlatBoards : [...step.data.fixBoards, ...step.data.moveBoards];
+  step.kind !== "fold" ? step.flatBoards : settled ? step.settledFlatBoards : [...step.data.fixBoards, ...step.data.moveBoards];
+
+/** 表示に掛ける回転。完成形の向きに整えるステップでは、回転なしから見せる向きへ補間する */
+export const getPresentationRotation = (step: ViewerStep, progress: number): QuaternionV2 => {
+  if (step.kind !== "present") return IDENTITY;
+  const rotation = new THREE.Quaternion().slerp(new THREE.Quaternion(...step.rotation), Math.max(0, Math.min(progress, 1)));
+  return [rotation.x, rotation.y, rotation.z, rotation.w];
+};

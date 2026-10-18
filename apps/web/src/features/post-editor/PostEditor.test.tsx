@@ -1,4 +1,9 @@
-import { useEffect } from "react";
+import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
+import { createApp } from "@oricube/api";
+import type { OrigamiCanvasHandle, OrigamiCanvasProps } from "../../components/OrigamiViewer/Canvas";
+import { AuthContext, unavailableAuth, type AuthState } from "../../auth/AuthContext";
 import * as THREE from "three";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
@@ -17,6 +22,13 @@ vi.mock("../../components/OrigamiPost", () => ({ OrigamiPostV2: function Editor(
   </>;
 } }));
 vi.mock("../../components/OrigamiViewer", () => ({ OrigamiViewer: function Preview({ model, startAtEnd }: OrigamiViewerProps) { return <div aria-label="プレビュー">{startAtEnd ? "完成形" : "折り方"}・{model.procedure.steps.length}回</div>; } }));
+const capture = vi.hoisted(() => vi.fn());
+const rotateModel = vi.hoisted(() => vi.fn());
+const getModelRotation = vi.hoisted(() => vi.fn());
+vi.mock("../../components/OrigamiViewer/Canvas", () => ({ OrigamiCanvas: forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function Camera({ label }, ref) {
+  useImperativeHandle(ref, () => ({ capture, rotateModel, getModelRotation }));
+  return <div role="img" aria-label={label} />;
+}) }));
 const openPanel = () => fireEvent.click(screen.getByRole("button", { name: "作品の設定" }));
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} }); });
 afterEach(() => vi.unstubAllGlobals());
@@ -75,5 +87,153 @@ describe("投稿画面", () => {
     openPanel();
     fireEvent.click(screen.getByRole("button", { name: "白紙に戻す" }));
     await waitFor(() => expect(localStorage.getItem(DRAFT_KEY)).not.toBe("invalid"));
+  });
+});
+
+describe("投稿", () => {
+  let auth: AuthState = unavailableAuth;
+  const wrapper = ({ children }: { children: ReactNode }) => <AuthContext.Provider value={auth}><QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider></AuthContext.Provider>;
+  let app: ReturnType<typeof createApp>;
+  beforeEach(() => {
+    auth = unavailableAuth;
+    app = createApp({ auth: { authenticate: async () => "user_a" } });
+    capture.mockResolvedValue(new Blob([new Uint8Array(8)], { type: "image/png" }));
+    // 同一オリジンの fetch と同じく Origin を付けてメモリ上の API へ送る
+    vi.stubGlobal("fetch", (url: string | URL | Request, init?: RequestInit) => {
+      const request = new Request(new URL(url instanceof Request ? url.url : url, window.location.origin), init);
+      if (request.method !== "GET") request.headers.set("Origin", window.location.origin);
+      return app.request(request);
+    });
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: () => "blob:thumbnail", revokeObjectURL: () => {} }));
+  });
+  const openPublish = async () => {
+    render(<PostEditor />, { wrapper });
+    openPanel();
+    expect(screen.getByRole("button", { name: "投稿へ進む" })).toBeDisabled();
+    fireEvent.click(await screen.findByRole("button", { name: "頂点を折る" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "投稿へ進む" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "投稿へ進む" }));
+  };
+
+  it("完成形を撮影してから投稿し、作品ページへ案内する", async () => {
+    await openPublish();
+    // 空欄は必須入力の検証で止まり、空白だけの名前も受け付けない
+    expect(screen.getByRole("textbox", { name: /作品名/ })).toBeRequired();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "  " } });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByText("作品名を入力してください。")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "説明" }), { target: { value: "はじめて折りました" } });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("先にサムネイルを撮影してください。");
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    expect(await screen.findByRole("img", { name: "撮影したサムネイル" })).toBeInTheDocument();
+    expect(capture).toHaveBeenCalledWith(expect.objectContaining({ size: 640 }));
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("heading", { name: "投稿しました" })).toBeInTheDocument();
+    const href = screen.getByRole("link", { name: "作品ページを見る" }).getAttribute("href") ?? "";
+    const id = href.replace("/view/", "");
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ name: "私の鶴", description: "はじめて折りました", procedure: { history: [{ kind: "fold" }] } });
+    // 説明も下書きに残る
+    expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ name: "私の鶴", description: "はじめて折りました" });
+    fireEvent.click(screen.getByRole("button", { name: "白紙から新しく折る" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0回の折りを記録"));
+  });
+
+  it("未ログインなら投稿せず、ログインして作成画面へ戻る", async () => {
+    const signIn = vi.fn();
+    auth = { status: "signedOut", signIn, signOut: vi.fn() };
+    await openPublish();
+    expect(screen.queryByRole("button", { name: "投稿する" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ログインして投稿" }));
+    expect(signIn).toHaveBeenCalledWith("/post");
+  });
+
+  it("ログイン中にセッションが切れていたら、もう一度ログインするよう伝える", async () => {
+    auth = { status: "signedIn", signIn: vi.fn(), signOut: vi.fn() };
+    app = createApp();
+    await openPublish();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("もう一度ログインしてから投稿してください");
+  });
+
+  it("ログインの設定がない環境で投稿できなければ、下書きが残ることを伝える", async () => {
+    app = createApp();
+    await openPublish();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("この環境では投稿できません。折った手順はこのブラウザに保存されています。");
+    fireEvent.click(screen.getByRole("button", { name: "折る画面に戻る" }));
+    expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
+  });
+
+  it("撮影した向きを完成形を見せる向きとして保存し、下書きにも残す", async () => {
+    const rotation = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
+    getModelRotation.mockReturnValue(rotation);
+    await openPublish();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "立てた鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ presentation: { rotation } }));
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    const href = (await screen.findByRole("link", { name: "作品ページを見る" })).getAttribute("href") ?? "";
+    expect(await (await app.request(`/api/models/${href.replace("/view/", "")}`)).json()).toMatchObject({ presentation: { rotation } });
+    getModelRotation.mockReset();
+  });
+
+  it("回していなければ見せる向きを保存しない", async () => {
+    getModelRotation.mockReturnValue([0, 0, 0, 1]);
+    await openPublish();
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).not.toHaveProperty("presentation");
+    getModelRotation.mockReset();
+  });
+
+  it("傾いた作品を画面内で15°ずつ回せる", async () => {
+    await openPublish();
+    fireEvent.click(screen.getByRole("button", { name: "左に回す" }));
+    expect(rotateModel).toHaveBeenLastCalledWith(Math.PI / 12);
+    fireEvent.click(screen.getByRole("button", { name: "右に回す" }));
+    expect(rotateModel).toHaveBeenLastCalledWith(-Math.PI / 12);
+  });
+
+  it("限定公開を選んで投稿すると、一覧に載らない作品として保存される", async () => {
+    await openPublish();
+    expect(screen.getByText("作品一覧と検索に載り、誰でも見られます。")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "限定公開" }));
+    expect(screen.getByText(/URLを知っている人だけ/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "ひみつの鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    const href = (await screen.findByRole("link", { name: "作品ページを見る" })).getAttribute("href") ?? "";
+    expect(await (await app.request(`/api/models/${href.replace("/view/", "")}`)).json()).toMatchObject({ visibility: "unlisted" });
+    const list = (await (await app.request("/api/models?q=ひみつ")).json()) as { total: number };
+    expect(list.total).toBe(0);
+  });
+
+  it("撮影できなければ再試行を案内する", async () => {
+    capture.mockRejectedValue(new Error("WebGL"));
+    await openPublish();
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("撮影できませんでした");
+  });
+});
+
+describe("fitZoom", () => {
+  it("完成形の外接球が枠の約75%になる倍率にし、1〜4倍に収める", async () => {
+    const { fitZoom } = await import("./PublishScreen");
+    const square = (half: number) => [{ layer: 0, polygon: [[-half, -half, 0], [half, -half, 0], [half, half, 0], [-half, half, 0]] as [number, number, number][] }];
+    const visible = 2 * 2.2 * 100 * Math.tan(Math.PI * 35 / 360);
+    expect(fitZoom(100, square(25))).toBeCloseTo(visible * 0.75 / (2 * 25 * Math.SQRT2));
+    expect(fitZoom(100, square(50))).toBe(1);
+    expect(fitZoom(100, square(1))).toBe(4);
+    expect(fitZoom(100, [])).toBe(1);
   });
 });

@@ -15,10 +15,10 @@ export interface OrigamiViewerProps {
 }
 
 export function OrigamiViewer({ model, startAtEnd = false, fullscreen = false }: OrigamiViewerProps) {
-  const timeline = useMemo(() => createViewerTimeline(model.procedure), [model.procedure]);
+  const timeline = useMemo(() => createViewerTimeline(model.procedure, model.presentation), [model.procedure, model.presentation]);
   const [resetKey, setResetKey] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const playback = usePlayback(timeline.steps.length, (index) => timeline.steps[index]?.kind === "flip", startAtEnd);
+  const playback = usePlayback(timeline.steps.length, (index) => timeline.steps[index]?.kind !== "fold", startAtEnd);
   const step = timeline.steps[playback.index];
   const description = step?.kind === "fold" ? model.stepDescriptions?.[step.sourceIndex] ?? step.label : step?.label ?? model.description;
   const showControls = timeline.steps.length > 0;
@@ -44,7 +44,7 @@ export function OrigamiViewer({ model, startAtEnd = false, fullscreen = false }:
     <div className={styles.stage}>
       <OrigamiCanvas
         size={model.procedure.size} color={model.color} step={step} progress={playback.progress}
-        flatFinalBoards={model.procedure.finalBoards} finalBoards={timeline.finalBoards} finalViewFront={timeline.finalViewFront}
+        flatFinalBoards={model.procedure.finalBoards} finalBoards={timeline.finalBoards} finalViewFront={timeline.finalViewFront} finalRotation={timeline.finalRotation}
         resetKey={resetKey} zoom={zoom}
         label={`${model.name}・${stepName}・${description}。矢印キーで視点を回転できます。`}
       />

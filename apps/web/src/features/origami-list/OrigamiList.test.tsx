@@ -34,12 +34,23 @@ describe("作品の一覧", () => {
     renderAt("/");
     const crane = await screen.findByRole("link", { name: /鶴/ });
     expect(crane).toHaveAttribute("href", "/view/crane");
-    expect(within(crane).getByText("21ステップ")).toBeInTheDocument();
+    // 鶴は完成形の向きに整えるステップを含む
+    expect(within(crane).getByText("22ステップ")).toBeInTheDocument();
     const fills = [...crane.querySelectorAll("svg polygon")].map((polygon) => polygon.getAttribute("fill"));
     expect(fills).toEqual(expect.arrayContaining(["#ed7070", "#ffffff"]));
     expect(within(screen.getByRole("link", { name: /折る前の紙/ })).getByText("折り手順なし")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("2件の作品");
     expect(screen.queryByRole("navigation", { name: "一覧のページ" })).not.toBeInTheDocument();
+  });
+
+  it("投稿時に撮影したサムネイルがあれば、完成形の図の代わりに画像を表示する", async () => {
+    const [{ createApp }, { createMemoryOrigamiRepository }, { models }] = await Promise.all([import("@oricube/api"), import("@oricube/api/repository"), import("@oricube/api/mocks/models")]);
+    const thumbnail = { key: "thumbnails/posted/a.png", contentType: "image/png" as const, size: 8 };
+    api.app = createApp({ repository: createMemoryOrigamiRepository([{ ownerId: "user_a", thumbnail, model: { ...models[0], id: "posted", name: "撮影した鶴" } }]) });
+    renderAt("/");
+    const card = await screen.findByRole("link", { name: /撮影した鶴/ });
+    expect(card.querySelector("img")).toHaveAttribute("src", "/api/mock-storage/objects/thumbnails/posted/a.png");
+    expect(card.querySelector("svg")).toBeNull();
   });
 
   it("入力が止まったら検索し、検索語をURLに入れる", async () => {
@@ -61,7 +72,7 @@ describe("作品の一覧", () => {
   });
 
   it("件数が多いとページを切り替えられる", async () => {
-    const [{ createApp, MODELS_PAGE_SIZE }, { createMemoryOrigamiRepository }] = await Promise.all([import("@oricube/api"), import("../../../../api/src/repository")]);
+    const [{ createApp, MODELS_PAGE_SIZE }, { createMemoryOrigamiRepository }] = await Promise.all([import("@oricube/api"), import("@oricube/api/repository")]);
     api.app = createApp({ repository: createMemoryOrigamiRepository(Array.from({ length: MODELS_PAGE_SIZE + 1 }, (_, index) => ({
       ownerId: null,
       model: { id: `m${index}`, name: `作品${index}`, description: "", color: "#ffffff", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [] } },

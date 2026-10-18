@@ -42,3 +42,13 @@ export const verifierFromEnv = (env: { CLERK_SECRET_KEY?: string; CLERK_PUBLISHA
         authorizedParties: env.APP_ORIGIN ? [env.APP_ORIGIN] : undefined,
       })
     : anonymousVerifier;
+
+/**
+ * 開発用: 常に同じユーザーでログインしている扱いにする
+ *
+ * @description
+ * Clerk のキーが無いローカル環境で投稿を確かめるためのもの。`src/dev.ts` だけで使い、本番の入口（index.ts・worker.ts）では使わない
+ */
+export const createFixedUserVerifier = (userId: string): AuthVerifier => ({
+  authenticate: async () => userId,
+});

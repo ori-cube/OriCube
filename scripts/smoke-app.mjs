@@ -40,6 +40,10 @@ try {
   const api = await get("/api/models/crane");
   check("/api/models/crane は200のJSON", api.status === 200 && JSON.parse(api.body).id === "crane");
   check("未定義のAPIは404のJSON", (await get("/api/nope")).type.includes("application/json"));
+  const list = await get("/api/models");
+  check("/api/models は公開済みの作品の一覧", list.status === 200 && JSON.parse(list.body).items.some((item) => item.id === "crane"));
+  const post = await fetch(`${origin}/api/models`, { method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: "{}" });
+  check("ログインしていない投稿は401", post.status === 401);
 } catch (error) {
   console.error(error);
   failures.push("起動");

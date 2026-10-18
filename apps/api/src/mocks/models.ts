@@ -25,6 +25,8 @@ export const models: OrigamiModelV2[] = [
       "表側の羽も150度折り下げます。",
       "首の先端を中割り折りして、頭を作ります。",
     ],
+    // 対角線で折るため、折ったときの向きでは首と尾が斜めになる。Z 軸周りに135°回して立てる
+    presentation: { rotation: [0, 0, Math.sin(Math.PI * 3 / 8), Math.cos(Math.PI * 3 / 8)] },
   },
   {
     id: "blank-paper", name: "折る前の紙", description: "折り手順がまだない作品です。", color: "#7898db",

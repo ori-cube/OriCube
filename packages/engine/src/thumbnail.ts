@@ -35,23 +35,26 @@ const polygonNormal = (polygon: PointV2[]) => {
  * 完成形のサムネイルを作る
  *
  * @description
- * - 閲覧画面の最終状態（仕上げ角度と最後の向き）を、カメラ正面から平行投影する
+ * - 閲覧画面の最終状態（仕上げ角度・最後の向き・完成形を見せる向き）を、カメラ正面から平行投影する
  * - 頂点の並びが紙の表裏を表すため、投影後の向きで作品の色と裏面の白を分ける
  * - 重なりは面の重心の奥行きで並べる簡易的な描画順なので、立体的に交差する面は近似になる
  * - サムネイル画像の保存ができるまで、一覧で軽く表示するために使う
  */
 export const createProcedureThumbnail = (procedure: ProcedureV2, timeline = createViewerTimeline(procedure)): ProcedureThumbnail => {
-  const { finalBoards, finalViewFront } = timeline;
-  const view = finalViewFront ? 1 : -1;
+  const { finalBoards, finalViewFront, finalRotation } = timeline;
+  // 閲覧画面と同じく、最後の表裏に合わせて Y 軸周りに回し、完成形を見せる向き（presentation）を掛ける
+  const display = new THREE.Quaternion(...finalRotation).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), finalViewFront ? 0 : Math.PI));
+  const toDisplay = (point: PointV2) => new THREE.Vector3(...point).applyQuaternion(display);
   const faces = finalBoards.map((board, index) => {
-    const normal = polygonNormal(board.polygon);
+    const normal = polygonNormal(board.polygon).applyQuaternion(display);
     const flatSign = Math.sign(polygonNormal(procedure.finalBoards[index].polygon).z) || 1;
-    const centroid = board.polygon.reduce((sum, point) => sum + point[2], 0) / board.polygon.length;
+    const points = board.polygon.map(toDisplay);
+    const centroid = points.reduce((sum, point) => sum + point.z, 0) / points.length;
     return {
-      depth: (centroid + normal.z * flatSign * board.layer * LAYER_DEPTH) * view,
+      depth: centroid + normal.z * flatSign * board.layer * LAYER_DEPTH,
       face: {
-        points: board.polygon.map(([x, y]): [number, number] => [round(x * view), round(-y)]),
-        side: normal.z * view > 0 ? "front" : "back",
+        points: points.map((point): [number, number] => [round(point.x), round(-point.y)]),
+        side: normal.z > 0 ? "front" : "back",
         shade: Math.round(Math.abs(normal.z) * 100) / 100,
       } satisfies ThumbnailFace,
     };

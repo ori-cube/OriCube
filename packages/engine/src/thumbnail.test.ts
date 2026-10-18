@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ProcedureV2 } from "./model-v2";
+import { createViewerTimeline } from "./playback";
 import { createProcedureThumbnail } from "./thumbnail";
 import { exportProcedureV2 } from "./utils/exportProcedureV2";
 import { craneNarrowedLegsSteps } from "./utils/replayFoldSteps/craneFixture";
@@ -34,5 +35,22 @@ describe("完成形のサムネイル", () => {
       expect(point[1]).toBeLessThanOrEqual(y + height);
     }
     expect(JSON.stringify(procedure)).toBe(saved);
+  });
+
+  it("完成形を見せる向きがあれば、その向きで投影する", () => {
+    const procedure = sheet([[0, 0, 0], [40, 0, 0], [0, 20, 0]]);
+    // Z 軸周りに90°回すと、+X に伸びた辺が上（SVG では -Y）を向く
+    const timeline = createViewerTimeline(procedure, { rotation: [0, 0, Math.SQRT1_2, Math.SQRT1_2] });
+    const [face] = createProcedureThumbnail(procedure, timeline).faces;
+    expect(face.points).toEqual([[0, 0], [0, -40], [-20, 0]]);
+    expect(face.side).toBe("front");
+  });
+
+  it("裏を向いて終わる作品は左右を反転し、裏面として描く", () => {
+    const procedure = sheet([[0, 0, 0], [40, 0, 0], [0, 20, 0]]);
+    const timeline = { ...createViewerTimeline(procedure), finalViewFront: false };
+    const [face] = createProcedureThumbnail(procedure, timeline).faces;
+    expect(face.points).toEqual([[0, 0], [-40, 0], [0, -20]]);
+    expect(face.side).toBe("back");
   });
 });

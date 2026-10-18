@@ -4,7 +4,7 @@ import { createViewerScene } from "./scene";
 import { BOARD_LAYER_OFFSET } from "../OrigamiPost/constants";
 import type { FixBoardV2, ViewerStep } from "@oricube/engine";
 
-const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn(), setViewport: vi.fn() }));
+const renderer = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn(), setSize: vi.fn(), setViewport: vi.fn(), setClearColor: vi.fn(), setPixelRatio: vi.fn() }));
 vi.mock("three", async (importOriginal) => {
   const actual = await importOriginal<typeof import("three")>();
   return { ...actual, WebGLRenderer: class {
@@ -12,7 +12,10 @@ vi.mock("three", async (importOriginal) => {
     dispose = renderer.dispose;
     setSize = renderer.setSize;
     setViewport = renderer.setViewport;
-    setPixelRatio = vi.fn();
+    setPixelRatio = renderer.setPixelRatio;
+    setClearColor = renderer.setClearColor;
+    getClearColor = (target: InstanceType<typeof actual.Color>) => target.set(0x000000);
+    getClearAlpha = () => 0;
   } };
 });
 const disconnect = vi.fn();
@@ -29,6 +32,9 @@ const step: ViewerStep = {
     moveBoards: [{ polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]], layer: 0, vertexAxes: [[], [{ origin: [0, 0, 0], direction: [0, 1, 0] }], []] }],
   },
 };
+
+/** 作品の置き方（pose）の下にある、板をまとめたグループ */
+const paperOf = (scene: THREE.Scene) => scene.children.find((child) => child instanceof THREE.Group)?.children[0];
 
 describe("V2閲覧シーン", () => {
   it("上下を切り取らず、ビュー全体を描画範囲とカメラの縦横比に使う", () => {
@@ -54,7 +60,7 @@ describe("V2閲覧シーン", () => {
     const renderedScene: unknown = renderer.render.mock.calls.at(-1)?.[0];
     expect(renderedScene).toBeInstanceOf(THREE.Scene);
     if (!(renderedScene instanceof THREE.Scene)) throw new Error("Sceneが描画されていません");
-    const paper = renderedScene.children.find((child) => child instanceof THREE.Group);
+    const paper = paperOf(renderedScene);
     const board = paper?.children[0];
     const mesh = board?.children[0];
     if (!(mesh instanceof THREE.Mesh)) throw new Error("紙が描画されていません");
@@ -97,7 +103,7 @@ describe("V2閲覧シーン", () => {
     scene.setProgress(0);
     const rendered: unknown = renderer.render.mock.calls.at(-1)?.[0];
     if (!(rendered instanceof THREE.Scene)) throw new Error("Sceneがありません");
-    const paper = rendered.children.find((child) => child instanceof THREE.Group);
+    const paper = paperOf(rendered);
     const board = paper?.children[0];
     const mesh = board?.children[0];
     if (!(mesh instanceof THREE.Mesh)) throw new Error("羽の面がありません");
@@ -108,4 +114,106 @@ describe("V2閲覧シーン", () => {
     scene.dispose();
   });
 
+  it("撮影は今の視点のまま、ビュー中央の正方形を指定の大きさで塗りつぶして画像にし、表示を戻す", async () => {
+    const canvas = document.createElement("canvas");
+    const container = document.createElement("div");
+    // 縦長のビュー。正方形の枠は幅（300px）に合わせる
+    Object.defineProperties(container, { clientWidth: { value: 300 }, clientHeight: { value: 600 } });
+    const blob = new Blob(["png"], { type: "image/png" });
+    const toBlob = vi.fn((callback: BlobCallback) => callback(blob));
+    canvas.toBlob = toBlob;
+    const scene = createViewerScene(canvas, container, 100);
+    scene.rotateCamera(Math.PI / 4, 0);
+    const camera: unknown = renderer.render.mock.calls.at(-1)?.[1];
+    if (!(camera instanceof THREE.PerspectiveCamera)) throw new Error("カメラがありません");
+    const position = camera.position.clone();
+    let captured: { aspect: number; fov: number } | undefined;
+    renderer.render.mockImplementationOnce((_scene: unknown, used: THREE.PerspectiveCamera) => { captured = { aspect: used.aspect, fov: used.fov }; });
+
+    await expect(scene.capture({ size: 640, background: "#f5f5f5" })).resolves.toBe(blob);
+
+    expect(captured?.aspect).toBe(1);
+    // 縦の視野角を枠の幅（高さの半分）に合わせて狭める
+    expect(Math.tan(THREE.MathUtils.degToRad(captured?.fov ?? 0) / 2)).toBeCloseTo(Math.tan(THREE.MathUtils.degToRad(35) / 2) / 2);
+    expect(renderer.setSize).toHaveBeenCalledWith(640, 640, false);
+    expect(renderer.setClearColor).toHaveBeenCalledWith("#f5f5f5", 1);
+    expect(toBlob).toHaveBeenCalledWith(expect.any(Function), "image/png");
+    // 表示の大きさ・視野角・背景・視点を戻す
+    expect(renderer.setSize).toHaveBeenLastCalledWith(300, 600, false);
+    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 300, 600);
+    expect(renderer.setClearColor).toHaveBeenLastCalledWith(expect.any(THREE.Color), 0);
+    expect(camera.fov).toBe(35);
+    expect(camera.aspect).toBeCloseTo(0.5);
+    expect(camera.position.distanceTo(position)).toBeCloseTo(0);
+    scene.dispose();
+  });
+
+  it("画像にできなければ失敗を返す", async () => {
+    const canvas = document.createElement("canvas");
+    canvas.toBlob = (callback: BlobCallback) => callback(null);
+    const scene = createViewerScene(canvas, document.createElement("div"), 100);
+    await expect(scene.capture({ size: 640, background: "#ffffff" })).rejects.toThrow("サムネイル");
+    scene.dispose();
+  });
+
+  it("作品を見ている方向を軸に画面内で回し、カメラの上下は変えない", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    scene.setContent(undefined, [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }], "#ed7070", true);
+    scene.setProgress(1);
+    const [rendered, camera] = renderer.render.mock.calls.at(-1) ?? [];
+    if (!(rendered instanceof THREE.Scene) || !(camera instanceof THREE.PerspectiveCamera)) throw new Error("描画されていません");
+    const pose = rendered.children.find((child) => child instanceof THREE.Group);
+    if (!pose) throw new Error("作品がありません");
+    // 正面（+Z）から見て反時計回りに90°回すと、+X の向きが +Y になる
+    scene.rotateModel(Math.PI / 2);
+    pose.updateMatrixWorld();
+    const direction = new THREE.Vector3(1, 0, 0).applyQuaternion(pose.quaternion);
+    expect(direction.x).toBeCloseTo(0);
+    expect(direction.y).toBeCloseTo(1);
+    expect(camera.up.toArray()).toEqual([0, 1, 0]);
+    expect(renderer.render.mock.calls.at(-1)?.[0]).toBe(rendered);
+    scene.dispose();
+  });
+
+  it("斜め上から見ていても水平な軸で回し、作品の上下を真上に合わせられる", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    scene.setContent(undefined, [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }], "#ed7070", true);
+    scene.setCamera("angled");
+    scene.rotateModel(Math.PI / 3);
+    const [x, y, z, w] = scene.getModelRotation();
+    // 回転軸（クォータニオンのベクトル部）が水平
+    expect(y).toBeCloseTo(0);
+    expect(Math.hypot(x, z)).toBeCloseTo(Math.sin(Math.PI / 6));
+    expect(w).toBeCloseTo(Math.cos(Math.PI / 6));
+    scene.dispose();
+  });
+
+  it("完成形の向きを表示に掛け、回した分はその上に重ねる", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    const quarter: [number, number, number, number] = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
+    scene.setContent(undefined, [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }], "#ed7070", true);
+    scene.setFinalRotation(quarter);
+    scene.setProgress(1);
+    scene.getModelRotation().forEach((value, index) => expect(value).toBeCloseTo(quarter[index]));
+    scene.rotateModel(Math.PI / 2);
+    // 正面（+Z）から見て、さらに90°回すと180°
+    expect(Math.abs(scene.getModelRotation()[2])).toBeCloseTo(1);
+    scene.setProgress(1);
+    expect(Math.abs(scene.getModelRotation()[2])).toBeCloseTo(1);
+    scene.dispose();
+  });
+
+  it("完成形の向きに整えるステップは、回転なしから見せる向きへ補間する", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    const boards = [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] as [number, number, number][] }];
+    const present: ViewerStep = { kind: "present", boards, flatBoards: boards, viewFront: true, rotation: [0, 0, 1, 0], label: "完成形の向きに整える" };
+    scene.setContent(present, boards, "#ed7070", true);
+    scene.setProgress(0);
+    expect(scene.getModelRotation()[3]).toBeCloseTo(1);
+    scene.setProgress(0.5);
+    expect(scene.getModelRotation()[2]).toBeCloseTo(Math.SQRT1_2);
+    scene.setProgress(1);
+    expect(Math.abs(scene.getModelRotation()[2])).toBeCloseTo(1);
+    scene.dispose();
+  });
 });

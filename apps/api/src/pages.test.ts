@@ -91,3 +91,21 @@ describe("静的ファイル", () => {
     expect(missing.headers.get("content-type")).toContain("text/html");
   });
 });
+
+describe("投稿した作品のページ", () => {
+  const model = { id: "posted", name: "投稿した鶴", description: "", color: "#ed7070", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [{ polygon: [[-50, -50, 0], [50, -50, 0], [50, 50, 0], [-50, 50, 0]], layer: 0 }] } };
+  const thumbnail = { key: "thumbnails/posted/a.png", contentType: "image/png" as const, size: 8 };
+
+  it("サムネイルがあれば og:image に使う", async () => {
+    const repository = createMemoryOrigamiRepository([{ ownerId: "user_a", status: "published", thumbnail, model }]);
+    const res = await createServerApp({ template, origin: "https://oricube.example", repository }).request("/view/posted");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain(`<meta property="og:image" content="https://oricube.example/api/mock-storage/objects/thumbnails/posted/a.png" />`);
+  });
+
+  it("公開前（pending）の作品は404のページにする", async () => {
+    const repository = createMemoryOrigamiRepository([{ ownerId: "user_a", status: "pending", thumbnail, model }]);
+    const res = await createServerApp({ template, repository }).request("/view/posted");
+    expect(res.status).toBe(404);
+  });
+});

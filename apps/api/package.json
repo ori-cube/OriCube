@@ -5,10 +5,11 @@
   "type": "module",
   "exports": {
     ".": "./src/app.ts",
-    "./mocks/*": "./src/mocks/*.ts"
+    "./mocks/*": "./src/mocks/*.ts",
+    "./repository": "./src/repository.ts"
   },
   "scripts": {
-    "dev": "tsx watch --tsconfig tsconfig.json src/index.ts",
+    "dev": "tsx watch --tsconfig tsconfig.json src/dev.ts",
     "dev:worker": "wrangler dev",
     "build": "vite build",
     "start": "node dist/index.js",

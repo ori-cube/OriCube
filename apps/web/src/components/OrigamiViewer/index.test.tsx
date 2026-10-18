@@ -48,7 +48,7 @@ describe("V2閲覧画面", () => {
     expect(within(procedure).getByRole("checkbox", { name: "繰り返し再生" })).toBeInTheDocument();
     expect(within(procedure).queryByRole("button", { name: "前へ" })).not.toBeInTheDocument();
     expect(within(procedure).queryByRole("status", { name: "現在のステップ" })).not.toBeInTheDocument();
-    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 22");
     expect(screen.getByRole("button", { name: "前へ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
   });
@@ -70,7 +70,7 @@ describe("V2閲覧画面", () => {
     const model = await getOrigamiV2("crane");
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} />);
-    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 22");
     expect(screen.getAllByText("裏返して裏側を向ける")).toHaveLength(1);
   });
   it("完成形は同じ閲覧画面の最終ステップで確認し、前へ戻れる", async () => {
@@ -78,11 +78,13 @@ describe("V2閲覧画面", () => {
     if (!model) throw new Error("モックがありません");
     render(<OrigamiViewer model={model} startAtEnd />);
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 21 / 21");
+    // 最後は折ったときの向きから、完成形を見せる向きへ立てるステップ
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 22 / 22");
+    expect(screen.getByText("完成形の向きに整える")).toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "1");
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "前へ" }));
-    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 20 / 21");
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 21 / 22");
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
   });
@@ -114,7 +116,7 @@ describe("V2閲覧画面", () => {
     fireEvent.click(screen.getByRole("button", { name: "再生" }));
     advance(0); advance(800); advance(1800);
     expect(screen.getByRole("img")).toHaveAttribute("data-progress", "0");
-    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 21");
+    expect(screen.getByRole("status", { name: "現在のステップ" })).toHaveTextContent("ステップ 1 / 22");
     fireEvent.click(checkbox);
     expect(checkbox).not.toBeChecked();
     advance(1800); advance(2600); advance(2616);
