@@ -88,7 +88,7 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
     // セッションは同一オリジンの Cookie。フォーム送信による他サイトからの書き込みを Origin で拒否する
     // （JSON はクロスオリジンだとプリフライトで止まり、CORS は許可していない）
     .use(csrf());
-  // メモリ上の保存先は、presigned URL の代わりのアップロード先と画像の配信を /api の下に持つ
+  // 保存先は、署名付きのアップロード先と画像の配信を /api の下に持つ
   if (storage.routes) api.route("/", storage.routes);
 
   return api
