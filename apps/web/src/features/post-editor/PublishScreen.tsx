@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Button, TextArea, TextInput } from "@oricube/design-system";
-import { createViewerTimeline, type FixBoardV2, type OrigamiModelV2 } from "@oricube/engine";
+import { createViewerTimeline, type FixBoardV2, type OrigamiModelV2, type PresentationV2 } from "@oricube/engine";
 import { apiClient } from "../../apiClient";
 import { OrigamiCanvas, type OrigamiCanvasHandle } from "../../components/OrigamiViewer/Canvas";
 import { THUMBNAIL_SIZE, submitErrorMessage, submitOrigami, type PendingSubmission } from "./publish";
@@ -15,6 +15,8 @@ export interface PublishScreenProps {
   onNameChange: (name: string) => void;
   description: string;
   onDescriptionChange: (description: string) => void;
+  /** 撮影した向きを、完成形を見せる向きとして下書きに残す。回していなければ undefined */
+  onPresentationChange: (presentation: PresentationV2 | undefined) => void;
   onBack: () => void;
   /** 投稿後に白紙から折り直す */
   onStartNew: () => void;
@@ -36,6 +38,9 @@ export const fitZoom = (size: number, boards: FixBoardV2[]) => {
   return Math.min(4, Math.max(1, visible * 0.75 / (2 * radius || 1)));
 };
 
+/** 回していない向き（q と -q は同じ回転） */
+const isIdentity = (rotation: PresentationV2["rotation"]) => Math.abs(rotation[3]) > 1 - 1e-9;
+
 /** 画面内で回す1回の角度 */
 const ROTATE_STEP = Math.PI / 12;
 
@@ -50,8 +55,10 @@ const thumbnailBackground = () =>
  * 一覧・OGP に使うサムネイルを、完成形を好きな向きに回して撮影してから投稿する。
  * 枠の中に写る範囲がそのまま正方形のサムネイルになる
  */
-export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onBack, onStartNew }: PublishScreenProps) {
-  const timeline = useMemo(() => createViewerTimeline(model.procedure), [model.procedure]);
+export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onPresentationChange, onBack, onStartNew }: PublishScreenProps) {
+  // 開いたときの見せる向きから始める。撮影で更新した向きを表示に重ねないよう、開いたときの値に固定する
+  const [initialPresentation] = useState(model.presentation);
+  const timeline = useMemo(() => createViewerTimeline(model.procedure, initialPresentation), [model.procedure, initialPresentation]);
   const zoom = useMemo(() => fitZoom(model.procedure.size, timeline.finalBoards), [model.procedure.size, timeline.finalBoards]);
   const canvas = useRef<OrigamiCanvasHandle>(null);
   const pending = useRef<PendingSubmission | null>(null);
@@ -65,7 +72,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   const submit = useMutation({
     mutationFn: (image: Blob) => submitOrigami({
       client: apiClient,
-      input: { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure },
+      input: { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, ...(model.presentation ? { presentation: model.presentation } : {}) },
       thumbnail: image,
       previous: pending.current,
       onPending: (next) => { pending.current = next; },
@@ -77,7 +84,10 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
     setCaptureError("");
     try {
       if (!canvas.current) throw new Error("3D表示がありません");
+      const rotation = canvas.current.getModelRotation();
       setThumbnail(await canvas.current.capture({ size: THUMBNAIL_SIZE, background: thumbnailBackground() }));
+      // サムネイルと同じ向きを、閲覧ページで完成形を見せる向きにする
+      onPresentationChange(rotation && !isIdentity(rotation) ? { rotation } : undefined);
     }
     catch { setCaptureError("撮影できませんでした。「向きをリセット」を押してから、もう一度撮影してください。"); }
   };
@@ -110,8 +120,8 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
       <div className={styles.camera}>
         <OrigamiCanvas
           ref={canvas} size={model.procedure.size} color={model.color} progress={1}
-          finalBoards={timeline.finalBoards} flatFinalBoards={model.procedure.finalBoards} finalViewFront={timeline.finalViewFront}
-          cameraPreset="angled" resetKey={resetKey} zoom={zoom}
+          finalBoards={timeline.finalBoards} flatFinalBoards={model.procedure.finalBoards} finalViewFront={timeline.finalViewFront} finalRotation={timeline.finalRotation}
+          resetKey={resetKey} zoom={zoom}
           label={`${name.trim() || model.name}の完成形。ドラッグまたは矢印キーで回して、サムネイルの向きを決めます。`}
         />
         <div className={styles.cameraFrame} aria-hidden />
@@ -128,7 +138,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
           <h2 id="publish-thumbnail" className={styles.sectionTitle}>サムネイル</h2>
           {thumbnailUrl
             ? <img className={styles.thumbnail} src={thumbnailUrl} alt="撮影したサムネイル" width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
-            : <p className={styles.hint}>まだ撮影していません。ドラッグや矢印キーで周りから見る向きを変え、作品が傾いて見えるときは「左に回す」「右に回す」（15°ずつ）で立てます。ホイールやピンチで大きさを変えられます。</p>}
+            : <p className={styles.hint}>まだ撮影していません。作品が傾いて見えるときは、まず正面のまま「左に回す」「右に回す」（15°ずつ）で立ててから、ドラッグや矢印キーで角度をつけます。ホイールやピンチで大きさを変えられます。撮影した向きは、作品ページで完成形を見せる向きにもなります。</p>}
           <div className={styles.previewActions}>
             <Button text={thumbnail ? "撮り直す" : "この向きで撮影"} variant="secondary" onClick={() => void capture()} disabled={submit.isPending} />
             <Button text="向きをリセット" variant="secondary" onClick={() => setResetKey((value) => value + 1)} disabled={submit.isPending} />

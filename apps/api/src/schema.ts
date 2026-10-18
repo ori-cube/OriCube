@@ -1,4 +1,4 @@
-import { procedureV2Schema } from "@oricube/engine";
+import { isUnitQuaternion, procedureV2Schema } from "@oricube/engine";
 import { z } from "zod";
 
 /** 作品ID。DBのUUIDと、移行中のモックのID（crane など）を受け付ける */
@@ -17,6 +17,10 @@ export const origamiModelSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   procedure: procedureV2Schema,
   stepDescriptions: z.array(z.string().max(1000)).max(200).optional(),
+  /** 完成形を見せる向き（engine の PresentationV2）。無ければ折ったときの向きで表示する */
+  presentation: z.object({
+    rotation: z.tuple([z.number(), z.number(), z.number(), z.number()]).refine(isUnitQuaternion, "回転は単位クォータニオンで指定してください"),
+  }).optional(),
 });
 
 export type OrigamiModel = z.infer<typeof origamiModelSchema>;

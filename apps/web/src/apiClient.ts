@@ -36,6 +36,7 @@ export interface OrigamiInput {
   color: string;
   procedure: OrigamiModelV2["procedure"];
   stepDescriptions?: string[];
+  presentation?: OrigamiModelV2["presentation"];
 }
 export type ThumbnailContentType = "image/png" | "image/webp";
 export interface ThumbnailUpload { url: string; method: "PUT"; headers: Record<string, string>; expiresAt: string }

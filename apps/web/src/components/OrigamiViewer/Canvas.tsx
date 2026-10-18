@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import type { FixBoardV2, ViewerStep } from "@oricube/engine";
+import type { FixBoardV2, QuaternionV2, ViewerStep } from "@oricube/engine";
 import { createViewerScene, type CameraPreset, type CaptureOptions } from "./scene";
 import styles from "./Canvas.module.css";
 
@@ -13,6 +13,8 @@ export interface OrigamiCanvasProps {
   finalBoards: FixBoardV2[];
   flatFinalBoards?: FixBoardV2[];
   finalViewFront: boolean;
+  /** 完成形を表示するときの回転（タイムラインの finalRotation） */
+  finalRotation?: QuaternionV2;
   cameraPreset?: CameraPreset;
   resetKey?: number;
   zoom?: number;
@@ -25,9 +27,13 @@ export interface OrigamiCanvasHandle {
   capture(options: CaptureOptions): Promise<Blob>;
   /** 作品を画面内で回す（ラジアン、正で反時計回り）。resetKey が変わると元に戻る */
   rotateModel(angle: number): void;
+  /** 今の作品の向き。3D表示が使えなければ null */
+  getModelRotation(): QuaternionV2 | null;
 }
 
-export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFinalBoards = finalBoards, finalViewFront, cameraPreset = "front", resetKey = 0, zoom = 1, label }, ref) {
+const IDENTITY: QuaternionV2 = [0, 0, 0, 1];
+
+export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function OrigamiCanvas({ size, color, step, progress, finalBoards, flatFinalBoards = finalBoards, finalViewFront, finalRotation = IDENTITY, cameraPreset = "front", resetKey = 0, zoom = 1, label }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ReturnType<typeof createViewerScene>>();
@@ -35,6 +41,7 @@ export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>
   useImperativeHandle(ref, () => ({
     capture: (options) => sceneRef.current && !failed ? sceneRef.current.capture(options) : Promise.reject(new Error("3D表示を読み込めていません")),
     rotateModel: (angle) => sceneRef.current?.rotateModel(angle),
+    getModelRotation: () => sceneRef.current?.getModelRotation() ?? null,
   }), [failed]);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -57,7 +64,10 @@ export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>
   useEffect(() => { sceneRef.current?.setContent(step, finalBoards, color, finalViewFront, false, true, flatFinalBoards); }, [step, finalBoards, flatFinalBoards, color, finalViewFront, size, resetKey]);
   useEffect(() => { sceneRef.current?.setCamera(cameraPreset); }, [cameraPreset, step, size, resetKey]);
   useEffect(() => { sceneRef.current?.setZoom(zoom); }, [zoom, step, size, resetKey]);
-  useEffect(() => { sceneRef.current?.setProgress(progress); }, [progress, step, color, finalBoards, finalViewFront, size, resetKey]);
+  useEffect(() => {
+    sceneRef.current?.setFinalRotation(finalRotation);
+    sceneRef.current?.setProgress(progress);
+  }, [progress, step, color, finalBoards, finalViewFront, finalRotation, size, resetKey]);
   return <div ref={containerRef} className={styles.container}>
     <canvas key={`${size}-${resetKey}`} ref={canvasRef} className={styles.canvas} role="img" aria-label={label} tabIndex={0} onKeyDown={(event) => {
       const movement: Record<string, [number, number]> = { ArrowLeft: [-Math.PI / 12, 0], ArrowRight: [Math.PI / 12, 0], ArrowUp: [0, -Math.PI / 12], ArrowDown: [0, Math.PI / 12] };

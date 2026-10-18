@@ -23,8 +23,9 @@ vi.mock("../../components/OrigamiPost", () => ({ OrigamiPostV2: function Editor(
 vi.mock("../../components/OrigamiViewer", () => ({ OrigamiViewer: function Preview({ model, startAtEnd }: OrigamiViewerProps) { return <div aria-label="プレビュー">{startAtEnd ? "完成形" : "折り方"}・{model.procedure.steps.length}回</div>; } }));
 const capture = vi.hoisted(() => vi.fn());
 const rotateModel = vi.hoisted(() => vi.fn());
+const getModelRotation = vi.hoisted(() => vi.fn());
 vi.mock("../../components/OrigamiViewer/Canvas", () => ({ OrigamiCanvas: forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function Camera({ label }, ref) {
-  useImperativeHandle(ref, () => ({ capture, rotateModel }));
+  useImperativeHandle(ref, () => ({ capture, rotateModel, getModelRotation }));
   return <div role="img" aria-label={label} />;
 }) }));
 const openPanel = () => fireEvent.click(screen.getByRole("button", { name: "作品の設定" }));
@@ -146,6 +147,29 @@ describe("投稿", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("ログインが必要です。折った手順はこのブラウザに保存されています。");
     fireEvent.click(screen.getByRole("button", { name: "折る画面に戻る" }));
     expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
+  });
+
+  it("撮影した向きを完成形を見せる向きとして保存し、下書きにも残す", async () => {
+    const rotation = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
+    getModelRotation.mockReturnValue(rotation);
+    await openPublish();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "立てた鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ presentation: { rotation } }));
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    const href = (await screen.findByRole("link", { name: "作品ページを見る" })).getAttribute("href") ?? "";
+    expect(await (await app.request(`/api/models/${href.replace("/view/", "")}`)).json()).toMatchObject({ presentation: { rotation } });
+    getModelRotation.mockReset();
+  });
+
+  it("回していなければ見せる向きを保存しない", async () => {
+    getModelRotation.mockReturnValue([0, 0, 0, 1]);
+    await openPublish();
+    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
+    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).not.toHaveProperty("presentation");
+    getModelRotation.mockReset();
   });
 
   it("傾いた作品を画面内で15°ずつ回せる", async () => {

@@ -106,3 +106,23 @@ export interface ProcedureV2 {
   /** ジェスチャ履歴 */
   history: HistoryStepV2[];
 }
+
+/** 回転を表す単位クォータニオン [x, y, z, w] */
+export type QuaternionV2 = [number, number, number, number];
+
+/**
+ * 完成形を見せる向き
+ *
+ * @description
+ * 閲覧の表示座標（完成形の中心を原点にし、最後の表裏に合わせて Y 軸周りに回したあと）に掛ける回転。
+ * 対角線で折る鶴のように、折ったときの向きでは傾いて見える作品を立てるのに使う。
+ * 折る途中の手順は折ったときの向きのまま見せ、最後の「完成形の向きに整える」ステップでこの向きへ回す
+ */
+export interface PresentationV2 {
+  rotation: QuaternionV2;
+}
+
+/** 単位クォータニオンとして使える値か（有限・長さ1） */
+export const isUnitQuaternion = (value: unknown): value is QuaternionV2 =>
+  Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === "number" && Number.isFinite(item))
+  && Math.abs(Math.hypot(...(value as number[])) - 1) < 1e-3;

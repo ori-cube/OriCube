@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { PointV2, OrigamiStep } from "@oricube/engine";
-import { exportProcedureV2 } from "@oricube/engine";
+import { exportProcedureV2, isUnitQuaternion } from "@oricube/engine";
 import type { OrigamiModelV2 } from "@oricube/engine";
 
 // 以前の下書きを引き継ぐため、キーは変えない
@@ -41,7 +41,11 @@ export const parseDraft = (text: string): Draft => {
   const procedure = exportProcedureV2({ size, steps });
   if (!procedure) throw new Error("この手順を再現できません。現在の下書きは変更していません。");
   return {
-    model: { id: "draft", name: value.name, description: typeof value.description === "string" ? value.description : "", color: value.color, procedure },
+    model: {
+      id: "draft", name: value.name, description: typeof value.description === "string" ? value.description : "", color: value.color, procedure,
+      // 見せる向きが壊れていても手順は復元し、向きだけ捨てる
+      ...(record(value.presentation) && isUnitQuaternion(value.presentation.rotation) ? { presentation: { rotation: value.presentation.rotation } } : {}),
+    },
     viewFront: typeof value.editorViewFront === "boolean" ? value.editorViewFront : steps.at(-1)?.viewFront ?? true,
   };
 };

@@ -174,4 +174,46 @@ describe("V2閲覧シーン", () => {
     expect(renderer.render.mock.calls.at(-1)?.[0]).toBe(rendered);
     scene.dispose();
   });
+
+  it("斜め上から見ていても水平な軸で回し、作品の上下を真上に合わせられる", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    scene.setContent(undefined, [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }], "#ed7070", true);
+    scene.setCamera("angled");
+    scene.rotateModel(Math.PI / 3);
+    const [x, y, z, w] = scene.getModelRotation();
+    // 回転軸（クォータニオンのベクトル部）が水平
+    expect(y).toBeCloseTo(0);
+    expect(Math.hypot(x, z)).toBeCloseTo(Math.sin(Math.PI / 6));
+    expect(w).toBeCloseTo(Math.cos(Math.PI / 6));
+    scene.dispose();
+  });
+
+  it("完成形の向きを表示に掛け、回した分はその上に重ねる", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    const quarter: [number, number, number, number] = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
+    scene.setContent(undefined, [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }], "#ed7070", true);
+    scene.setFinalRotation(quarter);
+    scene.setProgress(1);
+    scene.getModelRotation().forEach((value, index) => expect(value).toBeCloseTo(quarter[index]));
+    scene.rotateModel(Math.PI / 2);
+    // 正面（+Z）から見て、さらに90°回すと180°
+    expect(Math.abs(scene.getModelRotation()[2])).toBeCloseTo(1);
+    scene.setProgress(1);
+    expect(Math.abs(scene.getModelRotation()[2])).toBeCloseTo(1);
+    scene.dispose();
+  });
+
+  it("完成形の向きに整えるステップは、回転なしから見せる向きへ補間する", () => {
+    const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
+    const boards = [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] as [number, number, number][] }];
+    const present: ViewerStep = { kind: "present", boards, flatBoards: boards, viewFront: true, rotation: [0, 0, 1, 0], label: "完成形の向きに整える" };
+    scene.setContent(present, boards, "#ed7070", true);
+    scene.setProgress(0);
+    expect(scene.getModelRotation()[3]).toBeCloseTo(1);
+    scene.setProgress(0.5);
+    expect(scene.getModelRotation()[2]).toBeCloseTo(Math.SQRT1_2);
+    scene.setProgress(1);
+    expect(Math.abs(scene.getModelRotation()[2])).toBeCloseTo(1);
+    scene.dispose();
+  });
 });

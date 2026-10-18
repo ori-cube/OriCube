@@ -44,6 +44,18 @@ describe("POST /api/models", () => {
     expect(await res.json()).toMatchObject({ error: { code: "invalid_request" } });
   });
 
+  it("完成形を見せる向きを保存して返し、単位クォータニオンでなければ400", async () => {
+    const app = createApp({ auth });
+    const rotation = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
+    const bad = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, presentation: { rotation: [0, 0, 0, 2] } } });
+    expect(bad.status).toBe(400);
+    const res = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, presentation: { rotation } } });
+    const { id, thumbnailUpload } = (await res.json()) as Created;
+    await upload(app, thumbnailUpload);
+    await send(app, "POST", `/api/models/${id}/publish`, { user: "user_a" });
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ presentation: { rotation } });
+  });
+
   it("サムネイルの形式・サイズが不正なら400", async () => {
     const app = createApp({ auth });
     for (const bad of [undefined, { contentType: "image/svg+xml", size: 10 }, { contentType: "image/png", size: 512 * 1024 + 1 }, { contentType: "image/png", size: 0 }]) {

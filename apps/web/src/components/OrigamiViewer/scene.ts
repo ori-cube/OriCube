@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import type { FixBoardV2, PointV2 } from "@oricube/engine";
+import type { FixBoardV2, PointV2, QuaternionV2 } from "@oricube/engine";
 import {
   getFlatStepBoards,
+  getPresentationRotation,
   getStepBoards,
   getViewAngle,
   type ViewerStep,
@@ -38,8 +39,10 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
   controls.minDistance = size * 0.8;
   controls.maxDistance = size * 8;
   const root = new THREE.Group();
-  // 作品の置き方。rotateModel で画面内に回した向きを持ち、カメラはその周りを回る
+  // 作品の置き方。完成形を見せる向き（presentation）に、rotateModel で回した分を重ねる。カメラはその周りを回る
   const pose = new THREE.Group();
+  const userRotation = new THREE.Quaternion();
+  let finalRotation: QuaternionV2 = [0, 0, 0, 1];
   pose.add(root);
   scene.add(pose, new THREE.AmbientLight(0xffffff, 2));
   const light = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -180,6 +183,7 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
     const center = new THREE.Box3().setFromPoints(boards.flatMap((board) => board.polygon.map(toVector))).getCenter(new THREE.Vector3());
     root.rotation.y = -(step ? getViewAngle(step, progress) : finalViewFront ? 0 : Math.PI);
     root.position.copy(center).applyAxisAngle(new THREE.Vector3(0, 1, 0), root.rotation.y).negate();
+    pose.quaternion.set(...(step ? getPresentationRotation(step, progress) : finalRotation)).premultiply(userRotation);
     foldLines.forEach((line) => { line.visible = progress < 1; });
     render();
   };
@@ -203,9 +207,22 @@ export const createViewerScene = (canvas: HTMLCanvasElement, container: HTMLElem
      * カメラではなく作品を回すので、立てたあとの左右のドラッグは立てた作品の周りを回る
      */
     rotateModel: (angle: number) => {
-      const axis = camera.position.clone().sub(controls.target).normalize();
-      pose.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(axis, angle));
+      // 見ている方向を水平に寄せた軸で回す。斜め上から見ていても作品の上下を真上に合わせられ、
+      // 立てたあとの左右のドラッグ（Y 軸周り）でも傾かない。真上・真下から見ているときは見ている方向で回す
+      const view = camera.position.clone().sub(controls.target);
+      const horizontal = new THREE.Vector3(view.x, 0, view.z);
+      const axis = (horizontal.lengthSq() > view.lengthSq() * 0.01 ? horizontal : view).normalize();
+      const rotation = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+      userRotation.premultiply(rotation);
+      pose.quaternion.premultiply(rotation);
       render();
+    },
+    /** 完成形を表示するときの回転（ステップのない表示に使う） */
+    setFinalRotation: (rotation: QuaternionV2) => { finalRotation = rotation; },
+    /** 今の作品の向き（見せる向きと回した分を合わせた回転）。投稿で完成形を見せる向きとして保存する */
+    getModelRotation: (): QuaternionV2 => {
+      const rotation = pose.quaternion.clone().normalize();
+      return [rotation.x, rotation.y, rotation.z, rotation.w];
     },
     setCamera: (nextPreset: CameraPreset) => { preset = nextPreset; resetCamera(); },
     setZoom: (nextZoom: number) => { zoom = nextZoom; camera.zoom = zoom; camera.updateProjectionMatrix(); render(); },

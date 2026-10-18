@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType }
 import { Button, ColorField, SidePanel, TextInput } from "@oricube/design-system";
 import type { OrigamiEditorState, OrigamiPostV2Props } from "../../components/OrigamiPost";
 import { OrigamiViewer } from "../../components/OrigamiViewer";
-import { exportProcedureV2 } from "@oricube/engine";
+import { exportProcedureV2, type PresentationV2 } from "@oricube/engine";
 import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft } from "./draft";
 import { PublishScreen } from "./PublishScreen";
 import styles from "./PostEditor.module.css";
@@ -34,6 +34,7 @@ export function PostEditor() {
   const [size, setSize] = useState(100);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [presentation, setPresentation] = useState<PresentationV2 | undefined>();
   const [ready, setReady] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const [generation, setGeneration] = useState(0);
@@ -44,12 +45,12 @@ export function PostEditor() {
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const procedure = useMemo(() => exportProcedureV2({ size, steps: state.steps }), [size, state.steps]);
-  const draft: Draft | null = useMemo(() => procedure ? { model: { id: "draft", name: name.trim() || UNTITLED, description, color: state.color, procedure }, viewFront: state.viewFront } : null, [procedure, name, description, state.color, state.viewFront]);
+  const draft: Draft | null = useMemo(() => procedure ? { model: { id: "draft", name: name.trim() || UNTITLED, description, color: state.color, procedure, ...(presentation ? { presentation } : {}) }, viewFront: state.viewFront } : null, [procedure, name, description, presentation, state.color, state.viewFront]);
   const blocked = !ready || state.busy || !draft;
 
   const loadDraft = useCallback((next: Draft) => {
     setState({ steps: restoreHistory(next.model.procedure.history), color: next.model.color, viewFront: next.viewFront, busy: false, phase: "idle" });
-    setSize(next.model.procedure.size); setName(next.model.name === UNTITLED ? "" : next.model.name); setDescription(next.model.description); setPreview(null);
+    setSize(next.model.procedure.size); setName(next.model.name === UNTITLED ? "" : next.model.name); setDescription(next.model.description); setPresentation(next.model.presentation); setPreview(null);
     setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true);
   }, []);
   useEffect(() => {
@@ -83,7 +84,7 @@ export function PostEditor() {
   const changeColor = (color: string | null) => { if (color !== null) setState((current) => ({ ...current, color })); };
   const reset = ({ confirm = true } = {}) => {
     if (confirm && state.steps.length && !window.confirm("現在の手順を消して、白紙から折り直しますか？")) return;
-    setState(emptyState()); setSize(100); setName(""); setDescription(""); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
+    setState(emptyState()); setSize(100); setName(""); setDescription(""); setPresentation(undefined); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
   };
   const status = <p className={styles.step} role="status">{ready ? `${state.steps.length}回の折りを記録${state.busy ? "・操作中" : ""}` : "保存した手順を確認しています…"} {message}</p>;
   const alerts = <>
@@ -91,7 +92,7 @@ export function PostEditor() {
     {!procedure && <p className={styles.alert} role="alert">この手順は保存できません。最後の操作を元に戻してください。</p>}
   </>;
   if (preview === "publish" && draft) return <PublishScreen
-    model={draft.model} name={name} onNameChange={setName} description={description} onDescriptionChange={setDescription}
+    model={draft.model} name={name} onNameChange={setName} description={description} onDescriptionChange={setDescription} onPresentationChange={setPresentation}
     onBack={() => setPreview(null)} onStartNew={() => reset({ confirm: false })}
   />;
   if (preview && draft) return <div className={styles.preview}>
