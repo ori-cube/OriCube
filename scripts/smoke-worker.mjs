@@ -16,7 +16,7 @@ const env = { ...process.env, WRANGLER_SEND_METRICS: "false" };
 // 本番と同じく、ローカルの D1 に migrations を適用してから起動する
 execFileSync(wrangler, ["d1", "migrations", "apply", "oricube", "--local", "--persist-to", state], { cwd: apiDir, env, stdio: ["ignore", "ignore", "inherit"] });
 let output = "";
-const worker = spawn(wrangler, ["dev", "--ip", "127.0.0.1", "--port", String(port), "--persist-to", state, "--show-interactive-dev-session=false"], {
+const worker = spawn(wrangler, ["dev", "--test-scheduled", "--ip", "127.0.0.1", "--port", String(port), "--persist-to", state, "--show-interactive-dev-session=false"], {
   cwd: apiDir,
   env,
   stdio: ["ignore", "pipe", "pipe"],
@@ -53,6 +53,10 @@ try {
   check("存在しない作品は404", (await get("/view/unknown")).status === 404);
   const post = await get("/api/models", { method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: "{}" });
   check("ログインしていない投稿は401", post.status === 401);
+  // 掃除（src/cleanup.ts）を workerd の D1・R2 で実行できる
+  check("定期実行（scheduled）を呼べる", (await get("/__scheduled?cron=17+3+*+*+*")).status === 200);
+  for (let waited = 0; !output.includes("掃除しました") && waited < 5000; waited += 250) await new Promise((resolve) => setTimeout(resolve, 250));
+  check("定期実行で掃除を最後まで行う", output.includes("掃除しました"));
   check("Worker の実行時エラーがない", !/Uncaught|Disallowed operation/.test(output));
 } catch (error) {
   console.error(error);
