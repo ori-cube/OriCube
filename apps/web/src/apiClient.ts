@@ -69,12 +69,47 @@ export const createOrigami = async (client: ApiClient, input: OrigamiInput, thum
   return { id, thumbnailUpload };
 };
 
-/** 公開前の作品のアップロード先を作り直す（期限切れ・撮り直し） */
-export const renewThumbnailUpload = async (client: ApiClient, id: string, thumbnail: Blob): Promise<PendingOrigami> => {
+/**
+ * サムネイルのアップロード先を作る
+ *
+ * @description
+ * 公開前の作品はアップロード先の作り直し（期限切れ・撮り直し）。公開済みの作品は再編集での撮り直しで、
+ * 置いたあと {@link replaceThumbnail} に thumbnailKey を渡すまで今のサムネイルのまま
+ */
+export const renewThumbnailUpload = async (client: ApiClient, id: string, thumbnail: Blob): Promise<PendingOrigami & { thumbnailKey: string }> => {
   const res = await client.api.models[":id"]["thumbnail-upload"].$post({ param: { id }, json: thumbnailSpec(thumbnail) });
   if (!res.ok) throw await toError(res, "サムネイルのアップロード先を作れませんでした");
-  const { thumbnailUpload } = await res.json();
-  return { id, thumbnailUpload };
+  const { thumbnailUpload, thumbnailKey } = await res.json();
+  return { id, thumbnailUpload, thumbnailKey };
+};
+
+/** 公開済みの作品のサムネイルを、置いた画像に差し替える */
+export const replaceThumbnail = async (client: ApiClient, id: string, key: string) => {
+  const res = await client.api.models[":id"].thumbnail.$put({ param: { id }, json: { key } });
+  if (!res.ok) throw await toError(res, "サムネイルを差し替えられませんでした");
+};
+
+/** 作品の内容を同じIDのまま上書きする（再編集）。サムネイルは変えない */
+export const updateOrigami = async (client: ApiClient, id: string, input: OrigamiInput) => {
+  const res = await client.api.models[":id"].$put({ param: { id }, json: input });
+  if (!res.ok) throw await toError(res, "作品を更新できませんでした");
+};
+
+/** 作品を削除する。サムネイルの画像もサーバーが消す */
+export const deleteOrigami = async (client: ApiClient, id: string) => {
+  const res = await client.api.models[":id"].$delete({ param: { id } });
+  // 既に消えていれば目的は果たしている
+  if (!res.ok && res.status !== 404) throw await toError(res, "作品を削除できませんでした");
+};
+
+export type MyOrigamiResponse = InferResponseType<ApiClient["api"]["me"]["models"]["$get"], 200>;
+export type MyOrigami = MyOrigamiResponse["items"][number];
+
+/** ログインした人の作品（限定公開・公開前も含む） */
+export const fetchMyOrigami = async (client: ApiClient): Promise<MyOrigami[]> => {
+  const res = await client.api.me.models.$get();
+  if (!res.ok) throw await toError(res, "自分の作品を取得できませんでした");
+  return (await res.json()).items;
 };
 
 /** サムネイルを保存先（本番は R2 の presigned URL）へ直接送る。認証情報は付けない */

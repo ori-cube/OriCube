@@ -6,7 +6,8 @@ import { createViewerTimeline, type FixBoardV2, type OrigamiModelV2, type Presen
 import { apiClient, type Visibility } from "../../apiClient";
 import { useAuthState } from "../../auth/AuthContext";
 import { OrigamiCanvas, type OrigamiCanvasHandle } from "../../components/OrigamiViewer/Canvas";
-import { THUMBNAIL_SIZE, submitErrorMessage, submitOrigami, type PendingSubmission } from "./publish";
+import type { EditingTarget } from "./draft";
+import { THUMBNAIL_SIZE, submitErrorMessage, submitOrigami, submitUpdate, type PendingSubmission } from "./publish";
 import styles from "./PostEditor.module.css";
 
 export interface PublishScreenProps {
@@ -21,6 +22,10 @@ export interface PublishScreenProps {
   onBack: () => void;
   /** 投稿後に白紙から折り直す */
   onStartNew: () => void;
+  /** 再編集中の公開済みの作品。あれば新しく作らず、同じIDのまま上書きする */
+  editing?: EditingTarget;
+  /** 上書きしたときに、公開範囲を下書きの再編集の情報へ反映する */
+  onEditingChange?: (editing: EditingTarget) => void;
 }
 
 /**
@@ -66,7 +71,7 @@ const thumbnailBackground = () =>
  * 一覧・OGP に使うサムネイルを、完成形を好きな向きに回して撮影してから投稿する。
  * 枠の中に写る範囲がそのまま正方形のサムネイルになる
  */
-export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onPresentationChange, onBack, onStartNew }: PublishScreenProps) {
+export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onPresentationChange, onBack, onStartNew, editing, onEditingChange }: PublishScreenProps) {
   // 開いたときの見せる向きから始める。撮影で更新した向きを表示に重ねないよう、開いたときの値に固定する
   const [initialPresentation] = useState(model.presentation);
   const timeline = useMemo(() => createViewerTimeline(model.procedure, initialPresentation), [model.procedure, initialPresentation]);
@@ -77,28 +82,30 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   const [thumbnail, setThumbnail] = useState<Blob | null>(null);
   const [captureError, setCaptureError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [visibility, setVisibility] = useState<Visibility>("public");
+  const [visibility, setVisibility] = useState<Visibility>(editing?.visibility ?? "public");
   const thumbnailUrl = useMemo(() => thumbnail ? URL.createObjectURL(thumbnail) : null, [thumbnail]);
   useEffect(() => () => { if (thumbnailUrl) URL.revokeObjectURL(thumbnailUrl); }, [thumbnailUrl]);
 
   const auth = useAuthState();
   const queryClient = useQueryClient();
   const submit = useMutation({
-    mutationFn: (image: Blob) => submitOrigami({
-      client: apiClient,
-      input: { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, visibility, ...(model.presentation ? { presentation: model.presentation } : {}) },
-      thumbnail: image,
-      previous: pending.current,
-      onPending: (next) => { pending.current = next; },
-    }),
+    mutationFn: (image: Blob | null) => {
+      const input = { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, visibility, ...(model.presentation ? { presentation: model.presentation } : {}) };
+      if (editing) return submitUpdate({ client: apiClient, id: editing.id, input, thumbnail: image });
+      if (!image) throw new Error("サムネイルがありません");
+      return submitOrigami({ client: apiClient, input, thumbnail: image, previous: pending.current, onPending: (next) => { pending.current = next; } });
+    },
     onSuccess: async (id) => {
       pending.current = null;
+      if (editing) onEditingChange?.({ id, visibility });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["origami", id] }),
         queryClient.invalidateQueries({ queryKey: ["origami-list"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-origami"] }),
       ]);
     },
   });
+  const action = editing ? "更新" : "投稿";
 
   const capture = async () => {
     setCaptureError("");
@@ -113,13 +120,14 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   };
   const publish = () => {
     if (!name.trim()) { setNameError("作品名を入力してください。"); return; }
-    if (!thumbnail) { setCaptureError("先にサムネイルを撮影してください。"); return; }
+    // 再編集では、撮り直さなければ今のサムネイルのまま
+    if (!thumbnail && !editing) { setCaptureError("先にサムネイルを撮影してください。"); return; }
     submit.mutate(thumbnail);
   };
 
   if (submit.isSuccess) return <main id="origami-viewer" className={styles.published}>
-    <h1 className={styles.publishedTitle}>投稿しました</h1>
-    <p className={styles.hint}>「{name.trim()}」を公開しました。折った手順はこのブラウザにも残っています。</p>
+    <h1 className={styles.publishedTitle}>{action}しました</h1>
+    <p className={styles.hint}>「{name.trim()}」を{editing ? "同じURLのまま上書きし、" : ""}{visibility === "unlisted" ? "限定公開" : "公開"}しました。折った手順はこのブラウザにも残っています。</p>
     {thumbnailUrl && <img className={styles.publishedImage} src={thumbnailUrl} alt={`${name.trim()}のサムネイル`} width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />}
     <div className={styles.previewActions}>
       <Link className={styles.link} to={`/view/${submit.data}`}>作品ページを見る</Link>
@@ -151,7 +159,8 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
         </div>
       </div>
       <form className={styles.publishForm} aria-label="投稿の内容" onSubmit={(event) => { event.preventDefault(); publish(); }}>
-        <h1 className={styles.publishTitle}>投稿する</h1>
+        <h1 className={styles.publishTitle}>{editing ? "作品を更新する" : "投稿する"}</h1>
+        {editing && <p className={styles.hint}>公開中の作品を、同じURLのまま上書きします。過去の版は残りません。</p>}
         <TextInput label="作品名" required value={name} onChange={(value) => { onNameChange(value); setNameError(""); }} placeholder="例：鶴" errorMessage={nameError || undefined} />
         <TextArea label="説明" value={description} onChange={onDescriptionChange} placeholder="例：羽を広げた鶴です。" rows={3} />
         <div className={styles.visibility}>
@@ -162,7 +171,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
           <h2 id="publish-thumbnail" className={styles.sectionTitle}>サムネイル</h2>
           {thumbnailUrl
             ? <img className={styles.thumbnail} src={thumbnailUrl} alt="撮影したサムネイル" width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
-            : <p className={styles.hint}>まだ撮影していません。作品が傾いて見えるときは、まず正面のまま「左に回す」「右に回す」（15°ずつ）で立ててから、ドラッグや矢印キーで角度をつけます。ホイールやピンチで大きさを変えられます。撮影した向きは、作品ページで完成形を見せる向きにもなります。</p>}
+            : <p className={styles.hint}>{editing ? "撮り直さなければ、今のサムネイルのままです。" : "まだ撮影していません。"}作品が傾いて見えるときは、まず正面のまま「左に回す」「右に回す」（15°ずつ）で立ててから、ドラッグや矢印キーで角度をつけます。ホイールやピンチで大きさを変えられます。撮影した向きは、作品ページで完成形を見せる向きにもなります。</p>}
           <div className={styles.previewActions}>
             <Button text={thumbnail ? "撮り直す" : "この向きで撮影"} variant="secondary" onClick={() => void capture()} disabled={submit.isPending} />
             <Button text="向きをリセット" variant="secondary" onClick={() => setResetKey((value) => value + 1)} disabled={submit.isPending} />
@@ -172,11 +181,11 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
         {auth.status === "signedOut" || auth.status === "loading"
           // 下書きはブラウザに保存済み。ログイン後は作成画面へ戻り、もう一度投稿へ進む（戻っただけで公開しない）
           ? <>
-            <Button text="ログインして投稿" onClick={() => auth.signIn("/post")} disabled={auth.status === "loading"} />
+            <Button text={`ログインして${action}`} onClick={() => auth.signIn("/post")} disabled={auth.status === "loading"} />
             <p className={styles.hint}>下書きはこのブラウザに保存されています。ログイン後に作成画面へ戻ったら、もう一度「投稿へ進む」から投稿してください。</p>
           </>
           // ログインの設定がない環境（ローカル）でも、開発用の API（pnpm dev:api）なら開発ユーザーとして投稿できる
-          : <Button type="submit" text={submit.isPending ? "投稿しています…" : "投稿する"} disabled={submit.isPending} />}
+          : <Button type="submit" text={submit.isPending ? `${action}しています…` : `${action}する`} disabled={submit.isPending} />}
         {submit.isError && <p className={styles.alert} role="alert">{submitErrorMessage(submit.error, auth.status)}</p>}
       </form>
     </main>

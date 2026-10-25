@@ -13,6 +13,7 @@ export const routes: RouteObject[] = [
       { path: "view", element: <Navigate to="/" replace /> },
       { path: "view/:id", lazy: async () => ({ Component: (await import("./pages/ViewPage")).ViewPage }) },
       { path: "post", lazy: async () => ({ Component: (await import("./pages/PostPage")).PostPage }) },
+      { path: "me", lazy: async () => ({ Component: (await import("./pages/MyOrigamiPage")).MyOrigamiPage }) },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

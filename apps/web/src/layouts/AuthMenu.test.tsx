@@ -18,9 +18,10 @@ describe("AuthMenu", () => {
     expect(signIn).toHaveBeenCalledWith("/view/crane?step=last");
   });
 
-  it("ログイン中ならログアウトできる", () => {
+  it("ログイン中なら自分の作品へ移動でき、ログアウトできる", () => {
     const signOut = vi.fn();
     renderMenu({ status: "signedIn", signIn: vi.fn(), signOut });
+    expect(screen.getByRole("link", { name: "自分の作品" })).toHaveAttribute("href", "/me");
     fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
     expect(signOut).toHaveBeenCalled();
   });

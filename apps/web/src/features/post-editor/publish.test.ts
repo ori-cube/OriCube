@@ -3,7 +3,7 @@ import { craneProcedure } from "@oricube/api/mocks/crane";
 import { hc } from "hono/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiRequestError } from "../../apiClient";
-import { submitErrorMessage, submitOrigami, type PendingSubmission } from "./publish";
+import { submitErrorMessage, submitOrigami, submitUpdate, type PendingSubmission } from "./publish";
 
 const origin = "http://localhost";
 const input = { name: "投稿した鶴", description: "説明", color: "#ed7070", procedure: craneProcedure };
@@ -95,5 +95,49 @@ describe("submitOrigami", () => {
     // ログイン中なら期限切れ、ログインの設定がない環境ならこの環境では投稿できないと伝える
     expect(submitErrorMessage(error, "signedIn")).toContain("もう一度ログイン");
     expect(submitErrorMessage(error, "unavailable")).toContain("この環境では投稿できません");
+  });
+});
+
+describe("submitUpdate", () => {
+  const thumbnailUrl = async (id: string) => {
+    const { items } = (await (await app.request("/api/models")).json()) as { items: { id: string; thumbnailUrl: string | null }[] };
+    return items.find((item) => item.id === id)?.thumbnailUrl;
+  };
+
+  it("撮り直さなければ内容だけを同じIDで上書きし、サムネイルはそのまま", async () => {
+    const id = await submitOrigami({ client: client(), input, thumbnail: image(), previous: null, onPending: vi.fn() });
+    const before = await thumbnailUrl(id);
+    requests = [];
+    expect(await submitUpdate({ client: client(), id, input: { ...input, name: "直した鶴", visibility: "unlisted" }, thumbnail: null })).toBe(id);
+    expect(requests).toEqual([`PUT /api/models/${id}`]);
+    expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, name: "直した鶴", visibility: "unlisted" });
+    // 限定公開にしたので一覧には出ない。公開に戻して画像が変わっていないことを確かめる
+    await submitUpdate({ client: client(), id, input, thumbnail: null });
+    expect(await thumbnailUrl(id)).toBe(before);
+  });
+
+  it("撮り直したサムネイルを置いてから差し替え、古い画像を消す", async () => {
+    const id = await submitOrigami({ client: client(), input, thumbnail: image(), previous: null, onPending: vi.fn() });
+    const before = await thumbnailUrl(id) ?? "";
+    requests = [];
+    await submitUpdate({ client: client(), id, input, thumbnail: image(4) });
+    expect(requests).toEqual([`PUT /api/models/${id}`, `POST /api/models/${id}/thumbnail-upload`, expect.stringMatching(/^PUT \/api\/mock-storage\/uploads\//), `PUT /api/models/${id}/thumbnail`]);
+    const after = await thumbnailUrl(id) ?? "";
+    expect(after).not.toBe(before);
+    expect((await app.request(after)).status).toBe(200);
+    expect((await app.request(before)).status).toBe(404);
+  });
+
+  it("他人の作品・消えた作品は、理由を案内する", async () => {
+    let user = "user_a";
+    app = createApp({ auth: { authenticate: async () => user } });
+    const id = await submitOrigami({ client: client(), input, thumbnail: image(), previous: null, onPending: vi.fn() });
+    user = "user_b";
+    const forbidden = await submitUpdate({ client: client(), id, input, thumbnail: null }).catch((error: unknown) => error);
+    expect(submitErrorMessage(forbidden)).toContain("この作品を変更する権限がありません");
+    user = "user_a";
+    expect((await app.request(`/api/models/${id}`, { method: "DELETE", headers: { Origin: origin } })).status).toBe(204);
+    const missing = await submitUpdate({ client: client(), id, input, thumbnail: null }).catch((error: unknown) => error);
+    expect(submitErrorMessage(missing)).toContain("見つかりません");
   });
 });
