@@ -1,0 +1,46 @@
+/* 画面全体を覆う背景。開閉はフェードだけにする（動きを減らす設定では切り替えのみ） */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--spacing-md);
+  background: color-mix(in srgb, var(--text-default) 40%, transparent);
+}
+.overlay[data-entering] { animation: fade 160ms ease-out; }
+.overlay[data-exiting] { animation: fade 120ms ease-in reverse; }
+@media (prefers-reduced-motion: reduce) {
+  .overlay[data-entering], .overlay[data-exiting] { animation: none; }
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: min(28rem, 100%);
+  max-height: calc(100dvh - 2 * var(--spacing-md));
+  overflow: auto;
+  border-radius: calc(var(--border-radius-md) + var(--spacing-xs));
+  background: var(--background-default);
+  color: var(--text-default);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--text-default) 20%, transparent);
+}
+.dialog {
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  outline: none;
+}
+.title { margin: 0; font-size: 1.125rem; line-height: 1.5; }
+.body { font-size: 0.9375rem; line-height: 1.7; }
+.body > p { margin: 0; }
+.error { margin: 0; color: var(--text-danger); font-size: 0.875rem; line-height: 1.6; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-xs);
+  margin-block-start: var(--spacing-xs);
+}
+.actions .destructive { background-color: var(--danger-40); color: var(--text-primary-action); }
+.actions .destructive[data-hovered] { background-color: color-mix(in srgb, var(--danger-40) 85%, black); }
+.actions .destructive[data-pressed] { background-color: color-mix(in srgb, var(--danger-40) 70%, black); }
