@@ -9,6 +9,7 @@ export type ApiErrorCode =
   | "not_found"
   | "conflict"
   | "payload_too_large"
+  | "too_many_requests"
   | "internal_error";
 
 /** APIのエラーは常にこの形で返す */

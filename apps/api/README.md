@@ -69,7 +69,8 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 | `/assets/*` | ビルド済みの静的ファイル |
 | それ以外 | HTTP 404（画面はSPAの404表示、`/api/*` はJSON） |
 
-- APIのエラーは `{ "error": { "code", "message" } }` の形で返す（`invalid_request` 400・`unauthorized` 401・`forbidden` 403・`not_found` 404・`conflict` 409・`payload_too_large` 413・`internal_error` 500）。
+- APIのエラーは `{ "error": { "code", "message" } }` の形で返す（`invalid_request` 400・`unauthorized` 401・`forbidden` 403・`not_found` 404・`conflict` 409・`payload_too_large` 413・`too_many_requests` 429・`internal_error` 500）。
+- 書き込みAPI（投稿・サムネイルのアップロード先・公開・更新・差し替え・削除）は、ログインした人ごとに1分30回まで（`src/rateLimit.ts`）。超えたら429と `Retry-After: 60` を返す。Workers は Rate Limiting バインディング（`wrangler.jsonc` の `ratelimits`、`WRITE_LIMITER`）、Node.js とテストはメモリ上の固定窓で数える。読み取りと未ログインの書き込み（401）は数えない
 - ログインは Clerk のセッション（同一オリジンの Cookie）を `src/auth.ts` で検証する。`CLERK_SECRET_KEY`・`CLERK_PUBLISHABLE_KEY` が無い環境では未ログイン扱いになり、書き込みAPIは401を返す。Workers ではシークレットを `wrangler secret put CLERK_SECRET_KEY` で設定する。
 - 画面側は `VITE_CLERK_PUBLISHABLE_KEY`（`apps/web` のビルド時の環境変数）があるときだけログインを有効にする。ログイン画面は Clerk が提供するページへ移動し、画面に Clerk の部品は埋め込まない。未ログインで投稿画面の「ログインして投稿」を押すとログイン画面へ移り、ログイン後は作成画面へ戻る（下書きはブラウザに保存済み。戻っただけでは投稿しない）。
 - 他サイトからのフォーム送信は `hono/csrf` で拒否する。JSONの書き込みはクロスオリジンだとプリフライトで止まる（CORSは許可しない）。

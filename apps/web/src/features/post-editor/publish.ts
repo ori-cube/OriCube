@@ -101,6 +101,7 @@ export const submitErrorMessage = (error: unknown, authStatus: AuthStatus = "sig
     if (error.status === 403 && error.code === "forbidden") return "この作品を変更する権限がありません。自分の作品か、ログインしているアカウントを確認してください。";
     if (error.status === 404 && error.code === "not_found") return "更新する作品が見つかりません。削除された可能性があります。新しい作品として投稿するには、作品の設定で編集をやめてください。";
     if (error.status === 413) return "作品のデータが大きすぎて投稿できません。";
+    if (error.status === 429) return "短い時間に操作が多すぎました。1分ほど待ってから、もう一度お試しください。折った手順はこのブラウザに保存されています。";
     if (error.status === 400) return `投稿できませんでした。${error.message}`;
   }
   return "投稿できませんでした。通信状況を確認して、もう一度「投稿する」を押してください。";
