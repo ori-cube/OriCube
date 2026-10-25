@@ -14,6 +14,21 @@ const key = thumbnailKey("model-1", "image/png");
 const put = (storage: ReturnType<typeof createMemoryThumbnailStorage>, url: string, headers: Record<string, string> = { "Content-Type": "image/png" }, body: Uint8Array = image) =>
   createApp({ storage }).request(url, { method: "PUT", headers, body });
 
+describe("Workers のグローバルスコープ", () => {
+  it("アプリと保存先を作るときに乱数・鍵を作らない（app.ts はモジュールの読み込み時に createApp する）", () => {
+    const random = vi.spyOn(crypto, "getRandomValues");
+    const importKey = vi.spyOn(crypto.subtle, "importKey");
+    createApp();
+    createMemoryThumbnailStorage();
+    createR2ThumbnailStorage(createMemoryObjectStore(), undefined);
+    createR2ThumbnailStorage(createMemoryObjectStore(), secret);
+    expect(random).not.toHaveBeenCalled();
+    expect(importKey).not.toHaveBeenCalled();
+    random.mockRestore();
+    importKey.mockRestore();
+  });
+});
+
 describe("署名付きのアップロード先", () => {
   it("署名どおりの画像を置き、形式とサイズを返す", async () => {
     const storage = createMemoryThumbnailStorage();

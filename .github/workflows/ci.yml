@@ -59,6 +59,12 @@ jobs:
       - name: Smoke test v2 server
         run: pnpm smoke:app
 
+      # workerd で起動し、Workers の実行環境の制約（グローバルスコープで乱数を使えない など）に反していないか確かめる
+      - name: Smoke test Cloudflare Worker
+        run: pnpm smoke:worker
+        env:
+          WRANGLER_SEND_METRICS: "false"
+
       # Cloudflareのアカウントなしで、Workerのバンドルと設定が通ることを確かめる
       - name: Bundle Cloudflare Worker
         run: pnpm --filter @oricube/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
