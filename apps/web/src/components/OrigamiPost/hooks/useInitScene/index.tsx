@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { useCallback, useEffect, useRef } from "react";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import { createDemandRenderer } from "../../../../utils/three/demandRenderer";
 import { removeObjects } from "../../../../utils/three/removeObjects";

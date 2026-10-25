@@ -76,5 +76,5 @@ export const mockOrbitControls = () => ({
  */
 export const setupThreeMocks = () => {
   vi.mock("three", () => mockThree());
-  vi.mock("three/examples/jsm/Addons.js", () => mockOrbitControls());
+  vi.mock("three/examples/jsm/controls/OrbitControls.js", () => mockOrbitControls());
 };
