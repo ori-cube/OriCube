@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version-file: .node-version
           # packageManager を見て pnpm のキャッシュを自動で使おうとするが、この時点では pnpm がまだ無い
           package-manager-cache: false
 
