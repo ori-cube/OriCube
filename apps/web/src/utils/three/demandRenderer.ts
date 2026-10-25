@@ -1,4 +1,4 @@
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 export const createDemandRenderer = (
   controls: OrbitControls,

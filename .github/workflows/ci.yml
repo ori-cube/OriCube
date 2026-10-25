@@ -65,6 +65,12 @@ jobs:
         env:
           WRANGLER_SEND_METRICS: "false"
 
+      # ビルド済みの画面と API を実際のブラウザで操作する（#100 の完了条件）。ブラウザはランナーの Google Chrome を使い、Playwright のブラウザは取得しない
+      - name: E2E tests
+        run: pnpm test:e2e
+        env:
+          E2E_CHROMIUM_PATH: /usr/bin/google-chrome
+
       # Cloudflareのアカウントなしで、Workerのバンドルと設定が通ることを確かめる
       - name: Bundle Cloudflare Worker
         run: pnpm --filter @oricube/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run

@@ -29,6 +29,7 @@
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
     "test:storybook": "vitest --config vitest.storybook.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:all": "pnpm test:package-manager && pnpm test:security && pnpm test && pnpm test:storybook",
     "db:seed:dev": "dotenv -e .env.development -- ts-node prisma/seed.ts",
     "db:seed:prod": "dotenv -e .env.production -- ts-node prisma/seed.ts",
