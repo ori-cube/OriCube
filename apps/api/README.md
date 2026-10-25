@@ -61,7 +61,7 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 | `POST /api/models/:id/publish` | 申告どおりのサムネイルが置かれていれば公開する（ログイン必須・所有者のみ）。無ければ409。公開済みなら何もせず200 |
 | `PUT /api/models/:id` | 作品の更新（ログイン必須・所有者のみ） |
 | `DELETE /api/models/:id` | 作品の削除（ログイン必須・所有者のみ）。サムネイルも消す |
-| `PUT /api/mock-storage/uploads/:token`・`GET /api/mock-storage/objects/*` | 開発用のメモリ上の保存先（R2 の presigned URL と公開URLの代わり） |
+| `PUT /api/storage/uploads/:token`・`GET /api/storage/objects/*` | サムネイルのアップロード先（署名付き）と画像の配信（R2）。R2 が無い環境では `/api/mock-storage/*`（メモリ上） |
 | `GET /view/:id` | SPAの `index.html` に作品名・説明のタイトルとOGPを入れて返す。存在しない作品はHTTP 404 |
 | `GET /`・`/view`・`/post` | SPAの `index.html` |
 | `/assets/*` | ビルド済みの静的ファイル |
@@ -83,10 +83,20 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 DBと画像の保存先は単一トランザクションにならないため、#100 の流れで保存する。
 
 1. `POST /api/models` で作品を `pending` で作る。画像のキー（`thumbnails/<作品ID>/<UUID>.<拡張子>`）はサーバーが決め、形式とサイズを記録する
-2. 返したアップロード先へ、ブラウザが画像を直接 `PUT` する（API を通さない）
+2. 返したアップロード先（署名付きのURL）へ、ブラウザが画像を `PUT` する（作品のAPIは通さない）
 3. `POST /api/models/:id/publish` で、申告どおりの画像が置かれたことを確かめて `published` にする
 
 - 公開前の作品は取得・一覧・作品ページに出さない。画面は途中で失敗しても、同じ内容の再試行では作品を作り直さない（重複を残さない）
-- 保存先は `ThumbnailStorage`（`src/storage.ts`）。R2 に接続するまではメモリ上の実装で、アップロード先は `/api/mock-storage/uploads/:token`（10分で期限切れ。形式とサイズが申告と違えば拒否）、画像は `/api/mock-storage/objects/*` で返す。Workers でもメモリ上の実装のため、画像は isolate ごとに消える
+- 保存先は `ThumbnailStorage`（`src/storage.ts`）。Workers では R2（`THUMBNAILS` バインディング）、Node.js とテストではメモリ上の実装（`/api/mock-storage/*`。永続化されない）を使う
+- アップロード先は `/api/storage/uploads/<トークン>`。トークンはキー・形式・サイズ・期限（10分）を HMAC-SHA256 で署名したもので、Worker が署名と期限を確かめ、形式とサイズが申告と違えば拒否してから R2 に置く。R2 の presigned URL（S3 互換 API）と違い、R2 の API トークンや追加の依存を使わない
+- 画像は公開バケットにせず、Worker が `/api/storage/objects/thumbnails/...` で返す（`thumbnailKey` の形のキーだけ。`Cache-Control: immutable`）
+- 署名の秘密の値 `THUMBNAIL_UPLOAD_SECRET`（32文字以上）が無い・短いときは、投稿（アップロード先の発行）だけを失敗させ、保存済みの画像は返す
 - 一覧は撮影した画像があればそれを、無い作品（モックなど）は手順から作る完成形の図を表示する。作品ページの og:image はサムネイル、無い作品はロゴ
-- 未対応: R2 の presigned URL の発行と公開URL、`pending` のまま残った作品・画像の定期的な掃除、公開後のサムネイルの差し替え
+- 未対応: `pending` のまま残った作品・画像の定期的な掃除、公開後のサムネイルの差し替え
+
+初回は R2 のバケットと署名の秘密の値を用意する。
+
+```bash
+pnpm --filter @oricube/api exec wrangler r2 bucket create oricube-thumbnails
+openssl rand -base64 48 | pnpm --filter @oricube/api exec wrangler secret put THUMBNAIL_UPLOAD_SECRET
+```

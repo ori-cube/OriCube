@@ -3,6 +3,7 @@ import { verifierFromEnv } from "./auth";
 import { createD1OrigamiRepository, type D1Database } from "./d1Repository";
 import { createServerApp } from "./pages";
 import { createMockOrigamiRepository, withMockFallback } from "./repository";
+import { createMemoryThumbnailStorage, createR2ThumbnailStorage, type ObjectStore } from "./storage";
 
 /** wrangler.jsonc で定義するバインディングと環境変数 */
 interface Env {
@@ -11,6 +12,10 @@ interface Env {
   DB?: D1Database;
   /** OGPの絶対URLに使う公開オリジン。未設定ならリクエストのオリジン */
   APP_ORIGIN?: string;
+  /** サムネイルを保存する R2。未設定ならメモリ上の実装（画像は永続化されない） */
+  THUMBNAILS?: ObjectStore;
+  /** サムネイルのアップロード先の署名に使う秘密の値（wrangler secret で設定する） */
+  THUMBNAIL_UPLOAD_SECRET?: string;
   /** Clerk のキー（シークレットは wrangler secret で設定する） */
   CLERK_SECRET_KEY?: string;
   CLERK_PUBLISHABLE_KEY?: string;
@@ -28,6 +33,7 @@ const getApp = async (request: Request, env: Env) => {
     origin: env.APP_ORIGIN || undefined,
     auth: verifierFromEnv(env),
     repository: env.DB ? withMockFallback(createD1OrigamiRepository(env.DB)) : createMockOrigamiRepository(),
+    storage: env.THUMBNAILS ? createR2ThumbnailStorage(env.THUMBNAILS, env.THUMBNAIL_UPLOAD_SECRET) : createMemoryThumbnailStorage(),
   });
   return app;
 };
