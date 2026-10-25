@@ -25,6 +25,8 @@ export interface ThumbnailStorage {
   /** 置かれた画像の形式とサイズ。無ければ null */
   head(key: string): Promise<ThumbnailSpec | null>;
   delete(key: string): Promise<void>;
+  /** 置かれた画像を順に返す（掃除用）。続きがあれば cursor を返す */
+  list(cursor?: string): Promise<{ objects: { key: string; uploaded: Date }[]; cursor?: string }>;
   /** 画像を表示するURL。同一オリジンのパスか、公開バケットの絶対URL */
   publicUrl(key: string): string;
   /** アップロード先と画像の配信のルート。/api の下に追加する */
@@ -49,6 +51,7 @@ export interface ObjectStore {
   get(key: string): Promise<(StoredObject & { body: ReadableStream | ArrayBuffer }) | null>;
   head(key: string): Promise<StoredObject | null>;
   delete(key: string): Promise<void>;
+  list(options: { prefix: string; cursor?: string; limit?: number }): Promise<{ objects: { key: string; uploaded: Date }[]; truncated: boolean; cursor?: string }>;
 }
 
 interface StoredObject {
@@ -57,12 +60,12 @@ interface StoredObject {
 }
 
 /** メモリ上の ObjectStore。Workers では isolate ごとのメモリなので永続化されない */
-export const createMemoryObjectStore = (): ObjectStore => {
-  const objects = new Map<string, { body: ArrayBuffer; contentType: string }>();
+export const createMemoryObjectStore = ({ now = () => Date.now() }: { now?: () => number } = {}): ObjectStore => {
+  const objects = new Map<string, { body: ArrayBuffer; contentType: string; uploaded: Date }>();
   const meta = (object: { body: ArrayBuffer; contentType: string }) => ({ size: object.body.byteLength, httpMetadata: { contentType: object.contentType } });
   return {
     put: async (key, body, { httpMetadata }) => {
-      objects.set(key, { body, contentType: httpMetadata.contentType });
+      objects.set(key, { body, contentType: httpMetadata.contentType, uploaded: new Date(now()) });
     },
     get: async (key) => {
       const object = objects.get(key);
@@ -74,6 +77,13 @@ export const createMemoryObjectStore = (): ObjectStore => {
     },
     delete: async (key) => {
       objects.delete(key);
+    },
+    // R2 と同じく、キーの辞書順に limit 件ずつ返し、cursor（最後のキー）から続ける
+    list: async ({ prefix, cursor, limit = 1000 }) => {
+      const keys = [...objects.keys()].filter((key) => key.startsWith(prefix) && (!cursor || key > cursor)).sort();
+      const page = keys.slice(0, limit);
+      const truncated = keys.length > limit;
+      return { objects: page.map((key) => ({ key, uploaded: objects.get(key)!.uploaded })), truncated, ...(truncated ? { cursor: page.at(-1) } : {}) };
     },
   };
 };
@@ -168,6 +178,10 @@ export const createSignedUploadStorage = ({ objects, secret, mount, now = () => 
       return object && contentType ? { contentType, size: object.size } : null;
     },
     delete: (key) => objects.delete(key),
+    list: async (cursor) => {
+      const page = await objects.list({ prefix: "thumbnails/", ...(cursor ? { cursor } : {}) });
+      return { objects: page.objects.map(({ key, uploaded }) => ({ key, uploaded })), ...(page.truncated && page.cursor ? { cursor: page.cursor } : {}) };
+    },
     publicUrl: (key) => `/api${mount}/objects/${key}`,
     routes: new Hono().route(mount, routes),
   };
@@ -206,7 +220,7 @@ export const createR2ThumbnailStorage = (bucket: ObjectStore, secret: string | u
  */
 export const createMemoryThumbnailStorage = ({ now }: { now?: () => number } = {}): ThumbnailStorage =>
   createSignedUploadStorage({
-    objects: createMemoryObjectStore(),
+    objects: createMemoryObjectStore({ now }),
     secret: toBase64Url(crypto.getRandomValues(new Uint8Array(32))),
     mount: "/mock-storage",
     now,

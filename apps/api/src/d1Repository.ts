@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { ENGINE_VERSION } from "@oricube/engine";
 import { models } from "./db/schema";
@@ -49,6 +49,8 @@ export const createD1OrigamiRepository = (database: D1Database): OrigamiReposito
     },
     list: async () =>
       (await db.select().from(models).where(eq(models.status, "published")).orderBy(desc(models.createdAt), desc(models.id)).all()).map(toRecord),
+    listPendingBefore: async (before, limit) =>
+      (await db.select().from(models).where(and(eq(models.status, "pending"), lt(models.createdAt, before))).orderBy(asc(models.createdAt)).limit(limit).all()).map(toRecord),
     listByOwner: async (ownerId) =>
       (await db.select().from(models).where(eq(models.ownerId, ownerId)).orderBy(desc(models.createdAt), desc(models.id)).all()).map(toRecord),
     create: async ({ ownerId, status, thumbnail, model }) => {
