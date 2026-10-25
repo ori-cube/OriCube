@@ -22,11 +22,10 @@ vi.mock("../../components/OrigamiPost", () => ({ OrigamiPostV2: function Editor(
   </>;
 } }));
 vi.mock("../../components/OrigamiViewer", () => ({ OrigamiViewer: function Preview({ model, startAtEnd }: OrigamiViewerProps) { return <div aria-label="プレビュー">{startAtEnd ? "完成形" : "折り方"}・{model.procedure.steps.length}回</div>; } }));
-const capture = vi.hoisted(() => vi.fn());
 const rotateModel = vi.hoisted(() => vi.fn());
 const getModelRotation = vi.hoisted(() => vi.fn());
 vi.mock("../../components/OrigamiViewer/Canvas", () => ({ OrigamiCanvas: forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>(function Camera({ label }, ref) {
-  useImperativeHandle(ref, () => ({ capture, rotateModel, getModelRotation }));
+  useImperativeHandle(ref, () => ({ rotateModel, getModelRotation }));
   return <div role="img" aria-label={label} />;
 }) }));
 const openPanel = () => fireEvent.click(screen.getByRole("button", { name: "作品の設定" }));
@@ -97,14 +96,13 @@ describe("投稿", () => {
   beforeEach(() => {
     auth = unavailableAuth;
     app = createApp({ auth: { authenticate: async () => "user_a" } });
-    capture.mockResolvedValue(new Blob([new Uint8Array(8)], { type: "image/png" }));
+    getModelRotation.mockReturnValue([0, 0, 0, 1]);
     // 同一オリジンの fetch と同じく Origin を付けてメモリ上の API へ送る
     vi.stubGlobal("fetch", (url: string | URL | Request, init?: RequestInit) => {
       const request = new Request(new URL(url instanceof Request ? url.url : url, window.location.origin), init);
       if (request.method !== "GET") request.headers.set("Origin", window.location.origin);
       return app.request(request);
     });
-    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: () => "blob:thumbnail", revokeObjectURL: () => {} }));
   });
   const openPublish = async () => {
     render(<PostEditor />, { wrapper });
@@ -115,7 +113,7 @@ describe("投稿", () => {
     fireEvent.click(screen.getByRole("button", { name: "投稿へ進む" }));
   };
 
-  it("完成形を撮影してから投稿し、作品ページへ案内する", async () => {
+  it("完成形の向きを決めてから投稿し、作品ページへ案内する", async () => {
     await openPublish();
     // 空欄は必須入力の検証で止まり、空白だけの名前も受け付けない
     expect(screen.getByRole("textbox", { name: /作品名/ })).toBeRequired();
@@ -125,10 +123,10 @@ describe("投稿", () => {
     fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
     fireEvent.change(screen.getByRole("textbox", { name: "説明" }), { target: { value: "はじめて折りました" } });
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("先にサムネイルを撮影してください。");
-    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
-    expect(await screen.findByRole("img", { name: "撮影したサムネイル" })).toBeInTheDocument();
-    expect(capture).toHaveBeenCalledWith(expect.objectContaining({ size: 640 }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("先にサムネイルの向きを決めてください。");
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
+    // サーバーが描くのと同じ完成形の図をプレビューする
+    expect((await screen.findByRole("img", { name: "私の鶴のサムネイル" })).querySelector("polygon")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
     expect(await screen.findByRole("heading", { name: "投稿しました" })).toBeInTheDocument();
     const href = screen.getByRole("link", { name: "作品ページを見る" }).getAttribute("href") ?? "";
@@ -154,8 +152,7 @@ describe("投稿", () => {
     app = createApp();
     await openPublish();
     fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
-    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
-    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("もう一度ログインしてから投稿してください");
   });
@@ -164,21 +161,19 @@ describe("投稿", () => {
     app = createApp();
     await openPublish();
     fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
-    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
-    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("この環境では投稿できません。折った手順はこのブラウザに保存されています。");
     fireEvent.click(screen.getByRole("button", { name: "折る画面に戻る" }));
     expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
   });
 
-  it("撮影した向きを完成形を見せる向きとして保存し、下書きにも残す", async () => {
+  it("決めた向きを完成形を見せる向きとして保存し、下書きにも残す", async () => {
     const rotation = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
     getModelRotation.mockReturnValue(rotation);
     await openPublish();
     fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "立てた鶴" } });
-    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
-    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
     await waitFor(() => expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ presentation: { rotation } }));
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
     const href = (await screen.findByRole("link", { name: "作品ページを見る" })).getAttribute("href") ?? "";
@@ -187,12 +182,9 @@ describe("投稿", () => {
   });
 
   it("回していなければ見せる向きを保存しない", async () => {
-    getModelRotation.mockReturnValue([0, 0, 0, 1]);
     await openPublish();
-    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
-    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
     expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).not.toHaveProperty("presentation");
-    getModelRotation.mockReset();
   });
 
   it("傾いた作品を画面内で15°ずつ回せる", async () => {
@@ -209,8 +201,7 @@ describe("投稿", () => {
     fireEvent.click(screen.getByRole("radio", { name: "限定公開" }));
     expect(screen.getByText(/URLを知っている人だけ/)).toBeInTheDocument();
     fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "ひみつの鶴" } });
-    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
-    await screen.findByRole("img", { name: "撮影したサムネイル" });
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
     const href = (await screen.findByRole("link", { name: "作品ページを見る" })).getAttribute("href") ?? "";
     expect(await (await app.request(`/api/models/${href.replace("/view/", "")}`)).json()).toMatchObject({ visibility: "unlisted" });
@@ -218,11 +209,11 @@ describe("投稿", () => {
     expect(list.total).toBe(0);
   });
 
-  it("撮影できなければ再試行を案内する", async () => {
-    capture.mockRejectedValue(new Error("WebGL"));
+  it("3D表示から向きを読み取れなければ再試行を案内する", async () => {
+    getModelRotation.mockReturnValue(null);
     await openPublish();
-    fireEvent.click(screen.getByRole("button", { name: "この向きで撮影" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("撮影できませんでした");
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("向きを読み取れませんでした");
   });
 });
 

@@ -10,10 +10,6 @@ export type D1Database = Parameters<typeof drizzle>[0];
 
 const toRecord = (row: typeof models.$inferSelect): OrigamiRecord => ({
   ownerId: row.ownerId,
-  status: row.status,
-  thumbnail: row.thumbnailKey && row.thumbnailContentType && row.thumbnailSize !== null
-    ? { key: row.thumbnailKey, contentType: row.thumbnailContentType, size: row.thumbnailSize }
-    : null,
   model: {
     id: row.id,
     name: row.name,
@@ -48,33 +44,19 @@ export const createD1OrigamiRepository = (database: D1Database): OrigamiReposito
       return row ? toRecord(row) : null;
     },
     list: async () =>
-      (await db.select().from(models).where(eq(models.status, "published")).orderBy(desc(models.createdAt), desc(models.id)).all()).map(toRecord),
-    create: async ({ ownerId, status, thumbnail, model }) => {
+      (await db.select().from(models).orderBy(desc(models.createdAt), desc(models.id)).all()).map(toRecord),
+    create: async ({ ownerId, model }) => {
       const now = new Date();
       await db.insert(models).values({
         id: model.id,
         ownerId,
         ...modelColumns(model),
-        status,
-        thumbnailKey: thumbnail?.key ?? null,
-        thumbnailContentType: thumbnail?.contentType ?? null,
-        thumbnailSize: thumbnail?.size ?? null,
         createdAt: now,
         updatedAt: now,
       });
     },
-    update: async (id, { model, status, thumbnail }) => {
-      await db
-        .update(models)
-        .set({
-          ...(model ? modelColumns(model) : {}),
-          ...(status ? { status } : {}),
-          ...(thumbnail !== undefined
-            ? { thumbnailKey: thumbnail?.key ?? null, thumbnailContentType: thumbnail?.contentType ?? null, thumbnailSize: thumbnail?.size ?? null }
-            : {}),
-          updatedAt: new Date(),
-        })
-        .where(eq(models.id, id));
+    update: async (id, model) => {
+      await db.update(models).set({ ...modelColumns(model), updatedAt: new Date() }).where(eq(models.id, id));
     },
     delete: async (id) => {
       await db.delete(models).where(eq(models.id, id));

@@ -20,13 +20,5 @@
       "migrations_dir": "migrations"
     }
   ],
-  // サムネイルの保存先。`wrangler r2 bucket create oricube-thumbnails` で作る。
-  // 画像は公開バケットにせず Worker（/api/storage/objects/*）から返す
-  "r2_buckets": [
-    {
-      "binding": "THUMBNAILS",
-      "bucket_name": "oricube-thumbnails"
-    }
-  ],
   "observability": { "enabled": true }
 }

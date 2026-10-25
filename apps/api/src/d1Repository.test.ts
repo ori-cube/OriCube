@@ -9,7 +9,6 @@ import type { AuthVerifier } from "./auth";
 import { createD1OrigamiRepository, type D1Database } from "./d1Repository";
 import { models } from "./db/schema";
 import { craneProcedure } from "./mocks/crane";
-import { createMemoryThumbnailStorage } from "./storage";
 import { withMockFallback } from "./repository";
 
 const apiDir = path.resolve(import.meta.dirname, "..");
@@ -53,9 +52,9 @@ describe("D1のスキーマ", () => {
 describe("createD1OrigamiRepository", () => {
   it("作品を保存・取得・更新・削除できる", async () => {
     const repository = createD1OrigamiRepository(db);
-    await repository.create({ ownerId: "user_a", status: "published", thumbnail: null, model: { id: "d1-crane", ...input } });
-    expect(await repository.findById("d1-crane")).toEqual({ ownerId: "user_a", status: "published", thumbnail: null, model: { id: "d1-crane", ...input } });
-    await repository.update("d1-crane", { model: { id: "d1-crane", ...input, name: "更新した鶴", stepDescriptions: undefined } });
+    await repository.create({ ownerId: "user_a", model: { id: "d1-crane", ...input } });
+    expect(await repository.findById("d1-crane")).toEqual({ ownerId: "user_a", model: { id: "d1-crane", ...input } });
+    await repository.update("d1-crane", { id: "d1-crane", ...input, name: "更新した鶴", stepDescriptions: undefined });
     const updated = await repository.findById("d1-crane");
     expect(updated?.model).toMatchObject({ name: "更新した鶴" });
     expect(updated?.model).not.toHaveProperty("stepDescriptions");
@@ -63,53 +62,41 @@ describe("createD1OrigamiRepository", () => {
     expect(await repository.findById("d1-crane")).toBeNull();
   });
 
-  it("公開状態・サムネイル・見せる向きを保存し、一覧には公開済みだけを返す", async () => {
+  it("完成形を見せる向きを保存する", async () => {
     const repository = createD1OrigamiRepository(db);
-    const thumbnail = { key: "thumbnails/d1-pending/a.png", contentType: "image/png" as const, size: 8 };
     const presentation = { rotation: [0, 0, Math.SQRT1_2, Math.SQRT1_2] as [number, number, number, number] };
-    await repository.create({ ownerId: "user_a", status: "pending", thumbnail, model: { id: "d1-pending", ...input, presentation } });
-    expect(await repository.findById("d1-pending")).toEqual({ ownerId: "user_a", status: "pending", thumbnail, model: { id: "d1-pending", ...input, presentation } });
-    expect((await repository.list()).map((record) => (record.model as { id: string }).id)).not.toContain("d1-pending");
-    const replaced = { ...thumbnail, key: "thumbnails/d1-pending/b.png" };
-    await repository.update("d1-pending", { thumbnail: replaced });
-    await repository.update("d1-pending", { status: "published" });
-    expect(await repository.findById("d1-pending")).toMatchObject({ status: "published", thumbnail: replaced, model: { name: "D1の鶴", presentation } });
-    expect((await repository.list()).map((record) => (record.model as { id: string }).id)).toContain("d1-pending");
-    await repository.delete("d1-pending");
+    await repository.create({ ownerId: "user_a", model: { id: "d1-presented", ...input, presentation } });
+    expect(await repository.findById("d1-presented")).toEqual({ ownerId: "user_a", model: { id: "d1-presented", ...input, presentation } });
+    await repository.delete("d1-presented");
   });
 });
 
 describe("保存時の版", () => {
   it("公開範囲・データ形式・エンジンの版を記録する", async () => {
-    await createD1OrigamiRepository(db).create({ ownerId: "user_a", status: "published", thumbnail: null, model: { id: "versioned", ...input, visibility: "unlisted" } });
+    await createD1OrigamiRepository(db).create({ ownerId: "user_a", model: { id: "versioned", ...input, visibility: "unlisted" } });
     const row = await db.prepare("SELECT visibility, format_version, engine_version FROM models WHERE id = ?").bind("versioned").first();
     expect(row).toEqual({ visibility: "unlisted", format_version: 2, engine_version: ENGINE_VERSION });
   });
 });
 
 describe("APIとD1", () => {
-  it("投稿した作品をサムネイルの確定後にD1から読み、所有者だけが更新できる", async () => {
-    const app = createApp({ repository: withMockFallback(createD1OrigamiRepository(db)), auth, storage: createMemoryThumbnailStorage() });
+  it("投稿した作品をD1から読み、所有者だけが更新できる", async () => {
+    const app = createApp({ repository: withMockFallback(createD1OrigamiRepository(db)), auth });
     const headers = (user: string) => ({ "Content-Type": "application/json", "x-test-user": user });
-    const image = new Uint8Array(8);
-    const created = await app.request("/api/models", { method: "POST", headers: headers("user_a"), body: JSON.stringify({ ...input, thumbnail: { contentType: "image/png", size: image.byteLength } }) });
+    const created = await app.request("/api/models", { method: "POST", headers: headers("user_a"), body: JSON.stringify(input) });
     expect(created.status).toBe(201);
-    const { id, thumbnailUpload } = (await created.json()) as { id: string; thumbnailUpload: { url: string; headers: Record<string, string> } };
-    expect((await app.request(`/api/models/${id}`)).status).toBe(404);
-    expect((await app.request(thumbnailUpload.url, { method: "PUT", headers: thumbnailUpload.headers, body: image })).status).toBe(200);
-    expect((await app.request(`/api/models/${id}/publish`, { method: "POST", headers: headers("user_a") })).status).toBe(200);
+    const { id } = (await created.json()) as { id: string };
     expect(await (await app.request(`/api/models/${id}`)).json()).toEqual({ id, ...input });
-    const listed = (await (await app.request("/api/models")).json()) as { items: { id: string; thumbnailUrl: string | null }[] };
-    expect(listed.items.find((item) => item.id === id)?.thumbnailUrl).toContain(`/thumbnails/${id}/`);
+    expect((await app.request(`/api/models/${id}/thumbnail.png`)).headers.get("content-type")).toBe("image/png");
     expect((await app.request(`/api/models/${id}`, { method: "PUT", headers: headers("user_b"), body: JSON.stringify(input) })).status).toBe(403);
     expect((await app.request(`/api/models/${id}`, { method: "DELETE", headers: headers("user_a") })).status).toBe(204);
   });
 
   it("一覧はD1の作品を新しい順に並べ、そのあとにモックを並べる", async () => {
     const repository = createD1OrigamiRepository(db);
-    await repository.create({ ownerId: "user_a", status: "published", thumbnail: null, model: { id: "d1-old", ...input, name: "古い作品" } });
+    await repository.create({ ownerId: "user_a", model: { id: "d1-old", ...input, name: "古い作品" } });
     await new Promise((resolve) => setTimeout(resolve, 5));
-    await repository.create({ ownerId: "user_a", status: "published", thumbnail: null, model: { id: "d1-new", ...input, name: "新しい作品" } });
+    await repository.create({ ownerId: "user_a", model: { id: "d1-new", ...input, name: "新しい作品" } });
     const app = createApp({ repository: withMockFallback(repository), auth });
     const body = (await (await app.request("/api/models")).json()) as { items: { id: string }[] };
     expect(body.items.map((item) => item.id)).toEqual(["d1-new", "d1-old", "crane", "blank-paper"]);

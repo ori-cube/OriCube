@@ -17,10 +17,8 @@ const parsePage = (value: string | null) => {
 function OrigamiCard({ origami }: { origami: OrigamiSummary }) {
   return <li className={styles.item}>
     <Link to={`/view/${origami.id}`} className={styles.card}>
-      {/* 投稿時に撮影した画像があればそれを、無い作品（モックなど）は手順から作る完成形の図を出す。名前を併記するので装飾扱い */}
-      {origami.thumbnailUrl
-        ? <div className={[styles.thumbnail, styles.photo].join(" ")}><img src={origami.thumbnailUrl} alt="" loading="lazy" width={640} height={640} /></div>
-        : <div className={styles.thumbnail}><OrigamiThumbnail thumbnail={origami.thumbnail} color={origami.color} /></div>}
+      {/* 手順から作る完成形の図を出す。名前を併記するので装飾扱い */}
+      <div className={styles.thumbnail}><OrigamiThumbnail thumbnail={origami.thumbnail} color={origami.color} /></div>
       <div className={styles.body}>
         <h2 className={styles.name}>{origami.name}</h2>
         <p className={styles.steps}>{origami.stepCount > 0 ? `${origami.stepCount}ステップ` : "折り手順なし"}</p>

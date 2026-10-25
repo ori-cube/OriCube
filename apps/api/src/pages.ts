@@ -4,7 +4,6 @@ import { createApp } from "./app";
 import type { AuthVerifier } from "./auth";
 import { createMockOrigamiRepository, type OrigamiRepository } from "./repository";
 import { modelIdSchema, origamiModelSchema } from "./schema";
-import { createMemoryThumbnailStorage, type ThumbnailStorage } from "./storage";
 
 const SITE_NAME = "OriCube";
 const DEFAULT_DESCRIPTION = "折り紙の折り方を3Dで見る・作る";
@@ -53,8 +52,6 @@ interface ServerAppOptions {
   repository?: OrigamiRepository;
   /** 書き込みAPIのログイン検証 */
   auth?: AuthVerifier;
-  /** サムネイルの保存先。og:image にも使う */
-  storage?: ThumbnailStorage;
   /** 公開時のオリジン（例: https://oricube.example）。未指定ならリクエストのオリジンを使う */
   origin?: string;
   /** /assets/* の静的ファイルを返すミドルウェア（実行環境ごとに渡す） */
@@ -69,7 +66,7 @@ interface ServerAppOptions {
  * - 作品ページは作品名・説明をmetaに入れ、存在しない作品・URLはHTTP 404にする
  * - 静的ファイルの配信は実行環境ごとのミドルウェアを assets で受け取る（Node.jsでは index.ts）
  */
-export const createServerApp = ({ template, repository = createMockOrigamiRepository(), auth, storage = createMemoryThumbnailStorage(), origin, assets }: ServerAppOptions) => {
+export const createServerApp = ({ template, repository = createMockOrigamiRepository(), auth, origin, assets }: ServerAppOptions) => {
   renderPage(template, { title: SITE_NAME, description: DEFAULT_DESCRIPTION, url: "/", image: "/" });
   const absolute = (requestUrl: string, path: string) => new URL(path, origin ?? new URL(requestUrl).origin).toString();
   const meta = (requestUrl: string, overrides: Partial<PageMeta> = {}): PageMeta => ({
@@ -84,12 +81,11 @@ export const createServerApp = ({ template, repository = createMockOrigamiReposi
   const app = new Hono();
   if (assets) app.use("/assets/*", assets);
   return app
-    .route("/", createApp({ repository, auth, storage }))
+    .route("/", createApp({ repository, auth }))
     .get("/view/:id", async (c) => {
       const id = modelIdSchema.safeParse(c.req.param("id"));
       const record = id.success ? await repository.findById(id.data) : null;
-      // サムネイルの確定前（pending）の作品は公開しない
-      if (!id.success || record === null || record.status !== "published") return c.html(notFoundPage(c.req.url), 404);
+      if (!id.success || record === null) return c.html(notFoundPage(c.req.url), 404);
       const model = origamiModelSchema.safeParse(record.model);
       if (!model.success) throw new Error(`保存済みの作品 ${id.data} の形式が正しくありません`);
       return c.html(renderPage(template, meta(c.req.url, {
@@ -97,8 +93,8 @@ export const createServerApp = ({ template, repository = createMockOrigamiReposi
         description: model.data.description || DEFAULT_DESCRIPTION,
         // 限定公開の作品は検索結果に出さない
         noindex: model.data.visibility === "unlisted",
-        // サムネイルのない作品（モックなど）はロゴのまま
-        ...(record.thumbnail ? { image: absolute(c.req.url, storage.publicUrl(record.thumbnail.key)) } : {}),
+        // 手順から描いた完成形の画像（/api/models/:id/thumbnail.png）
+        image: absolute(c.req.url, `/api/models/${id.data}/thumbnail.png`),
       })));
     })
     .get("/", (c) => c.html(renderPage(template, meta(c.req.url))))

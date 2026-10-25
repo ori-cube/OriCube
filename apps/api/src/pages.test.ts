@@ -36,7 +36,7 @@ describe("画面の配信", () => {
     expect(page.body).toContain("<title>鶴の折り方 | OriCube</title>");
     expect(page.body).toContain(`<meta property="og:description" content="UIで折った鶴の手順です。" />`);
     expect(page.body).toContain(`<meta property="og:url" content="https://oricube.example/view/crane" />`);
-    expect(page.body).toContain(`<meta property="og:image" content="https://oricube.example/assets/OriCube.png" />`);
+    expect(page.body).toContain(`<meta property="og:image" content="https://oricube.example/api/models/crane/thumbnail.png" />`);
     expect(page.body).toContain(`<div id="root"></div>`);
   });
 
@@ -94,18 +94,12 @@ describe("静的ファイル", () => {
 
 describe("投稿した作品のページ", () => {
   const model = { id: "posted", name: "投稿した鶴", description: "", color: "#ed7070", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [{ polygon: [[-50, -50, 0], [50, -50, 0], [50, 50, 0], [-50, 50, 0]], layer: 0 }] } };
-  const thumbnail = { key: "thumbnails/posted/a.png", contentType: "image/png" as const, size: 8 };
-
-  it("サムネイルがあれば og:image に使う", async () => {
-    const repository = createMemoryOrigamiRepository([{ ownerId: "user_a", status: "published", thumbnail, model }]);
-    const res = await createServerApp({ template, origin: "https://oricube.example", repository }).request("/view/posted");
+  it("手順から描いた完成形の画像を og:image に使う", async () => {
+    const repository = createMemoryOrigamiRepository([{ ownerId: "user_a", model }]);
+    const app = createServerApp({ template, origin: "https://oricube.example", repository });
+    const res = await app.request("/view/posted");
     expect(res.status).toBe(200);
-    expect(await res.text()).toContain(`<meta property="og:image" content="https://oricube.example/api/mock-storage/objects/thumbnails/posted/a.png" />`);
-  });
-
-  it("公開前（pending）の作品は404のページにする", async () => {
-    const repository = createMemoryOrigamiRepository([{ ownerId: "user_a", status: "pending", thumbnail, model }]);
-    const res = await createServerApp({ template, repository }).request("/view/posted");
-    expect(res.status).toBe(404);
+    expect(await res.text()).toContain(`<meta property="og:image" content="https://oricube.example/api/models/posted/thumbnail.png" />`);
+    expect((await app.request("/api/models/posted/thumbnail.png")).headers.get("content-type")).toBe("image/png");
   });
 });

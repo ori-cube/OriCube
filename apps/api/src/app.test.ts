@@ -61,8 +61,8 @@ describe("GET /api/models", () => {
     const body = await res.json() as ListBody;
     expect(body).toMatchObject({ total: 2, page: 1, totalPages: 1 });
     expect(body.items.map((item) => item.id)).toEqual(["crane", "blank-paper"]);
-    // 鶴は完成形の向きに整えるステップを含む。撮影したサムネイルの無いモックは thumbnailUrl が null
-    expect(body.items[0]).toMatchObject({ name: "鶴", color: "#ed7070", stepCount: 22, thumbnailUrl: null });
+    // 鶴は完成形の向きに整えるステップを含む
+    expect(body.items[0]).toMatchObject({ name: "鶴", color: "#ed7070", stepCount: 22 });
     expect(body.items[0].thumbnail.faces.length).toBeGreaterThan(0);
     expect(body.items[0]).not.toHaveProperty("procedure");
   });
@@ -88,8 +88,8 @@ describe("GET /api/models", () => {
   it("投稿した作品を新しい順に先頭へ並べる", async () => {
     const repository = seed(2);
     const model = { name: "新作", description: "", color: "#ffffff", procedure: { version: 2 as const, size: 100, steps: [], history: [], finalBoards: [] }, visibility: "public" as const };
-    await repository.create({ ownerId: "user_1", status: "published", thumbnail: null, model: { id: "new1", ...model } });
-    await repository.create({ ownerId: "user_1", status: "published", thumbnail: null, model: { id: "new2", ...model } });
+    await repository.create({ ownerId: "user_1", model: { id: "new1", ...model } });
+    await repository.create({ ownerId: "user_1", model: { id: "new2", ...model } });
     await repository.delete("m0");
     const body = await list(createApp({ repository }), "/api/models");
     expect(body.items.map((item) => item.id)).toEqual(["new2", "new1", "m1"]);
@@ -106,7 +106,7 @@ describe("GET /api/models", () => {
   it("形式が正しくない作品は一覧から除いて記録する", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const repository = seed(1);
-    await repository.create({ ownerId: "user_1", status: "published", thumbnail: null, model: { id: "broken" } as never });
+    await repository.create({ ownerId: "user_1", model: { id: "broken" } as never });
     const body = await list(createApp({ repository }), "/api/models");
     expect(body.items.map((item) => item.id)).toEqual(["m0"]);
     expect(error).toHaveBeenCalled();

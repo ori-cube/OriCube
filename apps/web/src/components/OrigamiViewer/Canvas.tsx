@@ -2,7 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { FixBoardV2, QuaternionV2, ViewerStep } from "@oricube/engine";
-import { createViewerScene, type CameraPreset, type CaptureOptions } from "./scene";
+import { createViewerScene, type CameraPreset } from "./scene";
 import styles from "./Canvas.module.css";
 
 export interface OrigamiCanvasProps {
@@ -21,10 +21,8 @@ export interface OrigamiCanvasProps {
   label: string;
 }
 
-/** 親から呼べる操作。サムネイルの撮影に使う */
+/** 親から呼べる操作。投稿画面でサムネイルの向きを決めるのに使う */
 export interface OrigamiCanvasHandle {
-  /** 今の視点で、ビュー中央の正方形と同じ範囲を画像にする。3D表示が使えなければ失敗する */
-  capture(options: CaptureOptions): Promise<Blob>;
   /** 作品を画面内で回す（ラジアン、正で反時計回り）。resetKey が変わると元に戻る */
   rotateModel(angle: number): void;
   /** 今の作品の向き。3D表示が使えなければ null */
@@ -39,10 +37,9 @@ export const OrigamiCanvas = forwardRef<OrigamiCanvasHandle, OrigamiCanvasProps>
   const sceneRef = useRef<ReturnType<typeof createViewerScene>>();
   const [failed, setFailed] = useState(false);
   useImperativeHandle(ref, () => ({
-    capture: (options) => sceneRef.current && !failed ? sceneRef.current.capture(options) : Promise.reject(new Error("3D表示を読み込めていません")),
     rotateModel: (angle) => sceneRef.current?.rotateModel(angle),
     getModelRotation: () => sceneRef.current?.getModelRotation() ?? null,
-  }), [failed]);
+  }), []);
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;

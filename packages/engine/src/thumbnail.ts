@@ -38,7 +38,7 @@ const polygonNormal = (polygon: PointV2[]) => {
  * - 閲覧画面の最終状態（仕上げ角度・最後の向き・完成形を見せる向き）を、カメラ正面から平行投影する
  * - 頂点の並びが紙の表裏を表すため、投影後の向きで作品の色と裏面の白を分ける
  * - 重なりは面の重心の奥行きで並べる簡易的な描画順なので、立体的に交差する面は近似になる
- * - サムネイル画像の保存ができるまで、一覧で軽く表示するために使う
+ * - 一覧の SVG（apps/web）と、OGP 用の PNG（apps/api の thumbnailImage.ts）の元になる
  */
 export const createProcedureThumbnail = (procedure: ProcedureV2, timeline = createViewerTimeline(procedure)): ProcedureThumbnail => {
   const { finalBoards, finalViewFront, finalRotation } = timeline;

@@ -18,11 +18,6 @@ export const models = sqliteTable(
     color: text("color").notNull(),
     procedure: text("procedure", { mode: "json" }).notNull(),
     stepDescriptions: text("step_descriptions", { mode: "json" }).$type<string[]>(),
-    /** pending はサムネイルの確定前で、取得・一覧に出さない */
-    status: text("status", { enum: ["pending", "published"] }).notNull().default("published"),
-    thumbnailKey: text("thumbnail_key"),
-    thumbnailContentType: text("thumbnail_content_type", { enum: ["image/png", "image/webp"] }),
-    thumbnailSize: integer("thumbnail_size"),
     presentation: text("presentation", { mode: "json" }).$type<PresentationV2>(),
     visibility: text("visibility", { enum: ["public", "unlisted"] }).notNull().default("public"),
     formatVersion: integer("format_version").notNull().default(2),
@@ -33,6 +28,5 @@ export const models = sqliteTable(
   (table) => [
     index("models_owner_id_idx").on(table.ownerId),
     index("models_visibility_created_at_idx").on(table.visibility, table.createdAt),
-    index("models_status_created_at_idx").on(table.status, table.createdAt),
   ]
 );
