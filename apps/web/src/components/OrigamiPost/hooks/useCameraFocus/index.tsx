@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { LayeredBoard, computeBoardsCenter } from "@oricube/engine";
 import { easeInOutCubic } from "../../utils/easeInOutCubic";
 
