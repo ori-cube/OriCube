@@ -17,6 +17,7 @@
     "build:app": "pnpm --filter @oricube/web build && pnpm --filter @oricube/api build",
     "start:app": "pnpm --filter @oricube/api start",
     "smoke:app": "node scripts/smoke-app.mjs",
+    "smoke:worker": "node scripts/smoke-worker.mjs",
     "dev:worker": "pnpm --filter @oricube/web build && pnpm --filter @oricube/api run dev:worker",
     "deploy:worker": "pnpm --filter @oricube/web build && pnpm --filter @oricube/api run deploy:worker",
     "prod": "dotenv -e .env.production -- next dev",

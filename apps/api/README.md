@@ -18,7 +18,10 @@ pnpm dev:web   # http://localhost:5173 （/api を上のAPIへproxy）
 ```sh
 pnpm dev:worker      # 画面をビルドして wrangler dev（workerd）で起動
 pnpm deploy:worker   # 画面をビルドして wrangler deploy（Cloudflare のログインが必要）
+pnpm smoke:worker    # ビルド済みの画面と Worker を wrangler dev（workerd）で起動して確かめる（CI でも実行）
 ```
+
+- Workers はモジュールの読み込み時（グローバルスコープ）に乱数・非同期処理を使えない。`app.ts` は型のためにモジュールの読み込み時に `createApp()` するので、アプリや保存先を作る処理で乱数や鍵を作らず、最初に使うときに作る
 
 - `/assets/*` は Worker を通さずに静的配信し、それ以外（API・作品ページのOGP・404）は Worker が返す（`run_worker_first`）。
 - `index.html` は `ASSETS` バインディングから読み、isolate ごとに1回だけアプリを組み立てる。
