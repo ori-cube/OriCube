@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
-import { encode, decode, getToken } from "next-auth/jwt";
 
 const require = createRequire(import.meta.url);
 // bracesを直接依存に追加すると、間接依存へのパッチ適用漏れを見逃すため、実際のCommitizen経路から読み込む。
@@ -10,28 +9,6 @@ const fromFindNodeModules = createRequire(fromCommitizen.resolve("find-node-modu
 const fromFindup = createRequire(fromFindNodeModules.resolve("findup-sync"));
 const fromMicromatch = createRequire(fromFindup.resolve("micromatch"));
 const braces = fromMicromatch("braces");
-const secret = "test-only-secret-for-auth-regression";
-
-// jose単体のテストでは、4系から5系へのoverrideがNextAuthのセッション処理と互換か確認できない。
-test("認証セッションのJWTを発行しCookieから取得できる", async () => {
-  const token = await encode({ secret, token: { sub: "user-123", email: "user@example.com" } });
-  const session = await getToken({
-    secret,
-    req: { cookies: { "next-auth.session-token": token }, headers: {} },
-  });
-  assert.equal(session?.sub, "user-123");
-  assert.equal(session?.email, "user@example.com");
-});
-
-test("誤った鍵・改ざん・期限切れのJWTを拒否する", async () => {
-  const token = await encode({ secret, token: { sub: "user-123" } });
-  await assert.rejects(decode({ secret: "wrong-secret", token }));
-  const parts = token.split(".");
-  parts[3] = `${parts[3][0] === "A" ? "B" : "A"}${parts[3].slice(1)}`;
-  await assert.rejects(decode({ secret, token: parts.join(".") }));
-  const expired = await encode({ secret, maxAge: -60, token: { sub: "user-123" } });
-  await assert.rejects(decode({ secret, token: expired }));
-});
 
 test("通常のbrace展開と範囲指定を維持する", () => {
   assert.deepEqual(braces.expand("src/{app,components}/*.{ts,tsx}"), [

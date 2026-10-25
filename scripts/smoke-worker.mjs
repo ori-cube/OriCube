@@ -62,7 +62,7 @@ try {
   console.error(error);
   failures.push("起動");
 } finally {
-  try { process.kill(-worker.pid, "SIGTERM"); } catch {}
+  try { process.kill(-worker.pid, "SIGTERM"); } catch { /* すでに終了している */ }
   rmSync(state, { recursive: true, force: true });
 }
 

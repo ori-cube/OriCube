@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ComponentType } from "react";
 import * as Icons from "./index";
 import type { IconProps } from "./Icon.types";

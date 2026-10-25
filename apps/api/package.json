@@ -29,6 +29,8 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/three": "^0.169.0",
+    "three": "^0.169.0",
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vite": "^7.3.5",

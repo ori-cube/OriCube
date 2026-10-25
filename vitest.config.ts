@@ -1,11 +1,4 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
-
-const dirname =
-  typeof __dirname !== "undefined"
-    ? __dirname
-    : path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
@@ -17,9 +10,8 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "jsdom",
-          setupFiles: ["./src/test/setup.ts"],
+          setupFiles: ["./apps/web/src/test/setup.ts"],
           include: [
-            "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
             "packages/engine/src/**/*.{test,spec}.ts",
             "apps/web/src/**/*.{test,spec}.{ts,tsx}",
           ],
@@ -41,14 +33,9 @@ export default defineConfig({
       exclude: [
         "node_modules/",
         ".storybook/",
-        "src/test/",
+        "apps/web/src/test/",
         "**/*.stories.{js,ts,jsx,tsx}",
       ],
-    },
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(dirname, "./src"),
     },
   },
 });
