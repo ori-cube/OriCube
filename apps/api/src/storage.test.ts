@@ -14,6 +14,21 @@ const key = thumbnailKey("model-1", "image/png");
 const put = (storage: ReturnType<typeof createMemoryThumbnailStorage>, url: string, headers: Record<string, string> = { "Content-Type": "image/png" }, body: Uint8Array = image) =>
   createApp({ storage }).request(url, { method: "PUT", headers, body });
 
+describe("Workers のグローバルスコープ", () => {
+  it("アプリと保存先を作るときに乱数・鍵を作らない（app.ts はモジュールの読み込み時に createApp する）", () => {
+    const random = vi.spyOn(crypto, "getRandomValues");
+    const importKey = vi.spyOn(crypto.subtle, "importKey");
+    createApp();
+    createMemoryThumbnailStorage();
+    createR2ThumbnailStorage(createMemoryObjectStore(), undefined);
+    createR2ThumbnailStorage(createMemoryObjectStore(), secret);
+    expect(random).not.toHaveBeenCalled();
+    expect(importKey).not.toHaveBeenCalled();
+    random.mockRestore();
+    importKey.mockRestore();
+  });
+});
+
 describe("署名付きのアップロード先", () => {
   it("署名どおりの画像を置き、形式とサイズを返す", async () => {
     const storage = createMemoryThumbnailStorage();
@@ -53,6 +68,14 @@ describe("署名付きのアップロード先", () => {
     expect((await put(storage, url, undefined, image.slice(1))).status).toBe(400);
   });
 
+  it("メモリ上の置き場所は、キーの辞書順に limit 件ずつ返し、cursor から続ける", async () => {
+    const objects = createMemoryObjectStore();
+    for (const key of ["thumbnails/b", "thumbnails/a", "thumbnails/c", "other/x"]) await objects.put(key, new ArrayBuffer(1), { httpMetadata: { contentType: "image/png" } });
+    const first = await objects.list({ prefix: "thumbnails/", limit: 2 });
+    expect(first).toMatchObject({ objects: [{ key: "thumbnails/a" }, { key: "thumbnails/b" }], truncated: true, cursor: "thumbnails/b" });
+    expect(await objects.list({ prefix: "thumbnails/", cursor: first.cursor, limit: 2 })).toMatchObject({ objects: [{ key: "thumbnails/c" }], truncated: false });
+  });
+
   it("サムネイルのキーの形でないパスは読まない", async () => {
     const objects = createMemoryObjectStore();
     await objects.put("secret.txt", new ArrayBuffer(1), { httpMetadata: { contentType: "image/png" } });
@@ -85,6 +108,20 @@ describe("R2（wrangler のローカル環境）", () => {
   }, 60_000);
   afterAll(async () => {
     await proxy?.dispose();
+  });
+
+  it("R2 に置いた画像を一覧でき、続きは cursor で読む", async () => {
+    const storage = createR2ThumbnailStorage(proxy.env.THUMBNAILS, secret);
+    const app = createApp({ storage });
+    const keys = [thumbnailKey("list-a", "image/png"), thumbnailKey("list-b", "image/png")];
+    for (const key of keys) {
+      const { url } = await storage.createUpload(key, spec);
+      expect((await app.request(url, { method: "PUT", headers: { "Content-Type": "image/png" }, body: image })).status).toBe(200);
+    }
+    const { objects } = await storage.list();
+    expect(objects.map((object) => object.key)).toEqual(expect.arrayContaining(keys));
+    expect(objects.every((object) => object.uploaded instanceof Date)).toBe(true);
+    for (const key of keys) await storage.delete(key);
   });
 
   it("投稿・アップロード・公開・配信・削除が R2 で通る", async () => {

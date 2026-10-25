@@ -37,5 +37,7 @@
       "simple": { "limit": 30, "period": 60 }
     }
   ],
+  // 公開前のまま残った作品と、使われていないサムネイルの掃除（src/cleanup.ts）。毎日 03:17 UTC（12:17 JST）
+  "triggers": { "crons": ["17 3 * * *"] },
   "observability": { "enabled": true }
 }

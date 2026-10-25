@@ -25,6 +25,8 @@ export interface ThumbnailStorage {
   /** 置かれた画像の形式とサイズ。無ければ null */
   head(key: string): Promise<ThumbnailSpec | null>;
   delete(key: string): Promise<void>;
+  /** 置かれた画像を順に返す（掃除用）。続きがあれば cursor を返す */
+  list(cursor?: string): Promise<{ objects: { key: string; uploaded: Date }[]; cursor?: string }>;
   /** 画像を表示するURL。同一オリジンのパスか、公開バケットの絶対URL */
   publicUrl(key: string): string;
   /** アップロード先と画像の配信のルート。/api の下に追加する */
@@ -49,6 +51,7 @@ export interface ObjectStore {
   get(key: string): Promise<(StoredObject & { body: ReadableStream | ArrayBuffer }) | null>;
   head(key: string): Promise<StoredObject | null>;
   delete(key: string): Promise<void>;
+  list(options: { prefix: string; cursor?: string; limit?: number }): Promise<{ objects: { key: string; uploaded: Date }[]; truncated: boolean; cursor?: string }>;
 }
 
 interface StoredObject {
@@ -57,12 +60,12 @@ interface StoredObject {
 }
 
 /** メモリ上の ObjectStore。Workers では isolate ごとのメモリなので永続化されない */
-export const createMemoryObjectStore = (): ObjectStore => {
-  const objects = new Map<string, { body: ArrayBuffer; contentType: string }>();
+export const createMemoryObjectStore = ({ now = () => Date.now() }: { now?: () => number } = {}): ObjectStore => {
+  const objects = new Map<string, { body: ArrayBuffer; contentType: string; uploaded: Date }>();
   const meta = (object: { body: ArrayBuffer; contentType: string }) => ({ size: object.body.byteLength, httpMetadata: { contentType: object.contentType } });
   return {
     put: async (key, body, { httpMetadata }) => {
-      objects.set(key, { body, contentType: httpMetadata.contentType });
+      objects.set(key, { body, contentType: httpMetadata.contentType, uploaded: new Date(now()) });
     },
     get: async (key) => {
       const object = objects.get(key);
@@ -74,6 +77,13 @@ export const createMemoryObjectStore = (): ObjectStore => {
     },
     delete: async (key) => {
       objects.delete(key);
+    },
+    // R2 と同じく、キーの辞書順に limit 件ずつ返し、cursor（最後のキー）から続ける
+    list: async ({ prefix, cursor, limit = 1000 }) => {
+      const keys = [...objects.keys()].filter((key) => key.startsWith(prefix) && (!cursor || key > cursor)).sort();
+      const page = keys.slice(0, limit);
+      const truncated = keys.length > limit;
+      return { objects: page.map((key) => ({ key, uploaded: objects.get(key)!.uploaded })), truncated, ...(truncated ? { cursor: page.at(-1) } : {}) };
     },
   };
 };
@@ -97,8 +107,12 @@ export const isThumbnailKeyOf = (modelId: string, key: string) => THUMBNAIL_KEY_
 
 interface SignedUploadStorageOptions {
   objects: ObjectStore;
-  /** アップロード先の署名に使う秘密の値。本番は wrangler secret で設定する（32文字以上） */
-  secret: string;
+  /**
+   * アップロード先の署名に使う秘密の値。本番は wrangler secret で設定する（32文字以上）
+   *
+   * 関数なら最初に署名するときに1回だけ呼ぶ。Workers はモジュールの読み込み時（グローバルスコープ）に乱数を作れないため、乱数の値は関数で渡す
+   */
+  secret: string | (() => string);
   /** /api の下に置くパス */
   mount: string;
   now?: () => number;
@@ -113,10 +127,12 @@ interface SignedUploadStorageOptions {
  * 署名を Worker が確かめるので、S3 互換 API の鍵や追加の依存は要らない。画像は `GET /api<mount>/objects/*` で返す
  */
 export const createSignedUploadStorage = ({ objects, secret, mount, now = () => Date.now() }: SignedUploadStorageOptions): ThumbnailStorage => {
-  const signingKey = crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+  // 鍵は最初に使うときに作る（Workers はグローバルスコープでの非同期処理・乱数を許さず、app.ts はモジュールの読み込み時に createApp する）
+  let signingKey: ReturnType<typeof crypto.subtle.importKey> | undefined;
+  const getSigningKey = () => signingKey ??= crypto.subtle.importKey("raw", encoder.encode(typeof secret === "function" ? secret() : secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
   const sign = async (ticket: UploadTicket) => {
     const payload = toBase64Url(encoder.encode(JSON.stringify(ticket)));
-    const signature = new Uint8Array(await crypto.subtle.sign("HMAC", await signingKey, encoder.encode(payload)));
+    const signature = new Uint8Array(await crypto.subtle.sign("HMAC", await getSigningKey(), encoder.encode(payload)));
     return `${payload}.${toBase64Url(signature)}`;
   };
   /** 署名が正しく期限内なら中身を返す。比較は crypto.subtle.verify に任せる（時間差で漏らさない） */
@@ -124,7 +140,7 @@ export const createSignedUploadStorage = ({ objects, secret, mount, now = () => 
     const [payload, signature, ...rest] = token.split(".");
     if (!payload || !signature || rest.length) return null;
     try {
-      if (!(await crypto.subtle.verify("HMAC", await signingKey, fromBase64Url(signature), encoder.encode(payload)))) return null;
+      if (!(await crypto.subtle.verify("HMAC", await getSigningKey(), fromBase64Url(signature), encoder.encode(payload)))) return null;
       const ticket = uploadTicketSchema.safeParse(JSON.parse(new TextDecoder().decode(fromBase64Url(payload))));
       return ticket.success && ticket.data.expiresAt >= now() ? ticket.data : null;
     } catch {
@@ -168,10 +184,17 @@ export const createSignedUploadStorage = ({ objects, secret, mount, now = () => 
       return object && contentType ? { contentType, size: object.size } : null;
     },
     delete: (key) => objects.delete(key),
+    list: async (cursor) => {
+      const page = await objects.list({ prefix: "thumbnails/", ...(cursor ? { cursor } : {}) });
+      return { objects: page.objects.map(({ key, uploaded }) => ({ key, uploaded })), ...(page.truncated && page.cursor ? { cursor: page.cursor } : {}) };
+    },
     publicUrl: (key) => `/api${mount}/objects/${key}`,
     routes: new Hono().route(mount, routes),
   };
 };
+
+/** インスタンスごとの使い捨ての秘密の値。署名するときに1回だけ作る */
+const randomSecret = () => toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
 
 /** 署名の秘密の値として受け付ける最短の長さ */
 export const MIN_UPLOAD_SECRET_LENGTH = 32;
@@ -188,7 +211,7 @@ export const createR2ThumbnailStorage = (bucket: ObjectStore, secret: string | u
   if (secret && secret.length >= MIN_UPLOAD_SECRET_LENGTH) return createSignedUploadStorage({ objects: bucket, secret, mount: "/storage" });
   console.error(`THUMBNAIL_UPLOAD_SECRET が未設定か${MIN_UPLOAD_SECRET_LENGTH}文字未満のため、サムネイルのアップロードを止めています`);
   // 読み出しだけに使うので、署名の値は使い捨ての乱数にする（このトークンは誰にも渡さない）
-  const storage = createSignedUploadStorage({ objects: bucket, secret: toBase64Url(crypto.getRandomValues(new Uint8Array(32))), mount: "/storage" });
+  const storage = createSignedUploadStorage({ objects: bucket, secret: randomSecret, mount: "/storage" });
   return {
     ...storage,
     createUpload: async () => {
@@ -206,8 +229,8 @@ export const createR2ThumbnailStorage = (bucket: ObjectStore, secret: string | u
  */
 export const createMemoryThumbnailStorage = ({ now }: { now?: () => number } = {}): ThumbnailStorage =>
   createSignedUploadStorage({
-    objects: createMemoryObjectStore(),
-    secret: toBase64Url(crypto.getRandomValues(new Uint8Array(32))),
+    objects: createMemoryObjectStore({ now }),
+    secret: randomSecret,
     mount: "/mock-storage",
     now,
   });

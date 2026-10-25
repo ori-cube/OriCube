@@ -38,6 +38,8 @@ export interface OrigamiRepository {
   list(): Promise<OrigamiRecord[]>;
   /** その人の作品を、公開前（pending）も含めて新しい順に返す */
   listByOwner(ownerId: string): Promise<OrigamiRecord[]>;
+  /** before より前に作られ、公開されないまま（pending）の作品を古い順に最大 limit 件返す（掃除用） */
+  listPendingBefore(before: Date, limit: number): Promise<OrigamiRecord[]>;
   create(record: { ownerId: string; status: OrigamiStatus; thumbnail: ThumbnailRecord | null; model: OrigamiModel }): Promise<void>;
   update(id: string, patch: OrigamiRecordPatch): Promise<void>;
   delete(id: string): Promise<void>;
@@ -45,13 +47,13 @@ export interface OrigamiRepository {
 
 type SeedRecord = Pick<OrigamiRecord, "ownerId" | "model"> & Partial<OrigamiRecord>;
 
-export const createMemoryOrigamiRepository = (seed: SeedRecord[] = []): OrigamiRepository => {
-  const records = new Map<string, OrigamiRecord & { order: number }>();
+export const createMemoryOrigamiRepository = (seed: SeedRecord[] = [], { now = () => Date.now() }: { now?: () => number } = {}): OrigamiRepository => {
+  const records = new Map<string, OrigamiRecord & { order: number; createdAt: number }>();
   // seed は渡した順に並べ、投稿した作品はその前に新しい順で並べる。seed は既定で公開済み・サムネイルなし
   let lastOrder = 0;
   seed.forEach((record, index) => {
     const { id } = record.model as { id: string };
-    records.set(id, { status: "published", thumbnail: null, ...record, order: -index });
+    records.set(id, { status: "published", thumbnail: null, ...record, order: -index, createdAt: 0 });
   });
   const toRecord = ({ ownerId, status, thumbnail, model }: OrigamiRecord): OrigamiRecord => ({ ownerId, status, thumbnail, model });
   return {
@@ -60,9 +62,11 @@ export const createMemoryOrigamiRepository = (seed: SeedRecord[] = []): OrigamiR
       return record ? toRecord(record) : null;
     },
     list: async () => [...records.values()].filter((record) => record.status === "published").sort((left, right) => right.order - left.order).map(toRecord),
+    listPendingBefore: async (before, limit) =>
+      [...records.values()].filter((record) => record.status === "pending" && record.createdAt < before.getTime()).sort((left, right) => left.order - right.order).slice(0, limit).map(toRecord),
     listByOwner: async (ownerId) => [...records.values()].filter((record) => record.ownerId === ownerId).sort((left, right) => right.order - left.order).map(toRecord),
     create: async (record) => {
-      records.set(record.model.id, { ...record, order: ++lastOrder });
+      records.set(record.model.id, { ...record, order: ++lastOrder, createdAt: now() });
     },
     update: async (id, patch) => {
       const record = records.get(id);

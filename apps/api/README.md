@@ -18,7 +18,10 @@ pnpm dev:web   # http://localhost:5173 （/api を上のAPIへproxy）
 ```sh
 pnpm dev:worker      # 画面をビルドして wrangler dev（workerd）で起動
 pnpm deploy:worker   # 画面をビルドして wrangler deploy（Cloudflare のログインが必要）
+pnpm smoke:worker    # ビルド済みの画面と Worker を wrangler dev（workerd）で起動して確かめる（CI でも実行）
 ```
+
+- Workers はモジュールの読み込み時（グローバルスコープ）に乱数・非同期処理を使えない。`app.ts` は型のためにモジュールの読み込み時に `createApp()` するので、アプリや保存先を作る処理で乱数や鍵を作らず、最初に使うときに作る
 
 - `/assets/*` は Worker を通さずに静的配信し、それ以外（API・作品ページのOGP・404）は Worker が返す（`run_worker_first`）。
 - `index.html` は `ASSETS` バインディングから読み、isolate ごとに1回だけアプリを組み立てる。
@@ -96,7 +99,7 @@ DBと画像の保存先は単一トランザクションにならないため、
 - 署名の秘密の値 `THUMBNAIL_UPLOAD_SECRET`（32文字以上）が無い・短いときは、投稿（アップロード先の発行）だけを失敗させ、保存済みの画像は返す
 - 一覧は撮影した画像があればそれを、無い作品（モックなど）は手順から作る完成形の図を表示する。作品ページの og:image はサムネイル、無い作品はロゴ
 - 公開後の撮り直し: `thumbnail-upload` で新しいキーへ置き、`PUT /api/models/:id/thumbnail` で差し替える。キーはその作品の `thumbnailKey` の形だけを受け付ける（アップロード先は所有者にだけ発行する）
-- 未対応: `pending` のまま残った作品・画像の定期的な掃除
+- 掃除（`src/cleanup.ts`）: Worker の Cron Trigger（`wrangler.jsonc` の `triggers.crons`、毎日 03:17 UTC）で、作られてから24時間を過ぎても公開されない作品をサムネイルごと消し、置かれてから24時間を過ぎてどの作品の今のサムネイルでもない画像（撮り直しで作り直したアップロード先・差し替えなかった撮り直し・削除時に消せなかった画像）を消す。1回の量には上限があり、残りは次の回に回す。D1 と R2 が無い環境では何もしない
 
 初回は R2 のバケットと署名の秘密の値を用意する。
 

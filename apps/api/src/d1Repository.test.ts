@@ -51,6 +51,19 @@ describe("D1のスキーマ", () => {
 });
 
 describe("createD1OrigamiRepository", () => {
+  it("指定した時刻より前の公開前の作品だけを、古い順に返す", async () => {
+    const repository = createD1OrigamiRepository(db);
+    await repository.create({ ownerId: "owner_p", status: "pending", thumbnail: null, model: { id: "p-old", ...input } });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await repository.create({ ownerId: "owner_p", status: "pending", thumbnail: null, model: { id: "p-new", ...input } });
+    await repository.create({ ownerId: "owner_p", status: "published", thumbnail: null, model: { id: "p-done", ...input } });
+    const ids = (records: { model: unknown }[]) => records.map((record) => (record.model as { id: string }).id);
+    expect(ids(await repository.listPendingBefore(new Date(Date.now() + 1000), 10))).toEqual(["p-old", "p-new"]);
+    expect(ids(await repository.listPendingBefore(new Date(Date.now() + 1000), 1))).toEqual(["p-old"]);
+    expect(ids(await repository.listPendingBefore(new Date(0), 10))).toEqual([]);
+    for (const id of ["p-old", "p-new", "p-done"]) await repository.delete(id);
+  });
+
   it("所有者ごとの作品を、公開前も含めて新しい順に返す", async () => {
     const repository = createD1OrigamiRepository(db);
     await repository.create({ ownerId: "owner_x", status: "published", thumbnail: null, model: { id: "x-old", ...input } });

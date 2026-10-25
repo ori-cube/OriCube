@@ -1,5 +1,6 @@
 import type { ExecutionContext } from "hono";
 import { verifierFromEnv } from "./auth";
+import { cleanupStaleUploads } from "./cleanup";
 import { createD1OrigamiRepository, type D1Database } from "./d1Repository";
 import { createServerApp } from "./pages";
 import type { RateLimiter } from "./rateLimit";
@@ -45,5 +46,13 @@ const getApp = async (request: Request, env: Env) => {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return (await getApp(request, env)).fetch(request, env, ctx);
+  },
+  /** wrangler.jsonc の triggers.crons で1日1回、公開前のまま残った作品と使われていない画像を消す */
+  async scheduled(_controller: unknown, env: Env, ctx: ExecutionContext) {
+    // 保存先が D1・R2 でなければ（メモリ上の実装は isolate ごとに消える）掃除するものがない
+    if (!env.DB || !env.THUMBNAILS) return;
+    const repository = createD1OrigamiRepository(env.DB);
+    const storage = createR2ThumbnailStorage(env.THUMBNAILS, env.THUMBNAIL_UPLOAD_SECRET);
+    ctx.waitUntil(cleanupStaleUploads({ repository, storage }).then((result) => console.log("公開前の作品と使われていない画像を掃除しました", result)));
   },
 };
