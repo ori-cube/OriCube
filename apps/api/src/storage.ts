@@ -92,6 +92,9 @@ type UploadTicket = z.infer<typeof uploadTicketSchema>;
 /** サムネイルのキー。thumbnailKey が作る形だけを受け付け、それ以外のパスは読まない */
 const THUMBNAIL_KEY_PATTERN = /^thumbnails\/[A-Za-z0-9_-]{1,64}\/[0-9a-f-]{36}\.(png|webp)$/;
 
+/** key がその作品のために thumbnailKey で作ったキーの形か */
+export const isThumbnailKeyOf = (modelId: string, key: string) => THUMBNAIL_KEY_PATTERN.test(key) && key.startsWith(`thumbnails/${modelId}/`);
+
 interface SignedUploadStorageOptions {
   objects: ObjectStore;
   /** アップロード先の署名に使う秘密の値。本番は wrangler secret で設定する（32文字以上） */

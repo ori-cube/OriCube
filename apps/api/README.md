@@ -57,9 +57,11 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 | `GET /api/models` | 公開（`public`）かつ公開済み（`published`）の作品の一覧（新しい順・1ページ24件）。限定公開と公開前の作品は載らない。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、撮影したサムネイルの URL（`thumbnailUrl`、無ければ null）と完成形の図（`createProcedureThumbnail`）を付ける |
 | `GET /api/models/:id` | 作品の取得。保存済みの値も `origamiModelSchema` で検証してから返す。公開前（pending）は404 |
 | `POST /api/models` | 作品の投稿（ログイン必須）。本文は作品と `thumbnail: { contentType, size }`。IDはサーバーで採番し、所有者はClerkで検証したユーザーID。`pending` で作り、サムネイルのアップロード先（`thumbnailUpload`）を返す |
-| `POST /api/models/:id/thumbnail-upload` | 公開前の作品のアップロード先を作り直す（ログイン必須・所有者のみ。期限切れ・撮り直し） |
+| `POST /api/models/:id/thumbnail-upload` | サムネイルのアップロード先を作る（ログイン必須・所有者のみ）。公開前の作品は作り直し（期限切れ・撮り直し）で、記録も新しいキーにする。公開済みの作品は再編集での撮り直しで、`PUT /thumbnail` で差し替えるまで今のサムネイルのまま |
 | `POST /api/models/:id/publish` | 申告どおりのサムネイルが置かれていれば公開する（ログイン必須・所有者のみ）。無ければ409。公開済みなら何もせず200 |
-| `PUT /api/models/:id` | 作品の更新（ログイン必須・所有者のみ） |
+| `GET /api/me/models` | 自分の作品の一覧（ログイン必須）。限定公開・公開前（`pending`）も含め、新しい順。各作品に `visibility`・`status` を付ける |
+| `PUT /api/models/:id` | 作品の更新（ログイン必須・所有者のみ）。同じIDで上書きし、サムネイルは変えない |
+| `PUT /api/models/:id/thumbnail` | 公開済みの作品のサムネイルを差し替える（ログイン必須・所有者のみ）。本文は `{ key }`（`thumbnail-upload` が返した `thumbnailKey`）。置かれていなければ409。古い画像は消す |
 | `DELETE /api/models/:id` | 作品の削除（ログイン必須・所有者のみ）。サムネイルも消す |
 | `PUT /api/storage/uploads/:token`・`GET /api/storage/objects/*` | サムネイルのアップロード先（署名付き）と画像の配信（R2）。R2 が無い環境では `/api/mock-storage/*`（メモリ上） |
 | `GET /view/:id` | SPAの `index.html` に作品名・説明のタイトルとOGPを入れて返す。存在しない作品はHTTP 404 |
@@ -92,7 +94,8 @@ DBと画像の保存先は単一トランザクションにならないため、
 - 画像は公開バケットにせず、Worker が `/api/storage/objects/thumbnails/...` で返す（`thumbnailKey` の形のキーだけ。`Cache-Control: immutable`）
 - 署名の秘密の値 `THUMBNAIL_UPLOAD_SECRET`（32文字以上）が無い・短いときは、投稿（アップロード先の発行）だけを失敗させ、保存済みの画像は返す
 - 一覧は撮影した画像があればそれを、無い作品（モックなど）は手順から作る完成形の図を表示する。作品ページの og:image はサムネイル、無い作品はロゴ
-- 未対応: `pending` のまま残った作品・画像の定期的な掃除、公開後のサムネイルの差し替え
+- 公開後の撮り直し: `thumbnail-upload` で新しいキーへ置き、`PUT /api/models/:id/thumbnail` で差し替える。キーはその作品の `thumbnailKey` の形だけを受け付ける（アップロード先は所有者にだけ発行する）
+- 未対応: `pending` のまま残った作品・画像の定期的な掃除
 
 初回は R2 のバケットと署名の秘密の値を用意する。
 

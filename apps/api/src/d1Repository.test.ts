@@ -51,6 +51,16 @@ describe("D1のスキーマ", () => {
 });
 
 describe("createD1OrigamiRepository", () => {
+  it("所有者ごとの作品を、公開前も含めて新しい順に返す", async () => {
+    const repository = createD1OrigamiRepository(db);
+    await repository.create({ ownerId: "owner_x", status: "published", thumbnail: null, model: { id: "x-old", ...input } });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await repository.create({ ownerId: "owner_x", status: "pending", thumbnail: null, model: { id: "x-new", ...input } });
+    await repository.create({ ownerId: "owner_y", status: "published", thumbnail: null, model: { id: "y-one", ...input } });
+    expect((await repository.listByOwner("owner_x")).map((record) => [(record.model as { id: string }).id, record.status])).toEqual([["x-new", "pending"], ["x-old", "published"]]);
+    for (const id of ["x-old", "x-new", "y-one"]) await repository.delete(id);
+  });
+
   it("作品を保存・取得・更新・削除できる", async () => {
     const repository = createD1OrigamiRepository(db);
     await repository.create({ ownerId: "user_a", status: "published", thumbnail: null, model: { id: "d1-crane", ...input } });
