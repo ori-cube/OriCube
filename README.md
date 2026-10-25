@@ -93,23 +93,34 @@ Three.js を用いて、誰でもアクセス可能な Web 上で、折り紙の
 
 ## 開発技術
 
-![技術構成図：JSONのデータをThree.jsに送り、Three.jsで3DモデルをNext.jsとTypeScript上で構築したサイトをVercelにデプロイしていることを表すイメージ図](https://github.com/user-attachments/assets/ce6de659-a092-4b3c-b25f-8863db12d4c3)
+### 構成
 
-### 活用した技術
+方針は [#100](https://github.com/ori-cube/OriCube/issues/100) を参照。pnpm workspace で次の4つに分けている。
 
-#### フレームワーク・ライブラリ・モジュール
+| パッケージ | 内容 |
+| --- | --- |
+| `apps/web` | 画面（React + Vite + React Router + TanStack Query）。ログインは Clerk |
+| `apps/api` | API と画面の配信（Hono）。本番は Cloudflare Workers（D1・R2）、開発とテストは Node.js |
+| `packages/engine` | 折りの計算・データ形式・検証（Three.js。画面・サーバーの両方で使う） |
+| `packages/design-system` | 画面の部品（React Aria）とデザイントークン。Storybook で確認する |
 
-- Next.js
-  - React ベースのフロントエンドフレームワーク
-  - 本 web アプリの画面構築のために使用
-  - スタイリングには Sass, RadixUI を使用
 - Three.js
   - web で 3D コンテンツを描画するための JavaScript ライブラリ
   - 折り紙の 3D モデルを表示するために使用
-
-#### デバイス
-
 - Web アプリで、スマートフォン、タブレット、PC に対応
+
+### 開発
+
+```sh
+pnpm install --frozen-lockfile   # pnpm は package.json の packageManager の版を使う（AGENTS.md）
+pnpm dev:api                     # API（http://localhost:8787）
+pnpm dev:web                     # 画面（http://localhost:5173）
+pnpm exec vitest run             # 単体テスト
+pnpm build:app && pnpm test:e2e  # E2E テスト（e2e/README.md）
+pnpm storybook                   # デザインシステム・部品の確認
+```
+
+デプロイの手順と、事前に必要なアカウント側の準備は [docs/v2-deploy-checklist.md](docs/v2-deploy-checklist.md) と [apps/api/README.md](apps/api/README.md) を参照。
 
 ### 独自技術
 

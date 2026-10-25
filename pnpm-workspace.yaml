@@ -14,9 +14,7 @@ blockExoticSubdeps: true
 minimumReleaseAge: 1440
 overrides:
   "esbuild@>=0.25.12 <0.28.1": 0.28.1
-  "eslint-config-next>eslint-import-resolver-typescript": 3.10.0
   "jose@>=4 <5": 5.10.0
-  "next>postcss": 8.5.23
   "postcss-selector-parser@<7.1.6": 7.1.6
   "semver@<7": 7.8.5
   "storybook>@vitest/mocker": 4.1.11
@@ -25,7 +23,6 @@ overrides:
 packageManagerStrictVersion: true
 patchedDependencies:
   braces@3.0.3: patches/braces@3.0.3.patch
-  vite-plugin-storybook-nextjs@3.3.0: patches/vite-plugin-storybook-nextjs@3.3.0.patch
 strictDepBuilds: true
 trustPolicy: no-downgrade
 verifyStoreIntegrity: true

@@ -41,7 +41,7 @@ jobs:
 
       - name: Typecheck
         run: |
-          pnpm exec tsc --noEmit --incremental false
+          pnpm exec tsc --noEmit
           pnpm --filter @oricube/design-system typecheck
           pnpm --filter @oricube/engine typecheck
           pnpm --filter @oricube/api typecheck
@@ -76,9 +76,6 @@ jobs:
         run: pnpm --filter @oricube/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
         env:
           WRANGLER_SEND_METRICS: "false"
-
-      - name: Build v1 (Next.js)
-        run: pnpm build
 
       - name: Build Storybook
         run: pnpm build-storybook

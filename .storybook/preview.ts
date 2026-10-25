@@ -1,4 +1,4 @@
-import type { Preview } from '@storybook/nextjs-vite'
+import type { Preview } from '@storybook/react-vite'
 import 'destyle.css'
 import '@oricube/design-system/tokens.css'
 

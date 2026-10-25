@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { OrigamiPostV2 } from "./index";
 
 const meta: Meta<typeof OrigamiPostV2> = {

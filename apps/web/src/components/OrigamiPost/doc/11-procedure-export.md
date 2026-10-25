@@ -22,7 +22,7 @@
 
 - 1ステップ = `{ kind, fixBoards, moveBoards, foldLines }`。moveBoard は `{ polygon, layer, vertexAxes }` を持ち、閲覧側はソルバなしで θ 回転の再生だけで折り手順を表示できる（レイヤーは Z オフセット用）
 - `ProcedureV2 = { version: 2, size, steps, finalBoards, history }`。ジェスチャ履歴（`HistoryStepV2`、`THREE.Vector3` → `[x, y, z]`）も一緒に保存する
-- `Model.procedure`（Prisma の JSON カラム）にこの形式で保存する想定
+- 投稿した作品は、この形式のまま D1 の `models.procedure`（JSON）に保存する（`apps/api`）
 
 ## エクスポータ — exportProcedureV2
 
@@ -52,4 +52,4 @@
 | `packages/engine/src/utils/vertexAxes/index.ts` | 頂点ごとの回転軸の表現と適用（アニメーションと保存で共通） |
 | `packages/engine/src/utils/computeSquashAnimationPositions/index.ts` | squash の軸導出・頂点分類（エクスポートと共有） |
 | `packages/engine/src/utils/computePetalAnimationPositions/index.ts` | petal の軸導出・頂点分類（エクスポートと共有） |
-| `src/app/api/data/route.ts` | 既存の投稿 API（`Model.procedure` は JSON カラム） |
+| `apps/api/src/app.ts` | 投稿・更新 API。`procedureV2Schema` で検証してから保存する |

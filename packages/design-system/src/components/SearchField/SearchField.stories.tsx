@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { SearchField } from "./SearchField";
 const meta = { title: "Design System/SearchField", component: SearchField, args: { label: "折り紙を検索", placeholder: "例：つる" } } satisfies Meta<typeof SearchField>;
 export default meta;

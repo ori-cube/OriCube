@@ -1,6 +1,7 @@
 {
+  // ルートの設定ファイル・E2E・スクリプトの型検査用。アプリとパッケージはそれぞれの tsconfig.json で検査する
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -11,24 +12,9 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "jsx": "react-jsx",
+    "types": ["node"]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "prisma/schema.prisma",
-    "prisma/seed.ts"
-  ],
-  "exclude": ["node_modules", "apps"]
+  "include": ["*.ts", ".storybook/**/*.ts", "e2e/**/*.ts"],
+  "exclude": ["node_modules", "apps", "packages"]
 }
