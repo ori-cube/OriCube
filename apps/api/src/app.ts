@@ -5,10 +5,12 @@ import { cache } from "hono/cache";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
-import { anonymousVerifier, type AuthVerifier } from "./auth";
+import { createEditKey, EDIT_KEY_HEADER, hashEditKey } from "./editKey";
 import { apiError, handleApiError } from "./errors";
+import { rejectingHumanVerifier, type HumanVerifier } from "./humanCheck";
+import { unlimited, type RateLimiter } from "./rateLimit";
 import { createMockOrigamiRepository, type OrigamiRecord, type OrigamiRepository } from "./repository";
-import { modelIdSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema } from "./schema";
+import { modelIdSchema, origamiCreateSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema } from "./schema";
 import { normalizeSearchText, summarize } from "./summary";
 import { renderThumbnailPng } from "./thumbnailImage";
 
@@ -22,10 +24,15 @@ const THUMBNAIL_CACHE_SECONDS = 3600;
 
 export interface AppOptions {
   repository?: OrigamiRepository;
-  auth?: AuthVerifier;
+  /** 投稿したのが人かどうかの検証（本番は Turnstile）。未指定なら投稿をすべて拒否する */
+  human?: HumanVerifier;
+  /** 投稿の回数の上限（接続元の IP ごと） */
+  postLimiter?: RateLimiter;
+  /** 更新・削除の回数の上限（接続元の IP ごと。鍵の総当たりを抑える） */
+  writeLimiter?: RateLimiter;
 }
 
-export const createApp = ({ repository = createMockOrigamiRepository(), auth = anonymousVerifier }: AppOptions = {}) => {
+export const createApp = ({ repository = createMockOrigamiRepository(), human = rejectingHumanVerifier, postLimiter = unlimited, writeLimiter = unlimited }: AppOptions = {}) => {
   const idParam = zValidator("param", z.object({ id: modelIdSchema }), (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品IDの形式が正しくありません。");
   });
@@ -35,18 +42,27 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
   const modelBody = zValidator("json", origamiInputSchema, (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品の内容が正しくありません。");
   });
-  /** ログインを必須にし、検証済みのユーザーIDを userId に入れる */
-  const requireUser = createMiddleware<{ Variables: { userId: string } }>(async (c, next) => {
-    const userId = await auth.authenticate(c.req.raw);
-    if (!userId) return apiError(c, 401, "unauthorized", "ログインが必要です。");
-    c.set("userId", userId);
+  const createBody = zValidator("json", origamiCreateSchema, (result, c) => {
+    if (!result.success) return apiError(c, 400, "invalid_request", "作品の内容が正しくありません。");
+  });
+  /** 接続元の IP。Workers では Cloudflare が付ける。無ければ（Node.js）まとめて数える */
+  const clientIp = (request: Request) => request.headers.get("CF-Connecting-IP");
+  const limitBy = (limiter: RateLimiter) => createMiddleware(async (c, next) => {
+    if (!(await limiter.limit(clientIp(c.req.raw) ?? "unknown"))) return apiError(c, 429, "rate_limited", "短い時間に操作が続いています。少し待ってからもう一度お試しください。");
     await next();
   });
-  /** 作品を読み、所有者でなければ 403 にする */
-  const findOwned = async (id: string, userId: string) => {
+  /** 編集用の鍵を必須にし、ハッシュを editKeyHash に入れる */
+  const requireEditKey = createMiddleware<{ Variables: { editKeyHash: string } }>(async (c, next) => {
+    const key = c.req.header(EDIT_KEY_HEADER);
+    if (!key) return apiError(c, 401, "unauthorized", "編集用の鍵が必要です。");
+    c.set("editKeyHash", await hashEditKey(key));
+    await next();
+  });
+  /** 作品を読み、鍵が合わなければ 403 にする。鍵の無い作品（モック）は誰も変更できない */
+  const findOwned = async (id: string, editKeyHash: string) => {
     const record = await repository.findById(id);
     if (!record) return "not_found" as const;
-    return record.ownerId === userId ? record : ("forbidden" as const);
+    return record.editKeyHash !== null && record.editKeyHash === editKeyHash ? record : ("forbidden" as const);
   };
   /** 保存済みの値を検証する。不正なら中身を返さないよう null にしてログに残す */
   const parseStored = (id: string, record: OrigamiRecord) => {
@@ -59,8 +75,8 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
   return new Hono()
     .basePath("/api")
     .use(bodyLimit({ maxSize: MAX_BODY_BYTES, onError: (c) => apiError(c, 413, "payload_too_large", "リクエストが大きすぎます。") }))
-    // セッションは同一オリジンの Cookie。フォーム送信による他サイトからの書き込みを Origin で拒否する
-    // （JSON はクロスオリジンだとプリフライトで止まり、CORS は許可していない）
+    // 他サイトからのフォーム送信を Origin で拒否する
+    // （JSON と編集用の鍵のヘッダーはクロスオリジンだとプリフライトで止まり、CORS は許可していない）
     .use(csrf())
     .get("/models", listQuery, async (c) => {
       const { q, page } = c.req.valid("query");
@@ -91,22 +107,26 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
         "Cache-Control": `public, max-age=${THUMBNAIL_CACHE_SECONDS}`,
       });
     })
-    .post("/models", requireUser, modelBody, async (c) => {
+    // ログインの代わりに、Turnstile で人が投稿したことを確かめ、編集用の鍵を1回だけ返す
+    .post("/models", limitBy(postLimiter), createBody, async (c) => {
+      const { turnstileToken, ...input } = c.req.valid("json");
+      if (!(await human.verify(turnstileToken, clientIp(c.req.raw)))) return apiError(c, 403, "verification_failed", "ロボットでないことを確認できませんでした。");
       const id = crypto.randomUUID();
-      await repository.create({ ownerId: c.var.userId, model: { id, ...c.req.valid("json") } });
-      return c.json({ id }, 201);
+      const editKey = await createEditKey();
+      await repository.create({ editKeyHash: editKey.hash, model: { id, ...input } });
+      return c.json({ id, editKey: editKey.key }, 201);
     })
-    .put("/models/:id", requireUser, idParam, modelBody, async (c) => {
+    .put("/models/:id", limitBy(writeLimiter), requireEditKey, idParam, modelBody, async (c) => {
       const { id } = c.req.valid("param");
-      const owned = await findOwned(id, c.var.userId);
+      const owned = await findOwned(id, c.var.editKeyHash);
       if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");
       if (owned === "forbidden") return apiError(c, 403, "forbidden", "この作品を変更する権限がありません。");
       await repository.update(id, { id, ...c.req.valid("json") });
       return c.json({ id }, 200);
     })
-    .delete("/models/:id", requireUser, idParam, async (c) => {
+    .delete("/models/:id", limitBy(writeLimiter), requireEditKey, idParam, async (c) => {
       const { id } = c.req.valid("param");
-      const owned = await findOwned(id, c.var.userId);
+      const owned = await findOwned(id, c.var.editKeyHash);
       if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");
       if (owned === "forbidden") return apiError(c, 403, "forbidden", "この作品を削除する権限がありません。");
       await repository.delete(id);

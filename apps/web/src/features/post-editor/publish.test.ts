@@ -25,25 +25,30 @@ const route = (url: string | URL | Request, init?: RequestInit) => {
 const client = () => hc<AppType>(origin, { fetch: route });
 
 beforeEach(() => {
-  app = createApp({ auth: { authenticate: async () => "user_a" } });
+  app = createApp({ human: { verify: async (token) => token === "human" } });
   requests = [];
   vi.stubGlobal("fetch", vi.fn(route));
 });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("createOrigami", () => {
-  it("作品を投稿し、サーバーが決めたIDを返す", async () => {
-    const id = await createOrigami(client(), input);
+  it("作品を投稿し、サーバーが決めたIDと編集用の鍵を返す", async () => {
+    const { id, editKey } = await createOrigami(client(), input, "human");
     expect(requests).toEqual(["POST /api/models"]);
+    expect(editKey).toEqual(expect.any(String));
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, name: "投稿した鶴" });
   });
 
-  it("ログインしていなければ、ログイン状態に合わせて案内する", async () => {
-    app = createApp();
-    const error = await createOrigami(client(), input).catch((reason: unknown) => reason);
-    expect(error).toMatchObject({ status: 401, code: "unauthorized" });
-    // ログイン中なら期限切れ、ログインの設定がない環境ならこの環境では投稿できないと伝える
-    expect(submitErrorMessage(error, "signedIn")).toContain("もう一度ログイン");
-    expect(submitErrorMessage(error, "unavailable")).toContain("この環境では投稿できません");
+  it("人であることを確かめられなければ、もう一度確認するよう案内する", async () => {
+    const error = await createOrigami(client(), input, "bot").catch((reason: unknown) => reason);
+    expect(error).toMatchObject({ status: 403, code: "verification_failed" });
+    expect(submitErrorMessage(error)).toContain("もう一度確認して");
+  });
+
+  it("投稿が続いて上限を超えたら、待つよう案内する", async () => {
+    app = createApp({ human: { verify: async () => true }, postLimiter: { limit: async () => false } });
+    const error = await createOrigami(client(), input, "human").catch((reason: unknown) => reason);
+    expect(error).toMatchObject({ status: 429, code: "rate_limited" });
+    expect(submitErrorMessage(error)).toContain("1分ほど待って");
   });
 });

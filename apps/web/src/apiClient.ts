@@ -39,7 +39,7 @@ const toError = async (res: Response, fallback: string) => {
   return new ApiRequestError(error?.message ?? `${fallback}（${res.status}）`, res.status, error?.code);
 };
 
-/** 投稿する作品。IDと所有者はサーバーが決める */
+/** 投稿する作品。IDと編集用の鍵はサーバーが決める */
 export interface OrigamiInput {
   name: string;
   description: string;
@@ -52,10 +52,14 @@ export interface OrigamiInput {
 }
 /** 公開範囲。public は一覧・検索に載り、unlisted はURLを知っている人だけが見られる */
 export type Visibility = "public" | "unlisted";
-/** 作品を投稿し、サーバーが決めたIDを返す */
-export const createOrigami = async (client: ApiClient, input: OrigamiInput) => {
-  const res = await client.api.models.$post({ json: input });
+/**
+ * 作品を投稿する。turnstileToken は画面の Turnstile が発行したトークン（1回しか使えない）
+ *
+ * @returns サーバーが決めたIDと、編集・削除に使う鍵（この応答でしか受け取れない）
+ */
+export const createOrigami = async (client: ApiClient, input: OrigamiInput, turnstileToken: string) => {
+  const res = await client.api.models.$post({ json: { ...input, turnstileToken } });
   if (!res.ok) throw await toError(res, "作品を投稿できませんでした");
-  const { id } = await res.json();
-  return id;
+  const { id, editKey } = await res.json();
+  return { id, editKey };
 };

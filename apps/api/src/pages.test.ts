@@ -65,7 +65,7 @@ describe("画面の配信", () => {
   });
 
   it("限定公開の作品ページは検索結果に出さない", async () => {
-    const unlisted = createServerApp({ template, repository: createMemoryOrigamiRepository([{ ownerId: "user_a", model: { id: "secret", name: "ひみつの鶴", description: "", color: "#ffffff", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [] }, visibility: "unlisted" } }]) });
+    const unlisted = createServerApp({ template, repository: createMemoryOrigamiRepository([{ editKeyHash: "hash_user_a", model: { id: "secret", name: "ひみつの鶴", description: "", color: "#ffffff", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [] }, visibility: "unlisted" } }]) });
     const res = await unlisted.request("/view/secret");
     expect(res.status).toBe(200);
     expect(await res.text()).toContain(`<meta name="robots" content="noindex" />`);
@@ -74,7 +74,7 @@ describe("画面の配信", () => {
 
   it("保存済みの値が不正な作品ページは500にする", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const broken = createServerApp({ template, repository: createMemoryOrigamiRepository([{ ownerId: null, model: { id: "broken" } }]) });
+    const broken = createServerApp({ template, repository: createMemoryOrigamiRepository([{ editKeyHash: null, model: { id: "broken" } }]) });
     const res = await broken.request("/view/broken");
     expect(res.status).toBe(500);
     expect(await res.text()).toContain(`<meta name="robots" content="noindex" />`);
@@ -95,7 +95,7 @@ describe("静的ファイル", () => {
 describe("投稿した作品のページ", () => {
   const model = { id: "posted", name: "投稿した鶴", description: "", color: "#ed7070", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [{ polygon: [[-50, -50, 0], [50, -50, 0], [50, 50, 0], [-50, 50, 0]], layer: 0 }] } };
   it("手順から描いた完成形の画像を og:image に使う", async () => {
-    const repository = createMemoryOrigamiRepository([{ ownerId: "user_a", model }]);
+    const repository = createMemoryOrigamiRepository([{ editKeyHash: "hash_user_a", model }]);
     const app = createServerApp({ template, origin: "https://oricube.example", repository });
     const res = await app.request("/view/posted");
     expect(res.status).toBe(200);

@@ -29,8 +29,11 @@ export const origamiModelSchema = z.object({
 
 export type OrigamiModel = z.infer<typeof origamiModelSchema>;
 
-/** 投稿・更新で受け取る作品。IDと所有者はサーバーで決める */
+/** 投稿・更新で受け取る作品。IDと編集用の鍵はサーバーで決める */
 export const origamiInputSchema = origamiModelSchema.omit({ id: true });
+
+/** 投稿で受け取る作品と、画面の Turnstile が発行したトークン */
+export const origamiCreateSchema = origamiInputSchema.extend({ turnstileToken: z.string().max(2048) });
 
 /** 一覧の検索条件。page は1始まり */
 export const origamiListQuerySchema = z.object({

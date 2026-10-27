@@ -42,8 +42,10 @@ try {
   check("未定義のAPIは404のJSON", (await get("/api/nope")).type.includes("application/json"));
   const list = await get("/api/models");
   check("/api/models は公開済みの作品の一覧", list.status === 200 && JSON.parse(list.body).items.some((item) => item.id === "crane"));
-  const post = await fetch(`${origin}/api/models`, { method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: "{}" });
-  check("ログインしていない投稿は401", post.status === 401);
+  // Turnstile の秘密鍵が無い本番の入口は、形式の正しい投稿も拒否する
+  const { id: _id, ...crane } = JSON.parse(api.body);
+  const post = await fetch(`${origin}/api/models`, { method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: JSON.stringify({ ...crane, turnstileToken: "x" }) });
+  check("人の確認ができない投稿は403", post.status === 403);
 } catch (error) {
   console.error(error);
   failures.push("起動");

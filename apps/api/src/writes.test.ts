@@ -1,67 +1,99 @@
 import { describe, expect, it, vi } from "vitest";
-import { createApp } from "./app";
-import type { AuthVerifier } from "./auth";
+import { createApp, type AppOptions } from "./app";
+import { EDIT_KEY_HEADER } from "./editKey";
+import type { HumanVerifier } from "./humanCheck";
 import { craneProcedure } from "./mocks/crane";
 import { createMockOrigamiRepository } from "./repository";
 
-/** テスト用: x-test-user ヘッダーの値をログイン中のユーザーIDとして扱う */
-const auth: AuthVerifier = { authenticate: async (request) => request.headers.get("x-test-user") };
+/** テスト用: トークンが "human" なら人として扱う */
+const human: HumanVerifier = { verify: async (token) => token === "human" };
+const appWith = (options: AppOptions = {}) => createApp({ human, ...options });
 const input = { name: "テストの鶴", description: "説明", color: "#ed7070", procedure: craneProcedure };
-const send = (app: ReturnType<typeof createApp>, method: string, path: string, { user, body }: { user?: string; body?: unknown } = {}) =>
+const send = (app: ReturnType<typeof createApp>, method: string, path: string, { editKey, body, ip }: { editKey?: string; body?: unknown; ip?: string } = {}) =>
   app.request(path, {
     method,
-    headers: { "Content-Type": "application/json", ...(user ? { "x-test-user": user } : {}) },
+    headers: { "Content-Type": "application/json", ...(editKey ? { [EDIT_KEY_HEADER]: editKey } : {}), ...(ip ? { "CF-Connecting-IP": ip } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-/** 投稿して作品IDを返す */
-const create = async (app: ReturnType<typeof createApp>, user = "user_a", overrides: Record<string, unknown> = {}) => {
-  const res = await send(app, "POST", "/api/models", { user, body: { ...input, ...overrides } });
+/** 投稿して作品IDと編集用の鍵を返す */
+const create = async (app: ReturnType<typeof createApp>, overrides: Record<string, unknown> = {}) => {
+  const res = await send(app, "POST", "/api/models", { body: { ...input, turnstileToken: "human", ...overrides } });
   expect(res.status).toBe(201);
-  return ((await res.json()) as { id: string }).id;
+  return (await res.json()) as { id: string; editKey: string };
 };
 
 describe("POST /api/models", () => {
-  it("未ログインは401", async () => {
-    const res = await send(createApp({ auth }), "POST", "/api/models", { body: input });
-    expect(res.status).toBe(401);
-    expect(await res.json()).toMatchObject({ error: { code: "unauthorized" } });
+  it("ログインなしで投稿でき、編集用の鍵を1回だけ返す", async () => {
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(editKey).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    const res = await app.request(`/api/models/${id}`);
+    expect(await res.json()).toMatchObject({ id, name: "テストの鶴" });
+    expect(JSON.stringify(await (await app.request(`/api/models/${id}`)).json())).not.toContain(editKey);
+  });
+
+  it("人であることを確かめられなければ403", async () => {
+    for (const turnstileToken of ["bot", ""]) {
+      const res = await send(appWith(), "POST", "/api/models", { body: { ...input, turnstileToken } });
+      expect(res.status).toBe(403);
+      expect(await res.json()).toMatchObject({ error: { code: "verification_failed" } });
+    }
+    // トークンが無い投稿は形式の誤り
+    expect((await send(appWith(), "POST", "/api/models", { body: input })).status).toBe(400);
+  });
+
+  it("検証の設定が無ければ投稿をすべて拒否する", async () => {
+    const res = await send(createApp(), "POST", "/api/models", { body: { ...input, turnstileToken: "human" } });
+    expect(res.status).toBe(403);
+  });
+
+  it("検証には接続元の IP を渡す", async () => {
+    const verify = vi.fn(async () => true);
+    await send(appWith({ human: { verify } }), "POST", "/api/models", { body: { ...input, turnstileToken: "t" }, ip: "203.0.113.1" });
+    expect(verify).toHaveBeenCalledWith("t", "203.0.113.1");
+  });
+
+  it("接続元ごとの上限を超えたら429にし、作品を作らない", async () => {
+    const counts = new Map<string, number>();
+    const postLimiter = { limit: async (key: string) => { counts.set(key, (counts.get(key) ?? 0) + 1); return (counts.get(key) ?? 0) <= 1; } };
+    const app = appWith({ postLimiter });
+    const body = { ...input, name: "連投の鶴", turnstileToken: "human" };
+    expect((await send(app, "POST", "/api/models", { body, ip: "203.0.113.1" })).status).toBe(201);
+    const limited = await send(app, "POST", "/api/models", { body, ip: "203.0.113.1" });
+    expect(limited.status).toBe(429);
+    expect(await limited.json()).toMatchObject({ error: { code: "rate_limited" } });
+    expect((await send(app, "POST", "/api/models", { body, ip: "203.0.113.2" })).status).toBe(201);
+    const list = (await (await app.request(`/api/models?q=${encodeURIComponent("連投")}`)).json()) as { total: number };
+    expect(list.total).toBe(2);
   });
 
   it("作品の内容が不正なら400", async () => {
-    const res = await send(createApp({ auth }), "POST", "/api/models", { user: "user_a", body: { ...input, procedure: { ...craneProcedure, size: 0 } } });
+    const res = await send(appWith(), "POST", "/api/models", { body: { ...input, turnstileToken: "human", procedure: { ...craneProcedure, size: 0 } } });
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: { code: "invalid_request" } });
   });
 
   it("完成形を見せる向きを保存して返し、単位クォータニオンでなければ400", async () => {
-    const app = createApp({ auth });
+    const app = appWith();
     const rotation = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
-    const bad = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, presentation: { rotation: [0, 0, 0, 2] } } });
+    const bad = await send(app, "POST", "/api/models", { body: { ...input, turnstileToken: "human", presentation: { rotation: [0, 0, 0, 2] } } });
     expect(bad.status).toBe(400);
-    const id = await create(app, "user_a", { presentation: { rotation } });
+    const { id } = await create(app, { presentation: { rotation } });
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ presentation: { rotation } });
   });
 
-  it("IDをサーバーで決めて保存し、取得できる", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect(id).toMatch(/^[0-9a-f-]{36}$/);
-    const res = await app.request(`/api/models/${id}`);
-    expect(await res.json()).toMatchObject({ id, name: "テストの鶴" });
-  });
-
   it("クライアントが送ったIDは使わない", async () => {
-    const app = createApp({ auth });
-    const res = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, id: "crane" } });
-    const { id } = (await res.json()) as { id: string };
+    const app = appWith();
+    const { id } = await create(app, { id: "crane" });
     expect(id).not.toBe("crane");
     expect(await (await app.request("/api/models/crane")).json()).toMatchObject({ name: "鶴" });
   });
 
   it("他サイトからのフォーム送信はOriginで拒否する", async () => {
-    const res = await createApp({ auth }).request("/api/models", {
+    const res = await appWith().request("/api/models", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", Origin: "https://evil.example", "x-test-user": "user_a" },
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Origin: "https://evil.example" },
       body: "name=x",
     });
     expect(res.status).toBe(403);
@@ -69,37 +101,46 @@ describe("POST /api/models", () => {
 });
 
 describe("PUT・DELETE /api/models/:id", () => {
-  it("所有者だけが更新できる", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect((await send(app, "PUT", `/api/models/${id}`, { body: { ...input, name: "x" } })).status).toBe(401);
-    const other = await send(app, "PUT", `/api/models/${id}`, { user: "user_b", body: { ...input, name: "乗っ取り" } });
+  it("編集用の鍵を持つ人だけが更新できる", async () => {
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    const missing = await send(app, "PUT", `/api/models/${id}`, { body: { ...input, name: "x" } });
+    expect(missing.status).toBe(401);
+    expect(await missing.json()).toMatchObject({ error: { code: "unauthorized" } });
+    const other = await send(app, "PUT", `/api/models/${id}`, { editKey: (await create(app)).editKey, body: { ...input, name: "乗っ取り" } });
     expect(other.status).toBe(403);
     expect(await other.json()).toMatchObject({ error: { code: "forbidden" } });
-    expect((await send(app, "PUT", `/api/models/${id}`, { user: "user_a", body: { ...input, name: "更新した鶴" } })).status).toBe(200);
+    expect((await send(app, "PUT", `/api/models/${id}`, { editKey, body: { ...input, name: "更新した鶴" } })).status).toBe(200);
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, name: "更新した鶴" });
   });
 
-  it("所有者だけが削除でき、削除後は404", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_b" })).status).toBe(403);
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_a" })).status).toBe(204);
+  it("編集用の鍵を持つ人だけが削除でき、削除後は404", async () => {
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey: "wrong" })).status).toBe(403);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(204);
     expect((await app.request(`/api/models/${id}`)).status).toBe(404);
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_a" })).status).toBe(404);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(404);
   });
 
-  it("所有者のいないモックは誰も変更・削除できない", async () => {
-    const app = createApp({ auth });
-    expect((await send(app, "PUT", "/api/models/crane", { user: "user_a", body: input })).status).toBe(403);
-    expect((await send(app, "DELETE", "/api/models/crane", { user: "user_a" })).status).toBe(403);
+  it("鍵の無いモックは誰も変更・削除できない", async () => {
+    const app = appWith();
+    expect((await send(app, "PUT", "/api/models/crane", { editKey: "any", body: input })).status).toBe(403);
+    expect((await send(app, "DELETE", "/api/models/crane", { editKey: "any" })).status).toBe(403);
+  });
+
+  it("更新・削除も接続元ごとの上限を超えたら429", async () => {
+    const app = appWith({ writeLimiter: { limit: async () => false } });
+    const { id, editKey } = await create(app);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(429);
+    expect((await app.request(`/api/models/${id}`)).status).toBe(200);
   });
 });
 
 describe("GET /api/models/:id/thumbnail.png", () => {
   it("投稿した作品の完成形を手順から描いて PNG で返す", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
+    const app = appWith();
+    const { id } = await create(app);
     const res = await app.request(`/api/models/${id}/thumbnail.png`);
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("image/png");
@@ -125,9 +166,9 @@ describe("GET /api/models/:id/thumbnail.png", () => {
   });
 
   it("無い作品・削除した作品は404", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_a" })).status).toBe(204);
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(204);
     expect((await app.request(`/api/models/${id}/thumbnail.png`)).status).toBe(404);
     expect((await app.request("/api/models/unknown/thumbnail.png")).status).toBe(404);
   });
@@ -135,17 +176,17 @@ describe("GET /api/models/:id/thumbnail.png", () => {
 
 describe("公開範囲", () => {
   it("限定公開の作品はURLで見られるが、一覧と検索には出ない", async () => {
-    const app = createApp({ auth });
-    const id = await create(app, "user_a", { name: "ひみつの鶴", visibility: "unlisted" });
+    const app = appWith();
+    const { id } = await create(app, { name: "ひみつの鶴", visibility: "unlisted" });
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, visibility: "unlisted" });
     const list = (await (await app.request("/api/models?q=ひみつ")).json()) as { items: unknown[]; total: number };
     expect(list.total).toBe(0);
   });
 
   it("公開範囲を省略すると公開にし、不正な値は400にする", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
+    const app = appWith();
+    const { id } = await create(app);
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ visibility: "public" });
-    expect((await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, visibility: "private" } })).status).toBe(400);
+    expect((await send(app, "POST", "/api/models", { body: { ...input, turnstileToken: "human", visibility: "private" } })).status).toBe(400);
   });
 });

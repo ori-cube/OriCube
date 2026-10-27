@@ -7,7 +7,9 @@ export type ApiErrorCode =
   | "unauthorized"
   | "forbidden"
   | "not_found"
+  | "verification_failed"
   | "payload_too_large"
+  | "rate_limited"
   | "internal_error";
 
 /** APIのエラーは常にこの形で返す */

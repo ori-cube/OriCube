@@ -2,9 +2,9 @@ import { models } from "./mocks/models";
 import { origamiModelSchema, type OrigamiModel } from "./schema";
 import { searchTextOf, summarize, type OrigamiListQuery, type OrigamiListResult, type OrigamiSummary } from "./summary";
 
-/** 保存済みの作品と、その所有者（Clerk のユーザーID。モックは null で誰も編集できない） */
+/** 保存済みの作品と、編集用の鍵のハッシュ（モックは null で誰も編集できない） */
 export interface OrigamiRecord {
-  ownerId: string | null;
+  editKeyHash: string | null;
   /** 未検証の値として扱い、呼び出し側でスキーマ検証する */
   model: unknown;
 }
@@ -24,7 +24,7 @@ export interface OrigamiRepository {
    * 要約は投稿・更新のときに作って持ち、一覧では手順を読まない（作品数が増えても一覧の手間を一定にする）
    */
   listPublic(query: OrigamiListQuery): Promise<OrigamiListResult>;
-  create(record: { ownerId: string; model: OrigamiModel }): Promise<void>;
+  create(record: { editKeyHash: string; model: OrigamiModel }): Promise<void>;
   update(id: string, model: OrigamiModel): Promise<void>;
   delete(id: string): Promise<void>;
 }
@@ -53,7 +53,7 @@ export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): Origa
     const { id } = record.model as { id: string };
     records.set(id, { ...record, order: -index });
   });
-  const toRecord = ({ ownerId, model }: OrigamiRecord): OrigamiRecord => ({ ownerId, model });
+  const toRecord = ({ editKeyHash, model }: OrigamiRecord): OrigamiRecord => ({ editKeyHash, model });
   /** 要約は最初に一覧で使うときに作り、作品を書き換えるまで使い回す */
   const listing = (record: OrigamiRecord & { listing?: Listing | null }) => {
     if (record.listing === undefined) record.listing = listingOf(record.model);
@@ -86,16 +86,16 @@ export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): Origa
   };
 };
 
-/** 鶴などのモック（所有者なし）を入れた保存先 */
+/** 鶴などのモック（編集用の鍵なし）を入れた保存先 */
 export const createMockOrigamiRepository = () =>
-  createMemoryOrigamiRepository(models.map((model) => ({ ownerId: null, model })));
+  createMemoryOrigamiRepository(models.map((model) => ({ editKeyHash: null, model })));
 
 /**
  * 保存先に無い作品はモックから読む
  *
  * @description
  * 鶴などのモックをDB接続後も見られるようにし、一覧では保存先の作品のあとに並べる。
- * モックは所有者がいないため更新・削除できず、書き込みはすべて保存先に行く
+ * モックは編集用の鍵が無いため更新・削除できず、書き込みはすべて保存先に行く
  */
 export const withMockFallback = (primary: OrigamiRepository, mock = createMockOrigamiRepository()): OrigamiRepository => ({
   ...primary,

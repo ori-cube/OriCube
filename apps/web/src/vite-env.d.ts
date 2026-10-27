@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Clerk の Publishable Key。未設定ならログインできない（閲覧と下書きは使える） */
-  readonly VITE_CLERK_PUBLISHABLE_KEY?: string;
+  /** Cloudflare Turnstile のサイトキー。未設定なら確認のウィジェットを出さない（本番の API は投稿を拒否する） */
+  readonly VITE_TURNSTILE_SITE_KEY?: string;
 }

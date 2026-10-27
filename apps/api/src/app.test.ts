@@ -29,7 +29,7 @@ describe("GET /api/models/:id", () => {
 
   it("保存済みの値が不正なら中身を返さず500にする", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const app = createApp({ repository: createMemoryOrigamiRepository([{ ownerId: null, model: { id: "broken", name: "壊れた作品", description: "", color: "#ffffff", procedure: { version: 2, size: -1 } } }]) });
+    const app = createApp({ repository: createMemoryOrigamiRepository([{ editKeyHash: null, model: { id: "broken", name: "壊れた作品", description: "", color: "#ffffff", procedure: { version: 2, size: -1 } } }]) });
     const res = await app.request("/api/models/broken");
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({ error: { code: "internal_error" } });
@@ -51,7 +51,7 @@ describe("GET /api/models", () => {
   type ListBody = { items: { id: string; thumbnail: { faces: unknown[] } }[]; total: number; page: number; totalPages: number };
   const list = async (app: ReturnType<typeof createApp>, path: string) => (await app.request(path)).json() as Promise<ListBody>;
   const seed = (count: number) => createMemoryOrigamiRepository(Array.from({ length: count }, (_, index) => ({
-    ownerId: null,
+    editKeyHash: null,
     model: { id: `m${index}`, name: `作品${index}`, description: "", color: "#ffffff", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [{ polygon: [[-50, -50, 0], [50, -50, 0], [50, 50, 0], [-50, 50, 0]], layer: 0 }] } },
   })));
 
@@ -88,8 +88,8 @@ describe("GET /api/models", () => {
   it("投稿した作品を新しい順に先頭へ並べる", async () => {
     const repository = seed(2);
     const model = { name: "新作", description: "", color: "#ffffff", procedure: { version: 2 as const, size: 100, steps: [], history: [], finalBoards: [] }, visibility: "public" as const };
-    await repository.create({ ownerId: "user_1", model: { id: "new1", ...model } });
-    await repository.create({ ownerId: "user_1", model: { id: "new2", ...model } });
+    await repository.create({ editKeyHash: "hash_user_1", model: { id: "new1", ...model } });
+    await repository.create({ editKeyHash: "hash_user_1", model: { id: "new2", ...model } });
     await repository.delete("m0");
     const body = await list(createApp({ repository }), "/api/models");
     expect(body.items.map((item) => item.id)).toEqual(["new2", "new1", "m1"]);
@@ -115,7 +115,7 @@ describe("GET /api/models", () => {
   it("形式が正しくない作品は一覧から除いて記録する", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const repository = seed(1);
-    await repository.create({ ownerId: "user_1", model: { id: "broken" } as never });
+    await repository.create({ editKeyHash: "hash_user_1", model: { id: "broken" } as never });
     const body = await list(createApp({ repository }), "/api/models");
     expect(body.items.map((item) => item.id)).toEqual(["m0"]);
     expect(error).toHaveBeenCalled();

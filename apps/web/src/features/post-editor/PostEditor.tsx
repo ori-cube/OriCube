@@ -127,7 +127,7 @@ export function PostEditor() {
         <section className={styles.section} aria-labelledby="post-publish">
           <h3 id="post-publish" className={styles.sectionTitle}>投稿</h3>
           <Button text="投稿へ進む" onClick={() => setPreview("publish")} disabled={blocked || !state.steps.some(isFoldStep)} />
-          <p className={styles.hint}>{state.steps.some(isFoldStep) ? "完成形を見せる向き（サムネイルの向き）を決めて、作品を公開します。投稿にはログインが必要です。" : "1回以上折ると投稿できます。"}</p>
+          <p className={styles.hint}>{state.steps.some(isFoldStep) ? "完成形を見せる向き（サムネイルの向き）を決めて、作品を公開します。ログインは要りません。" : "1回以上折ると投稿できます。"}</p>
         </section>
         <section className={styles.section} aria-labelledby="post-reset">
           <h3 id="post-reset" className={styles.sectionTitle}>やり直し</h3>

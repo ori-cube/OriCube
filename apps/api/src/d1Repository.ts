@@ -10,7 +10,7 @@ import { procedureThumbnailSchema, searchTextOf, summarize, type OrigamiSummary 
 export type D1Database = Parameters<typeof drizzle>[0];
 
 const toRecord = (row: typeof models.$inferSelect): OrigamiRecord => ({
-  ownerId: row.ownerId,
+  editKeyHash: row.editKeyHash,
   model: {
     id: row.id,
     name: row.name,
@@ -104,11 +104,11 @@ export const createD1OrigamiRepository = (database: D1Database): OrigamiReposito
       });
       return { items, total: totalRow?.total ?? 0 };
     },
-    create: async ({ ownerId, model }) => {
+    create: async ({ editKeyHash, model }) => {
       const now = new Date();
       await db.insert(models).values({
         id: model.id,
-        ownerId,
+        editKeyHash,
         ...modelColumns(model),
         createdAt: now,
         updatedAt: now,

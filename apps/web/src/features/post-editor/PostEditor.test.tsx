@@ -3,14 +3,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { createApp } from "@oricube/api";
 import type { OrigamiCanvasHandle, OrigamiCanvasProps } from "../../components/OrigamiViewer/Canvas";
-import { AuthContext, unavailableAuth, type AuthState } from "../../auth/AuthContext";
 import * as THREE from "three";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { OrigamiPostV2Props } from "../../components/OrigamiPost";
 import type { OrigamiViewerProps } from "../../components/OrigamiViewer";
 import { exportProcedureV2 } from "@oricube/engine";
 import { DRAFT_KEY, serializeDraft } from "./draft";
+import { EDIT_KEYS_KEY } from "./editKeys";
 import { PostEditor } from "./PostEditor";
 
 vi.mock("../../components/OrigamiPost", () => ({ OrigamiPostV2: function Editor({ initialSteps = [], onStateChange, color = "#ed7070", cameraPosition }: OrigamiPostV2Props) {
@@ -90,12 +90,12 @@ describe("投稿画面", () => {
 });
 
 describe("投稿", () => {
-  let auth: AuthState = unavailableAuth;
-  const wrapper = ({ children }: { children: ReactNode }) => <AuthContext.Provider value={auth}><QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider></AuthContext.Provider>;
+  const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider>;
   let app: ReturnType<typeof createApp>;
+  // Turnstile のサイトキーが無い環境では、空のトークンで投稿する（開発用の API は確認を省く）
+  const acceptAll = () => createApp({ human: { verify: async () => true } });
   beforeEach(() => {
-    auth = unavailableAuth;
-    app = createApp({ auth: { authenticate: async () => "user_a" } });
+    app = acceptAll();
     getModelRotation.mockReturnValue([0, 0, 0, 1]);
     // 同一オリジンの fetch と同じく Origin を付けてメモリ上の API へ送る
     vi.stubGlobal("fetch", (url: string | URL | Request, init?: RequestInit) => {
@@ -138,34 +138,66 @@ describe("投稿", () => {
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0回の折りを記録"));
   });
 
-  it("未ログインなら投稿せず、ログインして作成画面へ戻る", async () => {
-    const signIn = vi.fn();
-    auth = { status: "signedOut", signIn, signOut: vi.fn() };
+  it("編集用の鍵をこのブラウザに保存し、そのことを伝える", async () => {
     await openPublish();
-    expect(screen.queryByRole("button", { name: "投稿する" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "ログインして投稿" }));
-    expect(signIn).toHaveBeenCalledWith("/post");
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
+    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+    expect(await screen.findByText(/編集・削除するための鍵を、このブラウザに保存しました/)).toBeInTheDocument();
+    const id = (screen.getByRole("link", { name: "作品ページを見る" }).getAttribute("href") ?? "").replace("/view/", "");
+    const keys = JSON.parse(localStorage.getItem(EDIT_KEYS_KEY) ?? "{}") as Record<string, string>;
+    // 保存した鍵で削除できる
+    const res = await fetch(`/api/models/${id}`, { method: "DELETE", headers: { "X-Edit-Key": keys[id] } });
+    expect(res.status).toBe(204);
   });
 
-  it("ログイン中にセッションが切れていたら、もう一度ログインするよう伝える", async () => {
-    auth = { status: "signedIn", signIn: vi.fn(), signOut: vi.fn() };
+  it("人であることを確かめられなければ、下書きが残ることを伝える", async () => {
     app = createApp();
     await openPublish();
     fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
     fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
     fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("もう一度ログインしてから投稿してください");
-  });
-
-  it("ログインの設定がない環境で投稿できなければ、下書きが残ることを伝える", async () => {
-    app = createApp();
-    await openPublish();
-    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
-    fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
-    fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("この環境では投稿できません。折った手順はこのブラウザに保存されています。");
+    expect(await screen.findByRole("alert")).toHaveTextContent("ロボットでないことを確認できませんでした。もう一度確認してから「投稿する」を押してください。折った手順はこのブラウザに保存されています。");
     fireEvent.click(screen.getByRole("button", { name: "折る画面に戻る" }));
     expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
+  });
+
+  describe("Turnstile", () => {
+    let callbacks: ((token: string) => void)[];
+    beforeEach(() => {
+      callbacks = [];
+      vi.stubEnv("VITE_TURNSTILE_SITE_KEY", "site-key");
+      vi.stubGlobal("turnstile", { render: (_container: HTMLElement, options: { sitekey: string; callback: (token: string) => void }) => { expect(options.sitekey).toBe("site-key"); callbacks.push(options.callback); return `w${callbacks.length}`; }, remove: vi.fn() });
+      app = createApp({ human: { verify: async (token) => token === "human" } });
+    });
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("確認が終わるまでは投稿せず、終わったらトークンを付けて投稿する", async () => {
+      await openPublish();
+      fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+      fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
+      await waitFor(() => expect(callbacks).toHaveLength(1));
+      fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("確認が終わってから投稿してください");
+      act(() => callbacks[0]("human"));
+      await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+      fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+      expect(await screen.findByRole("heading", { name: "投稿しました" })).toBeInTheDocument();
+    });
+
+    it("投稿に失敗したら、使ったトークンを捨てて確認をやり直す", async () => {
+      await openPublish();
+      fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "私の鶴" } });
+      fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
+      await waitFor(() => expect(callbacks).toHaveLength(1));
+      act(() => callbacks[0]("bot"));
+      fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("ロボットでないことを確認できませんでした");
+      await waitFor(() => expect(callbacks).toHaveLength(2));
+      act(() => callbacks[1]("human"));
+      fireEvent.click(screen.getByRole("button", { name: "投稿する" }));
+      expect(await screen.findByRole("heading", { name: "投稿しました" })).toBeInTheDocument();
+    });
   });
 
   it("決めた向きを完成形を見せる向きとして保存し、下書きにも残す", async () => {

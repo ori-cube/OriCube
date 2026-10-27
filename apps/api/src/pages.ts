@@ -1,8 +1,7 @@
 import { Hono, type MiddlewareHandler } from "hono";
 import { apiError, handleApiError } from "./errors";
-import { createApp } from "./app";
-import type { AuthVerifier } from "./auth";
-import { createMockOrigamiRepository, type OrigamiRepository } from "./repository";
+import { createApp, type AppOptions } from "./app";
+import { createMockOrigamiRepository } from "./repository";
 import { modelIdSchema, origamiModelSchema } from "./schema";
 
 const SITE_NAME = "OriCube";
@@ -46,12 +45,10 @@ export const renderPage = (template: string, meta: PageMeta) => {
   return template.replace(META_BLOCK, () => tags.join("\n    "));
 };
 
-interface ServerAppOptions {
+/** API の設定（AppOptions）に、画面の配信の設定を足したもの */
+interface ServerAppOptions extends AppOptions {
   /** ビルド済みの apps/web/dist/index.html */
   template: string;
-  repository?: OrigamiRepository;
-  /** 書き込みAPIのログイン検証 */
-  auth?: AuthVerifier;
   /** 公開時のオリジン（例: https://oricube.example）。未指定ならリクエストのオリジンを使う */
   origin?: string;
   /** /assets/* の静的ファイルを返すミドルウェア（実行環境ごとに渡す） */
@@ -66,7 +63,7 @@ interface ServerAppOptions {
  * - 作品ページは作品名・説明をmetaに入れ、存在しない作品・URLはHTTP 404にする
  * - 静的ファイルの配信は実行環境ごとのミドルウェアを assets で受け取る（Node.jsでは index.ts）
  */
-export const createServerApp = ({ template, repository = createMockOrigamiRepository(), auth, origin, assets }: ServerAppOptions) => {
+export const createServerApp = ({ template, repository = createMockOrigamiRepository(), origin, assets, ...appOptions }: ServerAppOptions) => {
   renderPage(template, { title: SITE_NAME, description: DEFAULT_DESCRIPTION, url: "/", image: "/" });
   const absolute = (requestUrl: string, path: string) => new URL(path, origin ?? new URL(requestUrl).origin).toString();
   const meta = (requestUrl: string, overrides: Partial<PageMeta> = {}): PageMeta => ({
@@ -81,7 +78,7 @@ export const createServerApp = ({ template, repository = createMockOrigamiReposi
   const app = new Hono();
   if (assets) app.use("/assets/*", assets);
   return app
-    .route("/", createApp({ repository, auth }))
+    .route("/", createApp({ ...appOptions, repository }))
     .get("/view/:id", async (c) => {
       const id = modelIdSchema.safeParse(c.req.param("id"));
       const record = id.success ? await repository.findById(id.data) : null;

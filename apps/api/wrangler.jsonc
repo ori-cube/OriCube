@@ -20,5 +20,11 @@
       "migrations_dir": "migrations"
     }
   ],
+  // 書き込みの回数の上限（接続元の IP ごと・1分あたり）。bot は Turnstile で止め、こちらは連続投稿と鍵の総当たりを抑える。
+  // namespace_id はアカウント内で重ならない数字にする
+  "ratelimits": [
+    { "name": "POST_LIMITER", "namespace_id": "1001", "simple": { "limit": 3, "period": 60 } },
+    { "name": "WRITE_LIMITER", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } }
+  ],
   "observability": { "enabled": true }
 }

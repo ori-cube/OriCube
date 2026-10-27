@@ -12,7 +12,6 @@ export const models = sqliteTable(
   "models",
   {
     id: text("id").primaryKey(),
-    ownerId: text("owner_id").notNull(),
     name: text("name").notNull(),
     description: text("description").notNull(),
     color: text("color").notNull(),
@@ -23,6 +22,8 @@ export const models = sqliteTable(
     stepCount: integer("step_count"),
     thumbnail: text("thumbnail", { mode: "json" }).$type<ProcedureThumbnail>(),
     searchText: text("search_text"),
+    /** 編集用の鍵の SHA-256（16進数）。鍵の無い作品は誰も変更できない */
+    editKeyHash: text("edit_key_hash"),
     visibility: text("visibility", { enum: ["public", "unlisted"] }).notNull().default("public"),
     formatVersion: integer("format_version").notNull().default(2),
     engineVersion: text("engine_version").notNull().default("unknown"),
@@ -30,7 +31,6 @@ export const models = sqliteTable(
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   },
   (table) => [
-    index("models_owner_id_idx").on(table.ownerId),
     index("models_visibility_created_at_idx").on(table.visibility, table.createdAt),
   ]
 );

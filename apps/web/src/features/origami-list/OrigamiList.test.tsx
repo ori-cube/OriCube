@@ -64,7 +64,7 @@ describe("作品の一覧", () => {
   it("件数が多いとページを切り替えられる", async () => {
     const [{ createApp, MODELS_PAGE_SIZE }, { createMemoryOrigamiRepository }] = await Promise.all([import("@oricube/api"), import("@oricube/api/repository")]);
     api.app = createApp({ repository: createMemoryOrigamiRepository(Array.from({ length: MODELS_PAGE_SIZE + 1 }, (_, index) => ({
-      ownerId: null,
+      editKeyHash: null,
       model: { id: `m${index}`, name: `作品${index}`, description: "", color: "#ffffff", procedure: { version: 2, size: 100, steps: [], history: [], finalBoards: [] } },
     }))) });
     const router = renderAt("/");
