@@ -1,14 +1,15 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { cache } from "hono/cache";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
-import { createProcedureThumbnail, createViewerTimeline } from "@oricube/engine";
 import { z } from "zod";
 import { anonymousVerifier, type AuthVerifier } from "./auth";
 import { apiError, handleApiError } from "./errors";
 import { createMockOrigamiRepository, type OrigamiRecord, type OrigamiRepository } from "./repository";
-import { modelIdSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema, type OrigamiModel } from "./schema";
+import { modelIdSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema } from "./schema";
+import { normalizeSearchText, summarize } from "./summary";
 import { renderThumbnailPng } from "./thumbnailImage";
 
 /** リクエスト本文の上限。作品データの上限（engine の PROCEDURE_V2_LIMITS）と合わせて見直す */
@@ -16,24 +17,8 @@ const MAX_BODY_BYTES = 1024 * 1024;
 /** 一覧の1ページの件数 */
 export const MODELS_PAGE_SIZE = 24;
 
-/** 検索語の比較用に、全角・半角と大文字・小文字の違いをそろえる */
-const normalize = (value: string) => value.normalize("NFKC").toLowerCase();
-
-/** 完成形を見せる向き（presentation）で、手順から完成形の図を作る */
-const thumbnailOf = (model: OrigamiModel) => createProcedureThumbnail(model.procedure, createViewerTimeline(model.procedure, model.presentation));
-
-/** 一覧で返す作品の要約。手順の本体は含めず、完成形の図を付ける */
-const toSummary = (model: OrigamiModel) => {
-  const timeline = createViewerTimeline(model.procedure, model.presentation);
-  return {
-    id: model.id,
-    name: model.name,
-    description: model.description,
-    color: model.color,
-    stepCount: timeline.steps.length,
-    thumbnail: createProcedureThumbnail(model.procedure, timeline),
-  };
-};
+/** 完成形の画像を Cache API に置く時間（秒）。作品を更新しても、この時間は前の画像を返すことがある */
+const THUMBNAIL_CACHE_SECONDS = 3600;
 
 export interface AppOptions {
   repository?: OrigamiRepository;
@@ -79,20 +64,9 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
     .use(csrf())
     .get("/models", listQuery, async (c) => {
       const { q, page } = c.req.valid("query");
-      const keyword = q ? normalize(q) : "";
-      // 公開済みの作品だけを並べる。壊れた作品があっても一覧全体は返せるよう、検証できない作品は除いて記録する
-      const models = (await repository.list()).flatMap((record) => {
-        const model = origamiModelSchema.safeParse(record.model);
-        if (model.success) return [model.data];
-        console.error("一覧から形式が正しくない作品を除きました", model.error.issues);
-        return [];
-      });
-      // 限定公開の作品は一覧・検索に出さない（URLを知っている人だけが見る）
-      const listed = models.filter((model) => model.visibility === "public");
-      const matched = keyword ? listed.filter((model) => normalize(`${model.name}\n${model.description}`).includes(keyword)) : listed;
-      const totalPages = Math.max(1, Math.ceil(matched.length / MODELS_PAGE_SIZE));
-      const items = matched.slice((page - 1) * MODELS_PAGE_SIZE, page * MODELS_PAGE_SIZE).map(toSummary);
-      return c.json({ items, total: matched.length, page, totalPages }, 200);
+      // 限定公開の作品は一覧・検索に出さない（URLを知っている人だけが見る）。形式が正しくない作品は保存先が除いて記録する
+      const { items, total } = await repository.listPublic({ keyword: q ? normalizeSearchText(q) : "", offset: (page - 1) * MODELS_PAGE_SIZE, limit: MODELS_PAGE_SIZE });
+      return c.json({ items, total, page, totalPages: Math.max(1, Math.ceil(total / MODELS_PAGE_SIZE)) }, 200);
     })
     .get("/models/:id", idParam, async (c) => {
       const { id } = c.req.valid("param");
@@ -102,18 +76,19 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       if (!model) return apiError(c, 500, "internal_error", "作品を読み込めませんでした。");
       return c.json(model, 200);
     })
-    // 一覧・OGP 用の完成形の画像。投稿者が送る画像は使わず、保存済みの手順から描く
-    .get("/models/:id/thumbnail.png", idParam, async (c) => {
+    // 一覧・OGP 用の完成形の画像。投稿者が送る画像は使わず、保存済みの手順から描く。
+    // 描くのが重い（数十ms）ため、Workers では Cache API に置いて使い回す（Node.js では caches が無いので毎回描く）
+    .get("/models/:id/thumbnail.png", cache({ cacheName: "oricube-thumbnails", onCacheNotAvailable: false }), idParam, async (c) => {
       const { id } = c.req.valid("param");
       const record = await repository.findById(id);
       if (record === null) return apiError(c, 404, "not_found", "作品が見つかりません。");
       const model = parseStored(id, record);
       if (!model) return apiError(c, 500, "internal_error", "作品を読み込めませんでした。");
-      return c.body(await renderThumbnailPng(thumbnailOf(model), model.color), 200, {
+      return c.body(await renderThumbnailPng(summarize(model).thumbnail, model.color), 200, {
         "Content-Type": "image/png",
         "X-Content-Type-Options": "nosniff",
-        // 作品を編集すると変わるので、長くは持たせない
-        "Cache-Control": "public, max-age=3600",
+        // Cache API もこの時間で消す。作品を更新すると変わるので、長くは持たせない
+        "Cache-Control": `public, max-age=${THUMBNAIL_CACHE_SECONDS}`,
       });
     })
     .post("/models", requireUser, modelBody, async (c) => {

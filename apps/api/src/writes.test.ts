@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createApp } from "./app";
 import type { AuthVerifier } from "./auth";
 import { craneProcedure } from "./mocks/crane";
+import { createMockOrigamiRepository } from "./repository";
 
 /** テスト用: x-test-user ヘッダーの値をログイン中のユーザーIDとして扱う */
 const auth: AuthVerifier = { authenticate: async (request) => request.headers.get("x-test-user") };
@@ -104,6 +105,23 @@ describe("GET /api/models/:id/thumbnail.png", () => {
     expect(res.headers.get("Content-Type")).toBe("image/png");
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect([...new Uint8Array(await res.arrayBuffer()).slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
+  });
+
+  it("Cache API があれば、描いた画像を使い回す", async () => {
+    const stored = new Map<string, Response>();
+    vi.stubGlobal("caches", { open: async () => ({ match: async (key: string) => stored.get(key)?.clone(), put: async (key: string, res: Response) => { stored.set(key, res); } }) });
+    const repository = createMockOrigamiRepository();
+    const findById = vi.spyOn(repository, "findById");
+    const app = createApp({ repository });
+    const pending: Promise<unknown>[] = [];
+    const ctx = { waitUntil: (promise: Promise<unknown>) => pending.push(promise), passThroughOnException: () => {}, props: {} };
+    const first = await app.request("/api/models/crane/thumbnail.png", {}, undefined, ctx);
+    await Promise.all(pending);
+    const second = await app.request("/api/models/crane/thumbnail.png", {}, undefined, ctx);
+    expect(new Uint8Array(await second.arrayBuffer())).toEqual(new Uint8Array(await first.arrayBuffer()));
+    expect(second.headers.get("Cache-Control")).toBe("public, max-age=3600");
+    expect(findById).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
   });
 
   it("無い作品・削除した作品は404", async () => {

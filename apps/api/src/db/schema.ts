@@ -1,4 +1,4 @@
-import type { PresentationV2 } from "@oricube/engine";
+import type { PresentationV2, ProcedureThumbnail } from "@oricube/engine";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /**
@@ -19,6 +19,10 @@ export const models = sqliteTable(
     procedure: text("procedure", { mode: "json" }).notNull(),
     stepDescriptions: text("step_descriptions", { mode: "json" }).$type<string[]>(),
     presentation: text("presentation", { mode: "json" }).$type<PresentationV2>(),
+    /** 一覧の要約（投稿・更新のときに作る）。これより前の作品は NULL */
+    stepCount: integer("step_count"),
+    thumbnail: text("thumbnail", { mode: "json" }).$type<ProcedureThumbnail>(),
+    searchText: text("search_text"),
     visibility: text("visibility", { enum: ["public", "unlisted"] }).notNull().default("public"),
     formatVersion: integer("format_version").notNull().default(2),
     engineVersion: text("engine_version").notNull().default("unknown"),

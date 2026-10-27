@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createApp, MODELS_PAGE_SIZE } from "./app";
-import { createMemoryOrigamiRepository } from "./repository";
+import { createMemoryOrigamiRepository, withMockFallback } from "./repository";
 import { getOrigamiV2 } from "./mocks/models";
 
 describe("GET /api/models/:id", () => {
@@ -93,6 +93,15 @@ describe("GET /api/models", () => {
     await repository.delete("m0");
     const body = await list(createApp({ repository }), "/api/models");
     expect(body.items.map((item) => item.id)).toEqual(["new2", "new1", "m1"]);
+  });
+
+  it("保存先の作品のあとにモックを続け、ページをまたいで切り出す", async () => {
+    const app = createApp({ repository: withMockFallback(seed(MODELS_PAGE_SIZE - 1)) });
+    const first = await list(app, "/api/models");
+    expect(first).toMatchObject({ total: MODELS_PAGE_SIZE + 1, totalPages: 2 });
+    expect(first.items.at(-1)?.id).toBe("crane");
+    const second = await list(app, "/api/models?page=2");
+    expect(second.items.map((item) => item.id)).toEqual(["blank-paper"]);
   });
 
   it("検索条件の形式が正しくなければ400を返す", async () => {

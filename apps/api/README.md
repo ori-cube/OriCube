@@ -54,9 +54,9 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 | パス | 内容 |
 | --- | --- |
-| `GET /api/models` | 公開（`public`）の作品の一覧（新しい順・1ページ24件）。限定公開の作品は載らない。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、完成形の図（`createProcedureThumbnail`）を付ける |
+| `GET /api/models` | 公開（`public`）の作品の一覧（新しい順・1ページ24件）。限定公開の作品は載らない。`q` で名前と説明を検索し、`page` でページを指定する。手順の本体は返さず、投稿・更新のときに保存した要約（ステップ数と完成形の図）を返す |
 | `GET /api/models/:id` | 作品の取得。保存済みの値も `origamiModelSchema` で検証してから返す |
-| `GET /api/models/:id/thumbnail.png` | 完成形の図の PNG（下のサムネイル） |
+| `GET /api/models/:id/thumbnail.png` | 完成形の図の PNG（下のサムネイル）。Workers では Cache API に1時間置く |
 | `POST /api/models` | 作品の投稿（ログイン必須）。IDはサーバーで採番し、所有者はClerkで検証したユーザーID |
 | `PUT /api/models/:id` | 作品の更新（ログイン必須・所有者のみ） |
 | `DELETE /api/models/:id` | 作品の削除（ログイン必須・所有者のみ） |
@@ -71,8 +71,10 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 - 他サイトからのフォーム送信は `hono/csrf` で拒否する。JSONの書き込みはクロスオリジンだとプリフライトで止まる（CORSは許可しない）。
 - フロントは `AppType` を type-only import し、`hono/client` で呼ぶ。
 - ページのmeta生成（`src/pages.ts`）は実行環境に依存しない。実行環境ごとの入口は `src/worker.ts`（Cloudflare Workers）と `src/index.ts`（Node.js。CIのスモークテストで使う）。
-- 一覧の検索とページ分割は、保存先から作品を全件読んでAPI側で行う。作品数が増えたら `OrigamiRepository` 側の検索・ページ分割へ移す。
-- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。Workers では D1（`src/d1Repository.ts`）、Node.js とテストではメモリ上の実装を使う。D1 の列は `migrations/` に番号順で追加する（`0003` で見せる向きを追加し、`0004` で投稿画像の保存と公開前の状態をやめた）。
+- 一覧は保存先（`OrigamiRepository.listPublic`）が検索・件数・ページ分割を行う。D1 では SQL の `LIKE`・`COUNT`・`LIMIT`/`OFFSET` で絞り、手順は読まない。要約（`step_count`・`thumbnail`・`search_text`）は投稿・更新のときに `src/summary.ts` で作って保存する。手順からタイムラインを組むのは作品1件で数msかかり、一覧のたびに計算すると作品数に比例して重くなるため
+- 検索の対象（`search_text`）は名前と説明を NFKC・小文字にそろえた値で、検索語も同じようにそろえて部分一致で探す
+- 要約の列が無い作品（`0005` より前に保存したもの）は、一覧のときに手順から作る。更新すると要約が保存される
+- 作品の保存先は `OrigamiRepository`（`src/repository.ts`）。Workers では D1（`src/d1Repository.ts`）、Node.js とテストではメモリ上の実装を使う。D1 の列は `migrations/` に番号順で追加する（`0003` で見せる向きを追加し、`0004` で投稿画像の保存と公開前の状態をやめ、`0005` で一覧の要約を追加）。
 
 ## サムネイル
 
@@ -80,5 +82,5 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 
 - 図は engine の `createProcedureThumbnail`（完成形を正面から平行投影した多角形）。一覧の API はこの図をそのまま返し、画面が SVG で描く（`OrigamiThumbnail`）
 - `GET /api/models/:id/thumbnail.png` は同じ図を 640px 四方の PNG にして返す（`src/thumbnailImage.ts`）。作品ページの og:image に使う。色・陰影・輪郭は一覧の SVG と同じにする
-- PNG の塗りと書き出しは依存を増やさずに `src/thumbnailImage.ts` で行う（多角形の塗りつぶしと、`CompressionStream` による zlib 圧縮）。画像は保存せず、リクエストごとに描く（`Cache-Control: public, max-age=3600`）
+- PNG の塗りと書き出しは依存を増やさずに `src/thumbnailImage.ts` で行う（多角形の塗りつぶしと、`CompressionStream` による zlib 圧縮）。画像は保存しない。描くのに数十msかかるため、Workers では Cache API（`hono/cache`）に1時間置いて使い回す（`Cache-Control: public, max-age=3600`）。作品を更新しても、その間は前の画像を返すことがある
 - 向きは投稿画面で完成形を回して決める（`apps/web/src/features/post-editor`）。作品を更新すると図も変わる

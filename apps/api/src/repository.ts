@@ -1,5 +1,6 @@
 import { models } from "./mocks/models";
-import type { OrigamiModel } from "./schema";
+import { origamiModelSchema, type OrigamiModel } from "./schema";
+import { searchTextOf, summarize, type OrigamiListQuery, type OrigamiListResult, type OrigamiSummary } from "./summary";
 
 /** 保存済みの作品と、その所有者（Clerk のユーザーID。モックは null で誰も編集できない） */
 export interface OrigamiRecord {
@@ -16,15 +17,36 @@ export interface OrigamiRecord {
  */
 export interface OrigamiRepository {
   findById(id: string): Promise<OrigamiRecord | null>;
-  /** 作品を新しい順に返す。作品数が増えたら検索・ページ分割を保存先へ移す */
-  list(): Promise<OrigamiRecord[]>;
+  /**
+   * 公開（public）の作品の要約を新しい順に返す。keyword で名前と説明を絞り込み、offset・limit で切り出す
+   *
+   * @description
+   * 要約は投稿・更新のときに作って持ち、一覧では手順を読まない（作品数が増えても一覧の手間を一定にする）
+   */
+  listPublic(query: OrigamiListQuery): Promise<OrigamiListResult>;
   create(record: { ownerId: string; model: OrigamiModel }): Promise<void>;
   update(id: string, model: OrigamiModel): Promise<void>;
   delete(id: string): Promise<void>;
 }
 
+/** 一覧に載せる作品の要約と検索の対象。形式が正しくない作品は null で、一覧から除く */
+interface Listing {
+  visibility: OrigamiModel["visibility"];
+  searchText: string;
+  summary: OrigamiSummary;
+}
+
+const listingOf = (model: unknown): Listing | null => {
+  const parsed = origamiModelSchema.safeParse(model);
+  if (!parsed.success) {
+    console.error("一覧から形式が正しくない作品を除きました", parsed.error.issues);
+    return null;
+  }
+  return { visibility: parsed.data.visibility, searchText: searchTextOf(parsed.data), summary: summarize(parsed.data) };
+};
+
 export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): OrigamiRepository => {
-  const records = new Map<string, OrigamiRecord & { order: number }>();
+  const records = new Map<string, OrigamiRecord & { order: number; listing?: Listing | null }>();
   // seed は渡した順に並べ、投稿した作品はその前に新しい順で並べる
   let lastOrder = 0;
   seed.forEach((record, index) => {
@@ -32,18 +54,31 @@ export const createMemoryOrigamiRepository = (seed: OrigamiRecord[] = []): Origa
     records.set(id, { ...record, order: -index });
   });
   const toRecord = ({ ownerId, model }: OrigamiRecord): OrigamiRecord => ({ ownerId, model });
+  /** 要約は最初に一覧で使うときに作り、作品を書き換えるまで使い回す */
+  const listing = (record: OrigamiRecord & { listing?: Listing | null }) => {
+    if (record.listing === undefined) record.listing = listingOf(record.model);
+    return record.listing;
+  };
   return {
     findById: async (id) => {
       const record = records.get(id);
       return record ? toRecord(record) : null;
     },
-    list: async () => [...records.values()].sort((left, right) => right.order - left.order).map(toRecord),
+    listPublic: async ({ keyword, offset, limit }) => {
+      const matched = [...records.values()]
+        .sort((left, right) => right.order - left.order)
+        .flatMap((record) => {
+          const entry = listing(record);
+          return entry && entry.visibility === "public" && entry.searchText.includes(keyword) ? [entry.summary] : [];
+        });
+      return { items: matched.slice(offset, offset + limit), total: matched.length };
+    },
     create: async (record) => {
       records.set(record.model.id, { ...record, order: ++lastOrder });
     },
     update: async (id, model) => {
       const record = records.get(id);
-      if (record) records.set(id, { ...record, model });
+      if (record) records.set(id, { ...record, model, listing: undefined });
     },
     delete: async (id) => {
       records.delete(id);
@@ -65,9 +100,17 @@ export const createMockOrigamiRepository = () =>
 export const withMockFallback = (primary: OrigamiRepository, mock = createMockOrigamiRepository()): OrigamiRepository => ({
   ...primary,
   findById: async (id) => (await primary.findById(id)) ?? mock.findById(id),
-  list: async () => {
-    const [stored, mocks] = await Promise.all([primary.list(), mock.list()]);
-    const ids = new Set(stored.map((record) => (record.model as { id: string }).id));
-    return [...stored, ...mocks.filter((record) => !ids.has((record.model as { id: string }).id))];
+  // 保存先の作品のあとにモックを続けたものを、offset・limit で切り出す。
+  // 投稿の ID はサーバーが UUID で決めるので、モックの ID（crane など）と重ならない
+  listPublic: async ({ keyword, offset, limit }) => {
+    const [stored, mocks] = await Promise.all([
+      primary.listPublic({ keyword, offset, limit }),
+      mock.listPublic({ keyword, offset: 0, limit: Number.MAX_SAFE_INTEGER }),
+    ]);
+    const mockStart = Math.max(0, offset - stored.total);
+    return {
+      items: [...stored.items, ...mocks.items.slice(mockStart, mockStart + limit - stored.items.length)],
+      total: stored.total + mocks.total,
+    };
   },
 });

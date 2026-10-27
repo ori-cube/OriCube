@@ -71,6 +71,55 @@ describe("createD1OrigamiRepository", () => {
   });
 });
 
+describe("一覧の要約", () => {
+  const ids = (result: { items: { id: string }[] }) => result.items.map((item) => item.id);
+
+  it("投稿・更新のときに要約を保存し、一覧は手順を読まずに返す", async () => {
+    const repository = createD1OrigamiRepository(db);
+    await repository.create({ ownerId: "user_a", model: { id: "summary", ...input, name: "ＡＢＣの鶴" } });
+    const row = await db.prepare("SELECT step_count, thumbnail, search_text FROM models WHERE id = ?").bind("summary").first<{ step_count: number; thumbnail: string; search_text: string }>();
+    expect(row?.step_count).toBeGreaterThan(0);
+    expect(JSON.parse(row?.thumbnail ?? "null")).toMatchObject({ faces: expect.any(Array) });
+    expect(row?.search_text).toBe("abcの鶴\n説明");
+    const listed = await repository.listPublic({ keyword: "abc", offset: 0, limit: 10 });
+    expect(listed).toMatchObject({ total: 1, items: [{ id: "summary", name: "ＡＢＣの鶴", stepCount: row?.step_count }] });
+    await repository.update("summary", { id: "summary", ...input, name: "更新した鶴" });
+    expect(ids(await repository.listPublic({ keyword: "abc", offset: 0, limit: 10 }))).toEqual([]);
+    expect(ids(await repository.listPublic({ keyword: "更新", offset: 0, limit: 10 }))).toEqual(["summary"]);
+    await repository.delete("summary");
+  });
+
+  it("件数と切り出しを D1 で行い、限定公開は数えない", async () => {
+    const repository = createD1OrigamiRepository(db);
+    for (const [index, visibility] of (["public", "public", "public", "unlisted"] as const).entries()) {
+      await repository.create({ ownerId: "user_a", model: { id: `page-${index}`, ...input, name: `ページ${index}`, visibility } });
+      await new Promise((resolve) => setTimeout(resolve, 2));
+    }
+    const second = await repository.listPublic({ keyword: "ページ", offset: 1, limit: 1 });
+    expect(second).toMatchObject({ total: 3 });
+    expect(ids(second)).toEqual(["page-1"]);
+    for (let index = 0; index < 4; index++) await repository.delete(`page-${index}`);
+  });
+
+  it("検索語の % と _ は文字どおりに扱う", async () => {
+    const repository = createD1OrigamiRepository(db);
+    await repository.create({ ownerId: "user_a", model: { id: "percent", ...input, name: "100%の鶴" } });
+    expect(ids(await repository.listPublic({ keyword: "100%", offset: 0, limit: 10 }))).toEqual(["percent"]);
+    expect(ids(await repository.listPublic({ keyword: "%", offset: 0, limit: 10 }))).toEqual(["percent"]);
+    expect(ids(await repository.listPublic({ keyword: "_", offset: 0, limit: 10 }))).toEqual([]);
+    await repository.delete("percent");
+  });
+
+  it("要約の無い（0005 より前の）作品は手順から作って並べる", async () => {
+    const repository = createD1OrigamiRepository(db);
+    await repository.create({ ownerId: "user_a", model: { id: "legacy", ...input, name: "Legacyな鶴" } });
+    await db.prepare("UPDATE models SET step_count = NULL, thumbnail = NULL, search_text = NULL WHERE id = ?").bind("legacy").run();
+    const listed = await repository.listPublic({ keyword: "legacy", offset: 0, limit: 10 });
+    expect(listed).toMatchObject({ total: 1, items: [{ id: "legacy", stepCount: expect.any(Number), thumbnail: { faces: expect.any(Array) } }] });
+    await repository.delete("legacy");
+  });
+});
+
 describe("保存時の版", () => {
   it("公開範囲・データ形式・エンジンの版を記録する", async () => {
     await createD1OrigamiRepository(db).create({ ownerId: "user_a", model: { id: "versioned", ...input, visibility: "unlisted" } });
