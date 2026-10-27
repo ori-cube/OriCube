@@ -7,6 +7,7 @@ import { createProcedureThumbnail, createViewerTimeline } from "@oricube/engine"
 import { z } from "zod";
 import { anonymousVerifier, type AuthVerifier } from "./auth";
 import { apiError, handleApiError } from "./errors";
+import { createMemoryRateLimiter, WRITE_LIMIT_PERIOD_SECONDS, type RateLimiter } from "./rateLimit";
 import { createMockOrigamiRepository, type OrigamiRecord, type OrigamiRepository } from "./repository";
 import { modelIdSchema, origamiCreateSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema, thumbnailSpecSchema, type OrigamiModel } from "./schema";
 import { createMemoryThumbnailStorage, isThumbnailKeyOf, thumbnailKey, type ThumbnailStorage } from "./storage";
@@ -43,9 +44,11 @@ export interface AppOptions {
   auth?: AuthVerifier;
   /** サムネイルの保存先（本番は R2）。未指定ならメモリ上の実装 */
   storage?: ThumbnailStorage;
+  /** 書き込みの回数制限（本番は Rate Limiting バインディング）。未指定ならメモリ上の実装 */
+  rateLimiter?: RateLimiter;
 }
 
-export const createApp = ({ repository = createMockOrigamiRepository(), auth = anonymousVerifier, storage = createMemoryThumbnailStorage() }: AppOptions = {}) => {
+export const createApp = ({ repository = createMockOrigamiRepository(), auth = anonymousVerifier, storage = createMemoryThumbnailStorage(), rateLimiter = createMemoryRateLimiter() }: AppOptions = {}) => {
   const idParam = zValidator("param", z.object({ id: modelIdSchema }), (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品IDの形式が正しくありません。");
   });
@@ -68,6 +71,17 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
   const requireUser = createMiddleware<{ Variables: { userId: string } }>(async (c, next) => {
     const userId = await auth.authenticate(c.req.raw);
     if (!userId) return apiError(c, 401, "unauthorized", "ログインが必要です。");
+    c.set("userId", userId);
+    await next();
+  });
+  /** 書き込み: ログインを必須にし、ログインした人ごとの回数制限を超えたら 429 にする */
+  const requireWriter = createMiddleware<{ Variables: { userId: string } }>(async (c, next) => {
+    const userId = await auth.authenticate(c.req.raw);
+    if (!userId) return apiError(c, 401, "unauthorized", "ログインが必要です。");
+    if (!(await rateLimiter.limit({ key: `write:${userId}` })).success) {
+      c.header("Retry-After", String(WRITE_LIMIT_PERIOD_SECONDS));
+      return apiError(c, 429, "too_many_requests", "操作が多すぎます。少し時間をおいてから、もう一度お試しください。");
+    }
     c.set("userId", userId);
     await next();
   });
@@ -135,7 +149,7 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       return c.json(model, 200);
     })
     // 投稿は pending で作り、サムネイルのアップロード先を返す。画像を置いてから /publish で公開する
-    .post("/models", requireUser, createBody, async (c) => {
+    .post("/models", requireWriter, createBody, async (c) => {
       const { thumbnail: spec, ...input } = c.req.valid("json");
       const id = crypto.randomUUID();
       const thumbnail = { key: thumbnailKey(id, spec.contentType), ...spec };
@@ -143,7 +157,7 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       return c.json({ id, status: "pending" as const, thumbnailUpload: await storage.createUpload(thumbnail.key, spec) }, 201);
     })
     // アップロードに失敗・期限切れになったときに、公開前の作品のアップロード先を作り直す
-    .post("/models/:id/thumbnail-upload", requireUser, idParam, thumbnailBody, async (c) => {
+    .post("/models/:id/thumbnail-upload", requireWriter, idParam, thumbnailBody, async (c) => {
       const { id } = c.req.valid("param");
       const owned = await findOwned(id, c.var.userId);
       if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");
@@ -159,7 +173,7 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       return c.json({ id, status: "pending" as const, thumbnailKey: thumbnail.key, thumbnailUpload: await storage.createUpload(thumbnail.key, spec) }, 200);
     })
     // 公開済みの作品のサムネイルを、アップロード済みの画像に差し替える（再編集で撮り直したとき）
-    .put("/models/:id/thumbnail", requireUser, idParam, replaceThumbnailBody, async (c) => {
+    .put("/models/:id/thumbnail", requireWriter, idParam, replaceThumbnailBody, async (c) => {
       const { id } = c.req.valid("param");
       const { key } = c.req.valid("json");
       const owned = await findOwned(id, c.var.userId);
@@ -176,7 +190,7 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       return c.json({ id }, 200);
     })
     // 申告どおりのサムネイルが置かれていることを確かめてから公開する。公開済みなら何もしない（再試行できる）
-    .post("/models/:id/publish", requireUser, idParam, async (c) => {
+    .post("/models/:id/publish", requireWriter, idParam, async (c) => {
       const { id } = c.req.valid("param");
       const owned = await findOwned(id, c.var.userId);
       if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");
@@ -189,7 +203,7 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       await repository.update(id, { status: "published" });
       return c.json({ id, status: "published" as const }, 200);
     })
-    .put("/models/:id", requireUser, idParam, modelBody, async (c) => {
+    .put("/models/:id", requireWriter, idParam, modelBody, async (c) => {
       const { id } = c.req.valid("param");
       const owned = await findOwned(id, c.var.userId);
       if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");
@@ -197,7 +211,7 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       await repository.update(id, { model: { id, ...c.req.valid("json") } });
       return c.json({ id }, 200);
     })
-    .delete("/models/:id", requireUser, idParam, async (c) => {
+    .delete("/models/:id", requireWriter, idParam, async (c) => {
       const { id } = c.req.valid("param");
       const owned = await findOwned(id, c.var.userId);
       if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");

@@ -28,5 +28,14 @@
       "bucket_name": "oricube-thumbnails"
     }
   ],
+  // 書き込みAPI（投稿・更新・削除など）の回数制限。ログインした人ごとに1分30回（src/rateLimit.ts の WRITE_LIMIT と合わせる）。
+  // namespace_id はアカウント内で他の Worker と重ならない数字にする
+  "ratelimits": [
+    {
+      "name": "WRITE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 30, "period": 60 }
+    }
+  ],
   "observability": { "enabled": true }
 }

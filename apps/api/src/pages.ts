@@ -4,6 +4,7 @@ import { createApp } from "./app";
 import type { AuthVerifier } from "./auth";
 import { createMockOrigamiRepository, type OrigamiRepository } from "./repository";
 import { modelIdSchema, origamiModelSchema } from "./schema";
+import type { RateLimiter } from "./rateLimit";
 import { createMemoryThumbnailStorage, type ThumbnailStorage } from "./storage";
 
 const SITE_NAME = "OriCube";
@@ -55,6 +56,8 @@ interface ServerAppOptions {
   auth?: AuthVerifier;
   /** サムネイルの保存先。og:image にも使う */
   storage?: ThumbnailStorage;
+  /** 書き込みAPIの回数制限 */
+  rateLimiter?: RateLimiter;
   /** 公開時のオリジン（例: https://oricube.example）。未指定ならリクエストのオリジンを使う */
   origin?: string;
   /** /assets/* の静的ファイルを返すミドルウェア（実行環境ごとに渡す） */
@@ -69,7 +72,7 @@ interface ServerAppOptions {
  * - 作品ページは作品名・説明をmetaに入れ、存在しない作品・URLはHTTP 404にする
  * - 静的ファイルの配信は実行環境ごとのミドルウェアを assets で受け取る（Node.jsでは index.ts）
  */
-export const createServerApp = ({ template, repository = createMockOrigamiRepository(), auth, storage = createMemoryThumbnailStorage(), origin, assets }: ServerAppOptions) => {
+export const createServerApp = ({ template, repository = createMockOrigamiRepository(), auth, storage = createMemoryThumbnailStorage(), rateLimiter, origin, assets }: ServerAppOptions) => {
   renderPage(template, { title: SITE_NAME, description: DEFAULT_DESCRIPTION, url: "/", image: "/" });
   const absolute = (requestUrl: string, path: string) => new URL(path, origin ?? new URL(requestUrl).origin).toString();
   const meta = (requestUrl: string, overrides: Partial<PageMeta> = {}): PageMeta => ({
@@ -84,7 +87,7 @@ export const createServerApp = ({ template, repository = createMockOrigamiReposi
   const app = new Hono();
   if (assets) app.use("/assets/*", assets);
   return app
-    .route("/", createApp({ repository, auth, storage }))
+    .route("/", createApp({ repository, auth, storage, rateLimiter }))
     .get("/view/:id", async (c) => {
       const id = modelIdSchema.safeParse(c.req.param("id"));
       const record = id.success ? await repository.findById(id.data) : null;

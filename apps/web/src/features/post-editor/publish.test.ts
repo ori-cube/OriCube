@@ -141,3 +141,12 @@ describe("submitUpdate", () => {
     expect(submitErrorMessage(missing)).toContain("見つかりません");
   });
 });
+
+describe("回数制限", () => {
+  it("書き込みが多すぎたら、待ってから再試行するよう伝える", async () => {
+    app = createApp({ auth: { authenticate: async () => "user_a" }, rateLimiter: { limit: async () => ({ success: false }) } });
+    const error = await submitOrigami({ client: client(), input, thumbnail: image(), previous: null, onPending: vi.fn() }).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(ApiRequestError);
+    expect(submitErrorMessage(error)).toContain("1分ほど待って");
+  });
+});

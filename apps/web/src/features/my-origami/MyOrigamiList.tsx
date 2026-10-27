@@ -7,10 +7,11 @@ import { useAuthState } from "../../auth/AuthContext";
 import { OrigamiCover } from "../../components/OrigamiCover";
 import styles from "./MyOrigamiList.module.css";
 
-const deleteErrorMessage = (error: unknown) =>
-  error instanceof ApiRequestError && error.status === 401
-    ? "ログインの有効期限が切れました。もう一度ログインしてから削除してください。"
-    : "削除できませんでした。時間をおいてもう一度お試しください。";
+const deleteErrorMessage = (error: unknown) => {
+  if (error instanceof ApiRequestError && error.status === 401) return "ログインの有効期限が切れました。もう一度ログインしてから削除してください。";
+  if (error instanceof ApiRequestError && error.status === 429) return "短い時間に操作が多すぎました。1分ほど待ってから、もう一度お試しください。";
+  return "削除できませんでした。時間をおいてもう一度お試しください。";
+};
 
 function MyOrigamiCard({ origami, onDelete }: { origami: MyOrigami; onDelete: (origami: MyOrigami) => void }) {
   const published = origami.status === "published";
