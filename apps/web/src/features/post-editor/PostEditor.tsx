@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useSearchParams } from "react-router";
 import { Button, ColorField, SidePanel, TextInput } from "@oricube/design-system";
 import type { OrigamiEditorState, OrigamiPostV2Props } from "../../components/OrigamiPost";
 import { OrigamiViewer } from "../../components/OrigamiViewer";
 import { exportProcedureV2, isFoldStep, type PresentationV2 } from "@oricube/engine";
-import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft } from "./draft";
+import { apiClient, fetchOrigami } from "../../apiClient";
+import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft, type EditingTarget } from "./draft";
 import { PublishScreen } from "./PublishScreen";
 import styles from "./PostEditor.module.css";
 
@@ -35,6 +37,10 @@ export function PostEditor() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [presentation, setPresentation] = useState<PresentationV2 | undefined>();
+  const [editing, setEditing] = useState<EditingTarget | undefined>();
+  // ?edit=<作品ID> で開くと、公開済みの作品を読み込んで再編集する
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
   const [ready, setReady] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const [generation, setGeneration] = useState(0);
@@ -45,12 +51,12 @@ export function PostEditor() {
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const procedure = useMemo(() => exportProcedureV2({ size, steps: state.steps }), [size, state.steps]);
-  const draft: Draft | null = useMemo(() => procedure ? { model: { id: "draft", name: name.trim() || UNTITLED, description, color: state.color, procedure, ...(presentation ? { presentation } : {}) }, viewFront: state.viewFront } : null, [procedure, name, description, presentation, state.color, state.viewFront]);
+  const draft: Draft | null = useMemo(() => procedure ? { model: { id: "draft", name: name.trim() || UNTITLED, description, color: state.color, procedure, ...(presentation ? { presentation } : {}) }, viewFront: state.viewFront, ...(editing ? { editing } : {}) } : null, [procedure, name, description, presentation, state.color, state.viewFront, editing]);
   const blocked = !ready || state.busy || !draft;
 
   const loadDraft = useCallback((next: Draft) => {
     setState({ steps: restoreHistory(next.model.procedure.history), color: next.model.color, viewFront: next.viewFront, busy: false, phase: "idle" });
-    setSize(next.model.procedure.size); setName(next.model.name === UNTITLED ? "" : next.model.name); setDescription(next.model.description); setPresentation(next.model.presentation); setPreview(null);
+    setSize(next.model.procedure.size); setName(next.model.name === UNTITLED ? "" : next.model.name); setDescription(next.model.description); setPresentation(next.model.presentation); setEditing(next.editing); setPreview(null);
     setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true);
   }, []);
   useEffect(() => {
@@ -66,6 +72,27 @@ export function PostEditor() {
     } catch { setStorageError("前回の下書きを読み込めませんでした。消えないよう自動保存を止めています。「白紙に戻す」で保存を再開できます。"); }
     setReady(true);
   }, [loadDraft]);
+  // 読み込みは開いたときの ?edit= ごとに1回だけ行う。編集中の状態は読み込み時点の値を参照する
+  const current = useRef({ editing, hasSteps: state.steps.length > 0 });
+  current.current = { editing, hasSteps: state.steps.length > 0 };
+  useEffect(() => {
+    if (!ready || !editId) return;
+    let active = true;
+    const clearParam = () => setSearchParams((params) => { params.delete("edit"); return params; }, { replace: true });
+    if (current.current.editing?.id === editId) { clearParam(); return; }
+    setMessage("作品を読み込んでいます…");
+    fetchOrigami(apiClient, editId).then((model) => {
+      if (!active) return;
+      clearParam();
+      if (!model) { setMessage("編集する作品が見つかりませんでした。"); return; }
+      // 折りかけの下書きは1つだけなので、置き換える前に確かめる
+      if (current.current.hasSteps && !window.confirm(`今の下書きを消して「${model.name}」を編集しますか？`)) { setMessage(""); return; }
+      const steps = restoreHistory(model.procedure.history);
+      loadDraft({ model: { ...model, id: "draft" }, viewFront: steps.at(-1)?.viewFront ?? true, editing: { id: model.id, visibility: model.visibility } });
+      setMessage(`「${model.name}」を編集しています。`);
+    }).catch(() => { if (active) setMessage("編集する作品を読み込めませんでした。時間をおいてもう一度お試しください。"); });
+    return () => { active = false; };
+  }, [ready, editId, loadDraft, setSearchParams]);
   useEffect(() => {
     const container = stage.current;
     if (!container) return;
@@ -84,7 +111,7 @@ export function PostEditor() {
   const changeColor = (color: string | null) => { if (color !== null) setState((current) => ({ ...current, color })); };
   const reset = ({ confirm = true } = {}) => {
     if (confirm && state.steps.length && !window.confirm("現在の手順を消して、白紙から折り直しますか？")) return;
-    setState(emptyState()); setSize(100); setName(""); setDescription(""); setPresentation(undefined); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
+    setState(emptyState()); setSize(100); setName(""); setDescription(""); setPresentation(undefined); setEditing(undefined); setPreview(null); setGeneration((value) => value + 1); setStorageError(""); setPersistenceReady(true); setMessage("白紙に戻しました。");
   };
   const status = <p className={styles.step} role="status">{ready ? `${state.steps.filter(isFoldStep).length}回の折りを記録${state.busy ? "・操作中" : ""}` : "保存した手順を確認しています…"} {message}</p>;
   const alerts = <>
@@ -93,7 +120,7 @@ export function PostEditor() {
   </>;
   if (preview === "publish" && draft) return <PublishScreen
     model={draft.model} name={name} onNameChange={setName} description={description} onDescriptionChange={setDescription} onPresentationChange={setPresentation}
-    onBack={() => setPreview(null)} onStartNew={() => reset({ confirm: false })}
+    onBack={() => setPreview(null)} onStartNew={() => reset({ confirm: false })} editing={editing} onEditingChange={setEditing}
   />;
   if (preview && draft) return <div className={styles.preview}>
     <div className={styles.previewBar}>
@@ -126,8 +153,11 @@ export function PostEditor() {
         </section>
         <section className={styles.section} aria-labelledby="post-publish">
           <h3 id="post-publish" className={styles.sectionTitle}>投稿</h3>
-          <Button text="投稿へ進む" onClick={() => setPreview("publish")} disabled={blocked || !state.steps.some(isFoldStep)} />
-          <p className={styles.hint}>{state.steps.some(isFoldStep) ? "完成形の向きを決めてサムネイルを撮影し、作品を公開します。投稿にはログインが必要です。" : "1回以上折ると投稿できます。"}</p>
+          <Button text={editing ? "更新へ進む" : "投稿へ進む"} onClick={() => setPreview("publish")} disabled={blocked || !state.steps.some(isFoldStep)} />
+          <p className={styles.hint}>{!state.steps.some(isFoldStep) ? "1回以上折ると投稿できます。"
+            : editing ? "公開中の作品を、同じURLのまま上書きします。サムネイルは撮り直すこともできます。"
+              : "完成形の向きを決めてサムネイルを撮影し、作品を公開します。投稿にはログインが必要です。"}</p>
+          {editing && <Button text="編集をやめて新しい作品にする" variant="secondary" onClick={() => { setEditing(undefined); setMessage("新しい作品として投稿します。"); }} disabled={!ready || state.busy} />}
         </section>
         <section className={styles.section} aria-labelledby="post-reset">
           <h3 id="post-reset" className={styles.sectionTitle}>やり直し</h3>

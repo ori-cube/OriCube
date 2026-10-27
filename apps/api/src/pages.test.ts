@@ -47,7 +47,7 @@ describe("画面の配信", () => {
     expect(page.body).toContain(`<div id="root"></div>`);
   });
 
-  it.each(["/", "/view", "/post"])("%sは200でSPAを返す", async (path) => {
+  it.each(["/", "/view", "/post", "/me"])("%sは200でSPAを返す", async (path) => {
     expect((await html(path)).status).toBe(200);
   });
 

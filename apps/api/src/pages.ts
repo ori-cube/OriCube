@@ -104,6 +104,8 @@ export const createServerApp = ({ template, repository = createMockOrigamiReposi
     .get("/", (c) => c.html(renderPage(template, meta(c.req.url))))
     .get("/view", (c) => c.html(renderPage(template, meta(c.req.url))))
     .get("/post", (c) => c.html(renderPage(template, meta(c.req.url, { title: `折り紙を作る | ${SITE_NAME}` }))))
+    // 人ごとに中身が変わる画面なので検索結果に出さない
+    .get("/me", (c) => c.html(renderPage(template, meta(c.req.url, { title: `自分の作品 | ${SITE_NAME}`, noindex: true }))))
     .notFound((c) => c.req.path.startsWith("/api/")
       ? apiError(c, 404, "not_found", "APIが見つかりません。")
       : c.html(notFoundPage(c.req.url), 404))

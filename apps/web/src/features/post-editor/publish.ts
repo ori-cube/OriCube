@@ -1,5 +1,5 @@
 import type { AuthStatus } from "../../auth/AuthContext";
-import { ApiRequestError, createOrigami, publishOrigami, renewThumbnailUpload, uploadThumbnail, type ApiClient, type OrigamiInput, type PendingOrigami } from "../../apiClient";
+import { ApiRequestError, createOrigami, publishOrigami, renewThumbnailUpload, replaceThumbnail, updateOrigami, uploadThumbnail, type ApiClient, type OrigamiInput, type PendingOrigami } from "../../apiClient";
 
 /** 出力するサムネイルの一辺。一覧のカードと OGP（summary カード）で使う正方形 */
 export const THUMBNAIL_SIZE = 640;
@@ -55,6 +55,37 @@ export const submitOrigami = async ({ client, input, thumbnail, previous, onPend
   return pending.id;
 };
 
+interface UpdateOptions {
+  client: ApiClient;
+  /** 上書きする作品のID */
+  id: string;
+  input: OrigamiInput;
+  /** 撮り直したサムネイル。null なら今のサムネイルのまま */
+  thumbnail: Blob | null;
+}
+
+/**
+ * 公開済みの作品を同じIDのまま上書きする（再編集）
+ *
+ * @description
+ * 内容を上書きしてから、撮り直したサムネイルがあれば新しいキーへ置いて差し替える。
+ * どの段階で失敗しても同じ内容で再試行でき、作品は増えない（差し替えるまでは前のサムネイルのまま）
+ */
+export const submitUpdate = async ({ client, id, input, thumbnail }: UpdateOptions) => {
+  await updateOrigami(client, id, input);
+  if (!thumbnail) return id;
+  let target = await renewThumbnailUpload(client, id, thumbnail);
+  try {
+    await uploadThumbnail(target.thumbnailUpload, thumbnail);
+  } catch (error) {
+    if (!(error instanceof ApiRequestError) || error.status !== 403) throw error;
+    target = await renewThumbnailUpload(client, id, thumbnail);
+    await uploadThumbnail(target.thumbnailUpload, thumbnail);
+  }
+  await replaceThumbnail(client, id, target.thumbnailKey);
+  return id;
+};
+
 /**
  * 失敗の理由ごとに、次にすることを案内する
  *
@@ -67,6 +98,8 @@ export const submitErrorMessage = (error: unknown, authStatus: AuthStatus = "sig
         ? "ログインの設定がないため、この環境では投稿できません。折った手順はこのブラウザに保存されています。"
         : "ログインの有効期限が切れました。もう一度ログインしてから投稿してください。折った手順はこのブラウザに保存されています。";
     }
+    if (error.status === 403 && error.code === "forbidden") return "この作品を変更する権限がありません。自分の作品か、ログインしているアカウントを確認してください。";
+    if (error.status === 404 && error.code === "not_found") return "更新する作品が見つかりません。削除された可能性があります。新しい作品として投稿するには、作品の設定で編集をやめてください。";
     if (error.status === 413) return "作品のデータが大きすぎて投稿できません。";
     if (error.status === 400) return `投稿できませんでした。${error.message}`;
   }
