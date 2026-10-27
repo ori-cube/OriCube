@@ -49,6 +49,8 @@ export const createD1OrigamiRepository = (database: D1Database): OrigamiReposito
     },
     list: async () =>
       (await db.select().from(models).where(eq(models.status, "published")).orderBy(desc(models.createdAt), desc(models.id)).all()).map(toRecord),
+    listByOwner: async (ownerId) =>
+      (await db.select().from(models).where(eq(models.ownerId, ownerId)).orderBy(desc(models.createdAt), desc(models.id)).all()).map(toRecord),
     create: async ({ ownerId, status, thumbnail, model }) => {
       const now = new Date();
       await db.insert(models).values({

@@ -9,7 +9,7 @@ import { anonymousVerifier, type AuthVerifier } from "./auth";
 import { apiError, handleApiError } from "./errors";
 import { createMockOrigamiRepository, type OrigamiRecord, type OrigamiRepository } from "./repository";
 import { modelIdSchema, origamiCreateSchema, origamiInputSchema, origamiListQuerySchema, origamiModelSchema, thumbnailSpecSchema, type OrigamiModel } from "./schema";
-import { createMemoryThumbnailStorage, thumbnailKey, type ThumbnailStorage } from "./storage";
+import { createMemoryThumbnailStorage, isThumbnailKeyOf, thumbnailKey, type ThumbnailStorage } from "./storage";
 
 /** リクエスト本文の上限。作品データの上限（engine の PROCEDURE_V2_LIMITS）と合わせて見直す */
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -57,6 +57,9 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
   });
   const createBody = zValidator("json", origamiCreateSchema, (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "作品の内容またはサムネイルの形式が正しくありません。");
+  });
+  const replaceThumbnailBody = zValidator("json", z.object({ key: z.string().max(200) }), (result, c) => {
+    if (!result.success) return apiError(c, 400, "invalid_request", "サムネイルの指定が正しくありません。");
   });
   const thumbnailBody = zValidator("json", thumbnailSpecSchema, (result, c) => {
     if (!result.success) return apiError(c, 400, "invalid_request", "サムネイルの形式が正しくありません。");
@@ -109,6 +112,19 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       const items = matched.slice((page - 1) * MODELS_PAGE_SIZE, page * MODELS_PAGE_SIZE).map(({ model, thumbnailUrl }) => toSummary(model, thumbnailUrl));
       return c.json({ items, total: matched.length, page, totalPages }, 200);
     })
+    // 自分の作品。公開範囲に関わらず、公開前（pending）の作品も含めて返す（編集・削除の画面用）
+    .get("/me/models", requireUser, async (c) => {
+      const items = (await repository.listByOwner(c.var.userId)).flatMap((record) => {
+        const model = origamiModelSchema.safeParse(record.model);
+        if (!model.success) {
+          console.error("自分の作品の一覧から形式が正しくない作品を除きました", model.error.issues);
+          return [];
+        }
+        const summary = toSummary(model.data, record.thumbnail ? storage.publicUrl(record.thumbnail.key) : null);
+        return [{ ...summary, visibility: model.data.visibility, status: record.status }];
+      });
+      return c.json({ items }, 200);
+    })
     .get("/models/:id", idParam, async (c) => {
       const { id } = c.req.valid("param");
       const record = await repository.findById(id);
@@ -132,12 +148,32 @@ export const createApp = ({ repository = createMockOrigamiRepository(), auth = a
       const owned = await findOwned(id, c.var.userId);
       if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");
       if (owned === "forbidden") return apiError(c, 403, "forbidden", "この作品を変更する権限がありません。");
-      if (owned.status !== "pending") return apiError(c, 409, "conflict", "公開済みの作品のサムネイルはここでは変更できません。");
       const spec = c.req.valid("json");
       const thumbnail = { key: thumbnailKey(id, spec.contentType), ...spec };
+      // 公開済みの作品は、置いた画像を PUT /thumbnail で差し替えるまで今のサムネイルのままにする
+      if (owned.status === "published") {
+        return c.json({ id, status: "published" as const, thumbnailKey: thumbnail.key, thumbnailUpload: await storage.createUpload(thumbnail.key, spec) }, 200);
+      }
       await repository.update(id, { thumbnail });
       if (owned.thumbnail) await storage.delete(owned.thumbnail.key);
-      return c.json({ id, status: "pending" as const, thumbnailUpload: await storage.createUpload(thumbnail.key, spec) }, 200);
+      return c.json({ id, status: "pending" as const, thumbnailKey: thumbnail.key, thumbnailUpload: await storage.createUpload(thumbnail.key, spec) }, 200);
+    })
+    // 公開済みの作品のサムネイルを、アップロード済みの画像に差し替える（再編集で撮り直したとき）
+    .put("/models/:id/thumbnail", requireUser, idParam, replaceThumbnailBody, async (c) => {
+      const { id } = c.req.valid("param");
+      const { key } = c.req.valid("json");
+      const owned = await findOwned(id, c.var.userId);
+      if (owned === "not_found") return apiError(c, 404, "not_found", "作品が見つかりません。");
+      if (owned === "forbidden") return apiError(c, 403, "forbidden", "この作品を変更する権限がありません。");
+      if (owned.status !== "published") return apiError(c, 409, "conflict", "公開前の作品は公開APIでサムネイルを確定してください。");
+      // その作品のために発行したキーだけを受け付ける（アップロード先は所有者にだけ発行している）
+      if (!isThumbnailKeyOf(id, key)) return apiError(c, 400, "invalid_request", "サムネイルの指定が正しくありません。");
+      if (owned.thumbnail?.key === key) return c.json({ id }, 200);
+      const uploaded = await storage.head(key);
+      if (!uploaded) return apiError(c, 409, "conflict", "サムネイルがアップロードされていません。");
+      await repository.update(id, { thumbnail: { key, ...uploaded } });
+      if (owned.thumbnail) await storage.delete(owned.thumbnail.key).catch((error) => console.error(`作品 ${id} の古いサムネイルを削除できませんでした`, error));
+      return c.json({ id }, 200);
     })
     // 申告どおりのサムネイルが置かれていることを確かめてから公開する。公開済みなら何もしない（再試行できる）
     .post("/models/:id/publish", requireUser, idParam, async (c) => {

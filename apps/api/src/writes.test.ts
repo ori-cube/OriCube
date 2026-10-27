@@ -179,7 +179,8 @@ describe("サムネイルのアップロードと公開", () => {
     expect((await send(app, "POST", `/api/models/${first.id}/publish`, { user: "user_a" })).status).toBe(409);
     expect((await upload(app, second.thumbnailUpload)).status).toBe(200);
     expect((await send(app, "POST", `/api/models/${first.id}/publish`, { user: "user_a" })).status).toBe(200);
-    expect((await send(app, "POST", `/api/models/${first.id}/thumbnail-upload`, { user: "user_a", body: thumbnail })).status).toBe(409);
+    // 公開後のアップロード先は、PUT /thumbnail で差し替えるまで今のサムネイルを変えない（下の差し替え）
+    expect(await (await send(app, "POST", `/api/models/${first.id}/thumbnail-upload`, { user: "user_a", body: thumbnail })).json()).toMatchObject({ status: "published" });
   });
 
   it("他人の作品は公開できない", async () => {
@@ -214,5 +215,57 @@ describe("公開範囲", () => {
     const id = await create(app);
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ visibility: "public" });
     expect((await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, visibility: "private" } })).status).toBe(400);
+  });
+});
+
+describe("自分の作品", () => {
+  it("ログインした人の作品だけを、限定公開・公開前も含めて新しい順に返す", async () => {
+    const app = createApp({ auth });
+    const older = await create(app, "user_a", { name: "古い作品" });
+    const unlisted = await create(app, "user_a", { name: "限定の作品", visibility: "unlisted" });
+    const { id: pending } = await createPending(app, "user_a", { name: "公開前の作品" });
+    await create(app, "user_b", { name: "他人の作品" });
+    expect((await app.request("/api/me/models")).status).toBe(401);
+    const { items } = (await (await send(app, "GET", "/api/me/models", { user: "user_a" })).json()) as { items: { id: string; name: string; visibility: string; status: string; thumbnailUrl: string | null }[] };
+    expect(items.map((item) => [item.id, item.visibility, item.status])).toEqual([[pending, "public", "pending"], [unlisted, "unlisted", "published"], [older, "public", "published"]]);
+    expect(items[1].thumbnailUrl).toMatch(/^\/api\/mock-storage\/objects\/thumbnails\//);
+  });
+});
+
+describe("公開済みのサムネイルの差し替え", () => {
+  const thumbnailUrlOf = async (app: ReturnType<typeof createApp>, id: string) => {
+    const { items } = (await (await send(app, "GET", "/api/me/models", { user: "user_a" })).json()) as { items: { id: string; thumbnailUrl: string }[] };
+    return items.find((item) => item.id === id)?.thumbnailUrl ?? "";
+  };
+
+  it("置いた画像に差し替え、古い画像を消す。置くまでは今のサムネイルのまま", async () => {
+    const app = createApp({ auth });
+    const id = await create(app);
+    const before = await thumbnailUrlOf(app, id);
+    const res = await send(app, "POST", `/api/models/${id}/thumbnail-upload`, { user: "user_a", body: { contentType: "image/webp", size: 4 } });
+    const { thumbnailKey, thumbnailUpload } = (await res.json()) as Created & { thumbnailKey: string };
+    expect(await thumbnailUrlOf(app, id)).toBe(before);
+    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(409);
+    expect((await upload(app, thumbnailUpload, image.slice(0, 4))).status).toBe(200);
+    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(200);
+    const after = await thumbnailUrlOf(app, id);
+    expect(after).toContain(thumbnailKey);
+    expect((await app.request(after)).headers.get("Content-Type")).toBe("image/webp");
+    expect((await app.request(before)).status).toBe(404);
+    // 同じキーで再試行しても成功する
+    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(200);
+  });
+
+  it("他の作品のキー・形の違うキー・他人・公開前の作品は差し替えられない", async () => {
+    const app = createApp({ auth });
+    const id = await create(app);
+    const other = await create(app);
+    const { thumbnailKey } = (await (await send(app, "POST", `/api/models/${other}/thumbnail-upload`, { user: "user_a", body: thumbnail })).json()) as { thumbnailKey: string };
+    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(400);
+    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: `thumbnails/${id}/../x.png` } })).status).toBe(400);
+    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_b", body: { key: thumbnailKey } })).status).toBe(403);
+    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { body: { key: thumbnailKey } })).status).toBe(401);
+    const { id: pending } = await createPending(app);
+    expect((await send(app, "PUT", `/api/models/${pending}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(409);
   });
 });

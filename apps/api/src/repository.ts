@@ -36,6 +36,8 @@ export interface OrigamiRepository {
   findById(id: string): Promise<OrigamiRecord | null>;
   /** 公開済みの作品を新しい順に返す。作品数が増えたら検索・ページ分割を保存先へ移す */
   list(): Promise<OrigamiRecord[]>;
+  /** その人の作品を、公開前（pending）も含めて新しい順に返す */
+  listByOwner(ownerId: string): Promise<OrigamiRecord[]>;
   create(record: { ownerId: string; status: OrigamiStatus; thumbnail: ThumbnailRecord | null; model: OrigamiModel }): Promise<void>;
   update(id: string, patch: OrigamiRecordPatch): Promise<void>;
   delete(id: string): Promise<void>;
@@ -58,6 +60,7 @@ export const createMemoryOrigamiRepository = (seed: SeedRecord[] = []): OrigamiR
       return record ? toRecord(record) : null;
     },
     list: async () => [...records.values()].filter((record) => record.status === "published").sort((left, right) => right.order - left.order).map(toRecord),
+    listByOwner: async (ownerId) => [...records.values()].filter((record) => record.ownerId === ownerId).sort((left, right) => right.order - left.order).map(toRecord),
     create: async (record) => {
       records.set(record.model.id, { ...record, order: ++lastOrder });
     },
