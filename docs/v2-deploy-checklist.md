@@ -9,13 +9,13 @@ v2（`apps/web` + `apps/api`）を Cloudflare Workers に公開する前に、�
 
 ## 2. Cloudflare D1（作品の保存先）
 
-- [ ] D1 を作る
+- [x] D1 を作る（location: Asia Pacific）
 
   ```bash
-  pnpm --filter @oricube/api exec wrangler d1 create oricube
+  pnpm --filter @oricube/api exec wrangler d1 create oricube --location apac
   ```
 
-- [ ] 表示された `database_id` を `apps/api/wrangler.jsonc` の `d1_databases[0].database_id`（今は `00000000-...` の仮の値）に設定する。値を共有してもらえれば PR にする
+- [x] 表示された `database_id` を `apps/api/wrangler.jsonc` の `d1_databases[0].database_id` に設定する
 - [ ] テーブルを作る（`apps/api/migrations` の 0001〜0003 が順に適用される）
 
   ```bash
