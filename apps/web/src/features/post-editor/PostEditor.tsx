@@ -7,6 +7,7 @@ import type { OrigamiEditorState, OrigamiPostV2Props } from "../../components/Or
 import { OrigamiViewer } from "../../components/OrigamiViewer";
 import { exportProcedureV2, isFoldStep, type PresentationV2 } from "@oricube/engine";
 import { apiClient, fetchOrigami } from "../../apiClient";
+import { loadEditKey } from "./editKeys";
 import { DRAFT_KEY, parseDraft, restoreHistory, serializeDraft, type Draft, type EditingTarget } from "./draft";
 import { PublishScreen } from "./PublishScreen";
 import styles from "./PostEditor.module.css";
@@ -80,6 +81,8 @@ export function PostEditor() {
     let active = true;
     const clearParam = () => setSearchParams((params) => { params.delete("edit"); return params; }, { replace: true });
     if (current.current.editing?.id === editId) { clearParam(); return; }
+    // ログインの代わりに、投稿したブラウザに残した編集用の鍵で更新する。鍵が無ければ読み込まない
+    if (!loadEditKey(editId)) { clearParam(); setMessage("このブラウザには、この作品の編集用の鍵がありません。投稿したブラウザで編集してください。"); return; }
     setMessage("作品を読み込んでいます…");
     fetchOrigami(apiClient, editId).then((model) => {
       if (!active) return;
@@ -155,8 +158,8 @@ export function PostEditor() {
           <h3 id="post-publish" className={styles.sectionTitle}>投稿</h3>
           <Button text={editing ? "更新へ進む" : "投稿へ進む"} onClick={() => setPreview("publish")} disabled={blocked || !state.steps.some(isFoldStep)} />
           <p className={styles.hint}>{!state.steps.some(isFoldStep) ? "1回以上折ると投稿できます。"
-            : editing ? "公開中の作品を、同じURLのまま上書きします。サムネイルは撮り直すこともできます。"
-              : "完成形の向きを決めてサムネイルを撮影し、作品を公開します。投稿にはログインが必要です。"}</p>
+            : editing ? "公開中の作品を、同じURLのまま上書きします。サムネイルの向きも決め直せます。"
+              : "完成形を見せる向き（サムネイルの向き）を決めて、作品を公開します。ログインは要りません。"}</p>
           {editing && <Button text="編集をやめて新しい作品にする" variant="secondary" onClick={() => { setEditing(undefined); setMessage("新しい作品として投稿します。"); }} disabled={!ready || state.busy} />}
         </section>
         <section className={styles.section} aria-labelledby="post-reset">

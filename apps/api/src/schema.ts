@@ -29,25 +29,14 @@ export const origamiModelSchema = z.object({
 
 export type OrigamiModel = z.infer<typeof origamiModelSchema>;
 
-/** 投稿・更新で受け取る作品。IDと所有者はサーバーで決める */
+/** 投稿・更新で受け取る作品。IDと編集用の鍵はサーバーで決める */
 export const origamiInputSchema = origamiModelSchema.omit({ id: true });
+
+/** 投稿で受け取る作品と、画面の Turnstile が発行したトークン */
+export const origamiCreateSchema = origamiInputSchema.extend({ turnstileToken: z.string().max(2048) });
 
 /** 一覧の検索条件。page は1始まり */
 export const origamiListQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
-
-/** サムネイルとして受け付ける画像。保存先のオブジェクトはこの形式とサイズで署名する */
-export const THUMBNAIL_CONTENT_TYPES = ["image/png", "image/webp"] as const;
-export const THUMBNAIL_MAX_BYTES = 512 * 1024;
-
-export const thumbnailSpecSchema = z.object({
-  contentType: z.enum(THUMBNAIL_CONTENT_TYPES),
-  size: z.number().int().min(1).max(THUMBNAIL_MAX_BYTES),
-});
-
-export type ThumbnailSpec = z.infer<typeof thumbnailSpecSchema>;
-
-/** 投稿で受け取る作品と、これからアップロードするサムネイルの形式 */
-export const origamiCreateSchema = origamiInputSchema.extend({ thumbnail: thumbnailSpecSchema });

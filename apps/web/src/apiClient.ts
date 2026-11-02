@@ -39,7 +39,7 @@ const toError = async (res: Response, fallback: string) => {
   return new ApiRequestError(error?.message ?? `${fallback}（${res.status}）`, res.status, error?.code);
 };
 
-/** 投稿する作品。IDと所有者はサーバーが決める */
+/** 投稿する作品。IDと編集用の鍵はサーバーが決める */
 export interface OrigamiInput {
   name: string;
   description: string;
@@ -52,75 +52,30 @@ export interface OrigamiInput {
 }
 /** 公開範囲。public は一覧・検索に載り、unlisted はURLを知っている人だけが見られる */
 export type Visibility = "public" | "unlisted";
-export type ThumbnailContentType = "image/png" | "image/webp";
-export interface ThumbnailUpload { url: string; method: "PUT"; headers: Record<string, string>; expiresAt: string }
-export interface PendingOrigami { id: string; thumbnailUpload: ThumbnailUpload }
-
-const thumbnailSpec = (thumbnail: Blob) => {
-  if (thumbnail.type !== "image/png" && thumbnail.type !== "image/webp") throw new ApiRequestError("サムネイルはPNGかWebPにしてください。", 400, "invalid_request");
-  return { contentType: thumbnail.type as ThumbnailContentType, size: thumbnail.size };
-};
-
-/** 作品を公開前（pending）で作り、サムネイルのアップロード先を受け取る */
-export const createOrigami = async (client: ApiClient, input: OrigamiInput, thumbnail: Blob): Promise<PendingOrigami> => {
-  const res = await client.api.models.$post({ json: { ...input, thumbnail: thumbnailSpec(thumbnail) } });
-  if (!res.ok) throw await toError(res, "作品を投稿できませんでした");
-  const { id, thumbnailUpload } = await res.json();
-  return { id, thumbnailUpload };
-};
-
 /**
- * サムネイルのアップロード先を作る
+ * 作品を投稿する。turnstileToken は画面の Turnstile が発行したトークン（1回しか使えない）
  *
- * @description
- * 公開前の作品はアップロード先の作り直し（期限切れ・撮り直し）。公開済みの作品は再編集での撮り直しで、
- * 置いたあと {@link replaceThumbnail} に thumbnailKey を渡すまで今のサムネイルのまま
+ * @returns サーバーが決めたIDと、編集・削除に使う鍵（この応答でしか受け取れない）
  */
-export const renewThumbnailUpload = async (client: ApiClient, id: string, thumbnail: Blob): Promise<PendingOrigami & { thumbnailKey: string }> => {
-  const res = await client.api.models[":id"]["thumbnail-upload"].$post({ param: { id }, json: thumbnailSpec(thumbnail) });
-  if (!res.ok) throw await toError(res, "サムネイルのアップロード先を作れませんでした");
-  const { thumbnailUpload, thumbnailKey } = await res.json();
-  return { id, thumbnailUpload, thumbnailKey };
+export const createOrigami = async (client: ApiClient, input: OrigamiInput, turnstileToken: string) => {
+  const res = await client.api.models.$post({ json: { ...input, turnstileToken } });
+  if (!res.ok) throw await toError(res, "作品を投稿できませんでした");
+  const { id, editKey } = await res.json();
+  return { id, editKey };
 };
 
-/** 公開済みの作品のサムネイルを、置いた画像に差し替える */
-export const replaceThumbnail = async (client: ApiClient, id: string, key: string) => {
-  const res = await client.api.models[":id"].thumbnail.$put({ param: { id }, json: { key } });
-  if (!res.ok) throw await toError(res, "サムネイルを差し替えられませんでした");
-};
+/** 編集用の鍵を送るヘッダー（API の EDIT_KEY_HEADER と同じ） */
+const EDIT_KEY_HEADER = "X-Edit-Key";
 
-/** 作品の内容を同じIDのまま上書きする（再編集）。サムネイルは変えない */
-export const updateOrigami = async (client: ApiClient, id: string, input: OrigamiInput) => {
-  const res = await client.api.models[":id"].$put({ param: { id }, json: input });
+/** 作品の内容を同じIDのまま上書きする（再編集）。editKey は投稿したときに受け取った編集用の鍵 */
+export const updateOrigami = async (client: ApiClient, id: string, input: OrigamiInput, editKey: string) => {
+  const res = await client.api.models[":id"].$put({ param: { id }, json: input }, { headers: { [EDIT_KEY_HEADER]: editKey } });
   if (!res.ok) throw await toError(res, "作品を更新できませんでした");
 };
 
-/** 作品を削除する。サムネイルの画像もサーバーが消す */
-export const deleteOrigami = async (client: ApiClient, id: string) => {
-  const res = await client.api.models[":id"].$delete({ param: { id } });
+/** 作品を削除する。editKey は投稿したときに受け取った編集用の鍵 */
+export const deleteOrigami = async (client: ApiClient, id: string, editKey: string) => {
+  const res = await client.api.models[":id"].$delete({ param: { id } }, { headers: { [EDIT_KEY_HEADER]: editKey } });
   // 既に消えていれば目的は果たしている
   if (!res.ok && res.status !== 404) throw await toError(res, "作品を削除できませんでした");
-};
-
-export type MyOrigamiResponse = InferResponseType<ApiClient["api"]["me"]["models"]["$get"], 200>;
-export type MyOrigami = MyOrigamiResponse["items"][number];
-
-/** ログインした人の作品（限定公開・公開前も含む） */
-export const fetchMyOrigami = async (client: ApiClient): Promise<MyOrigami[]> => {
-  const res = await client.api.me.models.$get();
-  if (!res.ok) throw await toError(res, "自分の作品を取得できませんでした");
-  return (await res.json()).items;
-};
-
-/** サムネイルを保存先（本番は R2 の presigned URL）へ直接送る。認証情報は付けない */
-export const uploadThumbnail = async (target: ThumbnailUpload, thumbnail: Blob) => {
-  const res = await fetch(target.url, { method: target.method, headers: target.headers, body: thumbnail, credentials: "omit" });
-  if (!res.ok) throw new ApiRequestError(`サムネイルをアップロードできませんでした（${res.status}）`, res.status, "upload_failed");
-};
-
-/** サムネイルが置かれたことをサーバーで確かめて公開する。公開済みでも成功する */
-export const publishOrigami = async (client: ApiClient, id: string) => {
-  const res = await client.api.models[":id"].publish.$post({ param: { id } });
-  if (!res.ok) throw await toError(res, "作品を公開できませんでした");
-  return res.json();
 };

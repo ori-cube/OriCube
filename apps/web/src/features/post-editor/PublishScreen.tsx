@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Button, SegmentedControl, TextArea, TextInput } from "@oricube/design-system";
-import { createViewerTimeline, type FixBoardV2, type OrigamiModelV2, type PresentationV2 } from "@oricube/engine";
-import { apiClient, type Visibility } from "../../apiClient";
-import { useAuthState } from "../../auth/AuthContext";
+import { createProcedureThumbnail, createViewerTimeline, type FixBoardV2, type OrigamiModelV2, type PresentationV2 } from "@oricube/engine";
+import { apiClient, createOrigami, type Visibility } from "../../apiClient";
+import { OrigamiThumbnail } from "../../components/OrigamiThumbnail";
+import { Turnstile } from "../../components/Turnstile";
 import { OrigamiCanvas, type OrigamiCanvasHandle } from "../../components/OrigamiViewer/Canvas";
 import type { EditingTarget } from "./draft";
-import { THUMBNAIL_SIZE, submitErrorMessage, submitOrigami, submitUpdate, type PendingSubmission } from "./publish";
+import { saveEditKey } from "./editKeys";
+import { submitErrorMessage, submitUpdate } from "./publish";
 import styles from "./PostEditor.module.css";
 
 export interface PublishScreenProps {
@@ -17,12 +19,14 @@ export interface PublishScreenProps {
   onNameChange: (name: string) => void;
   description: string;
   onDescriptionChange: (description: string) => void;
-  /** 撮影した向きを、完成形を見せる向きとして下書きに残す。回していなければ undefined */
+  /** 決めた向きを、完成形を見せる向きとして下書きに残す。回していなければ undefined */
   onPresentationChange: (presentation: PresentationV2 | undefined) => void;
   onBack: () => void;
   /** 投稿後に白紙から折り直す */
   onStartNew: () => void;
-  /** 再編集中の公開済みの作品。あれば新しく作らず、同じIDのまま上書きする */
+  /** Turnstile のサイトキー。未設定なら確認を出さない（開発用の API は確認を省く） */
+  turnstileSiteKey?: string;
+  /** 再編集中の公開中の作品。あれば新しく作らず、同じIDのまま上書きする */
   editing?: EditingTarget;
   /** 上書きしたときに、公開範囲を下書きの再編集の情報へ反映する */
   onEditingChange?: (editing: EditingTarget) => void;
@@ -60,43 +64,46 @@ const visibilityHints: Record<Visibility, string> = {
 /** 画面内で回す1回の角度 */
 const ROTATE_STEP = Math.PI / 12;
 
-// 撮影の背景は作業台と同じ色にする。OGP など透過を扱えない表示先があるため塗りつぶす
-const thumbnailBackground = () =>
-  getComputedStyle(document.documentElement).getPropertyValue("--background-subtle").trim() || "#f5f5f5";
-
 /**
  * 投稿画面
  *
  * @description
- * 一覧・OGP に使うサムネイルを、完成形を好きな向きに回して撮影してから投稿する。
- * 枠の中に写る範囲がそのまま正方形のサムネイルになる
+ * 完成形を好きな向きに回して、見せる向きを決めてから投稿する。
+ * 一覧・OGP のサムネイルは、サーバーがこの向きで手順から描く（画像は送らない）。プレビューは同じ図を画面で描く
  */
-export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onPresentationChange, onBack, onStartNew, editing, onEditingChange }: PublishScreenProps) {
-  // 開いたときの見せる向きから始める。撮影で更新した向きを表示に重ねないよう、開いたときの値に固定する
+export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onPresentationChange, onBack, onStartNew, turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY, editing, onEditingChange }: PublishScreenProps) {
+  // 開いたときの見せる向きから始める。決めた向きを表示に重ねないよう、開いたときの値に固定する
   const [initialPresentation] = useState(model.presentation);
   const timeline = useMemo(() => createViewerTimeline(model.procedure, initialPresentation), [model.procedure, initialPresentation]);
   const zoom = useMemo(() => fitZoom(model.procedure.size, timeline.finalBoards), [model.procedure.size, timeline.finalBoards]);
   const canvas = useRef<OrigamiCanvasHandle>(null);
-  const pending = useRef<PendingSubmission | null>(null);
   const [resetKey, setResetKey] = useState(0);
-  const [thumbnail, setThumbnail] = useState<Blob | null>(null);
-  const [captureError, setCaptureError] = useState("");
+  // 再編集では、決め直さなければ今の向き（読み込んだ作品の向き）のまま
+  const [decided, setDecided] = useState(editing !== undefined);
+  const [orientationError, setOrientationError] = useState("");
   const [nameError, setNameError] = useState("");
   const [visibility, setVisibility] = useState<Visibility>(editing?.visibility ?? "public");
-  const thumbnailUrl = useMemo(() => thumbnail ? URL.createObjectURL(thumbnail) : null, [thumbnail]);
-  useEffect(() => () => { if (thumbnailUrl) URL.revokeObjectURL(thumbnailUrl); }, [thumbnailUrl]);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  // トークンは1回しか使えないため、投稿に失敗したら確認を作り直す
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const [turnstileError, setTurnstileError] = useState("");
+  // 決めた向きで、サーバーがサムネイルに描く図と同じものを作る
+  const thumbnail = useMemo(() => createProcedureThumbnail(model.procedure, createViewerTimeline(model.procedure, model.presentation)), [model.procedure, model.presentation]);
 
-  const auth = useAuthState();
   const queryClient = useQueryClient();
   const submit = useMutation({
-    mutationFn: (image: Blob | null) => {
+    mutationFn: async () => {
       const input = { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, visibility, ...(model.presentation ? { presentation: model.presentation } : {}) };
-      if (editing) return submitUpdate({ client: apiClient, id: editing.id, input, thumbnail: image });
-      if (!image) throw new Error("サムネイルがありません");
-      return submitOrigami({ client: apiClient, input, thumbnail: image, previous: pending.current, onPending: (next) => { pending.current = next; } });
+      // 更新は編集用の鍵で確かめるため、Turnstile の確認は要らない
+      if (editing) return { id: await submitUpdate({ client: apiClient, id: editing.id, input }), editKeySaved: true };
+      const { id, editKey } = await createOrigami(apiClient, input, turnstileToken ?? "");
+      return { id, editKeySaved: saveEditKey(id, editKey) };
     },
-    onSuccess: async (id) => {
-      pending.current = null;
+    onError: () => {
+      setTurnstileToken(null);
+      setTurnstileKey((value) => value + 1);
+    },
+    onSuccess: async ({ id }) => {
       if (editing) onEditingChange?.({ id, visibility });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["origami", id] }),
@@ -106,31 +113,36 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
     },
   });
   const action = editing ? "更新" : "投稿";
+  // 更新は編集用の鍵で確かめるため、Turnstile は新しい投稿だけに出す
+  const turnstile = editing ? undefined : turnstileSiteKey;
 
-  const capture = async () => {
-    setCaptureError("");
-    try {
-      if (!canvas.current) throw new Error("3D表示がありません");
-      const rotation = canvas.current.getModelRotation();
-      setThumbnail(await canvas.current.capture({ size: THUMBNAIL_SIZE, background: thumbnailBackground() }));
-      // サムネイルと同じ向きを、閲覧ページで完成形を見せる向きにする
-      onPresentationChange(rotation && !isIdentity(rotation) ? { rotation } : undefined);
-    }
-    catch { setCaptureError("撮影できませんでした。「向きをリセット」を押してから、もう一度撮影してください。"); }
+  const decide = () => {
+    setOrientationError("");
+    const rotation = canvas.current?.getModelRotation();
+    if (!rotation) { setOrientationError("向きを読み取れませんでした。「向きをリセット」を押してから、もう一度決めてください。"); return; }
+    // サムネイルと閲覧ページで、完成形をこの向きで見せる
+    onPresentationChange(isIdentity(rotation) ? undefined : { rotation });
+    setDecided(true);
   };
   const publish = () => {
     if (!name.trim()) { setNameError("作品名を入力してください。"); return; }
-    // 再編集では、撮り直さなければ今のサムネイルのまま
-    if (!thumbnail && !editing) { setCaptureError("先にサムネイルを撮影してください。"); return; }
-    submit.mutate(thumbnail);
+    if (!decided) { setOrientationError("先にサムネイルの向きを決めてください。"); return; }
+    if (turnstile && !turnstileToken) { setTurnstileError("ロボットでないことの確認が終わってから投稿してください。"); return; }
+    submit.mutate();
   };
+  const preview = <div className={styles.thumbnail} role="img" aria-label={`${name.trim() || model.name}のサムネイル`}>
+    <OrigamiThumbnail thumbnail={thumbnail} color={model.color} />
+  </div>;
 
   if (submit.isSuccess) return <main id="origami-viewer" className={styles.published}>
     <h1 className={styles.publishedTitle}>{action}しました</h1>
     <p className={styles.hint}>「{name.trim()}」を{editing ? "同じURLのまま上書きし、" : ""}{visibility === "unlisted" ? "限定公開" : "公開"}しました。折った手順はこのブラウザにも残っています。</p>
-    {thumbnailUrl && <img className={styles.publishedImage} src={thumbnailUrl} alt={`${name.trim()}のサムネイル`} width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />}
+    {editing ? null : submit.data.editKeySaved
+      ? <p className={styles.hint}>この作品を編集・削除するための鍵を、このブラウザに保存しました。ブラウザのデータを消すと、この作品は編集・削除できなくなります。</p>
+      : <p className={styles.alert} role="alert">このブラウザに編集用の鍵を保存できませんでした。この作品はあとから編集・削除できません。</p>}
+    <div className={styles.publishedImage}>{preview}</div>
     <div className={styles.previewActions}>
-      <Link className={styles.link} to={`/view/${submit.data}`}>作品ページを見る</Link>
+      <Link className={styles.link} to={`/view/${submit.data.id}`}>作品ページを見る</Link>
       <Button text="白紙から新しく折る" variant="secondary" onClick={onStartNew} />
     </div>
   </main>;
@@ -138,7 +150,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   return <div className={styles.preview}>
     <div className={styles.previewBar}>
       <div className={styles.previewNote}>
-        <p className={styles.hint}>完成形を回して、枠の中がサムネイルになる向きで撮影します。サムネイルは作品一覧とSNSでの共有に使います。</p>
+        <p className={styles.hint}>完成形を回して、サムネイルにする向きを決めます。サムネイルは作品一覧とSNSでの共有に使います。</p>
       </div>
       <div className={styles.previewActions}>
         <Button text="折る画面に戻る" variant="secondary" onClick={onBack} disabled={submit.isPending} />
@@ -152,7 +164,6 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
           resetKey={resetKey} zoom={zoom}
           label={`${name.trim() || model.name}の完成形。ドラッグまたは矢印キーで回して、サムネイルの向きを決めます。`}
         />
-        <div className={styles.cameraFrame} aria-hidden />
         <div className={styles.rotate} role="group" aria-label="作品を画面内で回す">
           <Button text="左に回す" variant="secondary" size="sm" onClick={() => canvas.current?.rotateModel(ROTATE_STEP)} disabled={submit.isPending} />
           <Button text="右に回す" variant="secondary" size="sm" onClick={() => canvas.current?.rotateModel(-ROTATE_STEP)} disabled={submit.isPending} />
@@ -169,24 +180,24 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
         </div>
         <section className={styles.section} aria-labelledby="publish-thumbnail">
           <h2 id="publish-thumbnail" className={styles.sectionTitle}>サムネイル</h2>
-          {thumbnailUrl
-            ? <img className={styles.thumbnail} src={thumbnailUrl} alt="撮影したサムネイル" width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
-            : <p className={styles.hint}>{editing ? "撮り直さなければ、今のサムネイルのままです。" : "まだ撮影していません。"}作品が傾いて見えるときは、まず正面のまま「左に回す」「右に回す」（15°ずつ）で立ててから、ドラッグや矢印キーで角度をつけます。ホイールやピンチで大きさを変えられます。撮影した向きは、作品ページで完成形を見せる向きにもなります。</p>}
+          {decided
+            ? preview
+            : <p className={styles.hint}>まだ向きを決めていません。作品が傾いて見えるときは、まず正面のまま「左に回す」「右に回す」（15°ずつ）で立ててから、ドラッグや矢印キーで角度をつけます。決めた向きは、作品ページで完成形を見せる向きにもなります。</p>}
           <div className={styles.previewActions}>
-            <Button text={thumbnail ? "撮り直す" : "この向きで撮影"} variant="secondary" onClick={() => void capture()} disabled={submit.isPending} />
+            <Button text={decided ? "今の向きに決め直す" : "この向きに決める"} variant="secondary" onClick={decide} disabled={submit.isPending} />
             <Button text="向きをリセット" variant="secondary" onClick={() => setResetKey((value) => value + 1)} disabled={submit.isPending} />
           </div>
-          {captureError && <p className={styles.alert} role="alert">{captureError}</p>}
+          {orientationError && <p className={styles.alert} role="alert">{orientationError}</p>}
         </section>
-        {auth.status === "signedOut" || auth.status === "loading"
-          // 下書きはブラウザに保存済み。ログイン後は作成画面へ戻り、もう一度投稿へ進む（戻っただけで公開しない）
-          ? <>
-            <Button text={`ログインして${action}`} onClick={() => auth.signIn("/post")} disabled={auth.status === "loading"} />
-            <p className={styles.hint}>下書きはこのブラウザに保存されています。ログイン後に作成画面へ戻ったら、もう一度「投稿へ進む」から投稿してください。</p>
-          </>
-          // ログインの設定がない環境（ローカル）でも、開発用の API（pnpm dev:api）なら開発ユーザーとして投稿できる
-          : <Button type="submit" text={submit.isPending ? `${action}しています…` : `${action}する`} disabled={submit.isPending} />}
-        {submit.isError && <p className={styles.alert} role="alert">{submitErrorMessage(submit.error, auth.status)}</p>}
+        {turnstile && <Turnstile
+          key={turnstileKey} siteKey={turnstile}
+          onToken={(token) => { setTurnstileToken(token); if (token) setTurnstileError(""); }}
+          onLoadError={() => setTurnstileError("ロボットでないことの確認を読み込めませんでした。通信状況を確認して、ページを読み込み直してください。")}
+        />}
+        {turnstileError && <p className={styles.alert} role="alert">{turnstileError}</p>}
+        <Button type="submit" text={submit.isPending ? `${action}しています…` : `${action}する`} disabled={submit.isPending} />
+        <p className={styles.hint}>{editing ? "このブラウザに保存した編集用の鍵で更新します。" : "ログインは要りません。投稿した作品の編集・削除に使う鍵は、このブラウザに保存されます。"}</p>
+        {submit.isError && <p className={styles.alert} role="alert">{submitErrorMessage(submit.error)}</p>}
       </form>
     </main>
   </div>;

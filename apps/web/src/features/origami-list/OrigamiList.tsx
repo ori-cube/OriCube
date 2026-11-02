@@ -17,7 +17,7 @@ const parsePage = (value: string | null) => {
 function OrigamiCard({ origami }: { origami: OrigamiSummary }) {
   return <li className={styles.item}>
     <Link to={`/view/${origami.id}`} className={styles.card}>
-      <OrigamiCover thumbnailUrl={origami.thumbnailUrl} thumbnail={origami.thumbnail} color={origami.color} />
+      <OrigamiCover thumbnail={origami.thumbnail} color={origami.color} />
       <div className={styles.body}>
         <h2 className={styles.name}>{origami.name}</h2>
         <p className={styles.steps}>{origami.stepCount > 0 ? `${origami.stepCount}ステップ` : "折り手順なし"}</p>

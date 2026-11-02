@@ -114,48 +114,6 @@ describe("V2閲覧シーン", () => {
     scene.dispose();
   });
 
-  it("撮影は今の視点のまま、ビュー中央の正方形を指定の大きさで塗りつぶして画像にし、表示を戻す", async () => {
-    const canvas = document.createElement("canvas");
-    const container = document.createElement("div");
-    // 縦長のビュー。正方形の枠は幅（300px）に合わせる
-    Object.defineProperties(container, { clientWidth: { value: 300 }, clientHeight: { value: 600 } });
-    const blob = new Blob(["png"], { type: "image/png" });
-    const toBlob = vi.fn((callback: BlobCallback) => callback(blob));
-    canvas.toBlob = toBlob;
-    const scene = createViewerScene(canvas, container, 100);
-    scene.rotateCamera(Math.PI / 4, 0);
-    const camera: unknown = renderer.render.mock.calls.at(-1)?.[1];
-    if (!(camera instanceof THREE.PerspectiveCamera)) throw new Error("カメラがありません");
-    const position = camera.position.clone();
-    let captured: { aspect: number; fov: number } | undefined;
-    renderer.render.mockImplementationOnce((_scene: unknown, used: THREE.PerspectiveCamera) => { captured = { aspect: used.aspect, fov: used.fov }; });
-
-    await expect(scene.capture({ size: 640, background: "#f5f5f5" })).resolves.toBe(blob);
-
-    expect(captured?.aspect).toBe(1);
-    // 縦の視野角を枠の幅（高さの半分）に合わせて狭める
-    expect(Math.tan(THREE.MathUtils.degToRad(captured?.fov ?? 0) / 2)).toBeCloseTo(Math.tan(THREE.MathUtils.degToRad(35) / 2) / 2);
-    expect(renderer.setSize).toHaveBeenCalledWith(640, 640, false);
-    expect(renderer.setClearColor).toHaveBeenCalledWith("#f5f5f5", 1);
-    expect(toBlob).toHaveBeenCalledWith(expect.any(Function), "image/png");
-    // 表示の大きさ・視野角・背景・視点を戻す
-    expect(renderer.setSize).toHaveBeenLastCalledWith(300, 600, false);
-    expect(renderer.setViewport).toHaveBeenLastCalledWith(0, 0, 300, 600);
-    expect(renderer.setClearColor).toHaveBeenLastCalledWith(expect.any(THREE.Color), 0);
-    expect(camera.fov).toBe(35);
-    expect(camera.aspect).toBeCloseTo(0.5);
-    expect(camera.position.distanceTo(position)).toBeCloseTo(0);
-    scene.dispose();
-  });
-
-  it("画像にできなければ失敗を返す", async () => {
-    const canvas = document.createElement("canvas");
-    canvas.toBlob = (callback: BlobCallback) => callback(null);
-    const scene = createViewerScene(canvas, document.createElement("div"), 100);
-    await expect(scene.capture({ size: 640, background: "#ffffff" })).rejects.toThrow("サムネイル");
-    scene.dispose();
-  });
-
   it("作品を見ている方向を軸に画面内で回し、カメラの上下は変えない", () => {
     const scene = createViewerScene(document.createElement("canvas"), document.createElement("div"), 100);
     scene.setContent(undefined, [{ layer: 0, polygon: [[0, 0, 0], [20, 0, 0], [0, 20, 0]] }], "#ed7070", true);

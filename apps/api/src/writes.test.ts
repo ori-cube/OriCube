@@ -1,89 +1,99 @@
-import { describe, expect, it } from "vitest";
-import { createApp } from "./app";
-import type { AuthVerifier } from "./auth";
+import { describe, expect, it, vi } from "vitest";
+import { createApp, type AppOptions } from "./app";
+import { EDIT_KEY_HEADER } from "./editKey";
+import type { HumanVerifier } from "./humanCheck";
 import { craneProcedure } from "./mocks/crane";
-import { createMemoryThumbnailStorage } from "./storage";
+import { createMockOrigamiRepository } from "./repository";
 
-/** テスト用: x-test-user ヘッダーの値をログイン中のユーザーIDとして扱う */
-const auth: AuthVerifier = { authenticate: async (request) => request.headers.get("x-test-user") };
+/** テスト用: トークンが "human" なら人として扱う */
+const human: HumanVerifier = { verify: async (token) => token === "human" };
+const appWith = (options: AppOptions = {}) => createApp({ human, ...options });
 const input = { name: "テストの鶴", description: "説明", color: "#ed7070", procedure: craneProcedure };
-const image = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
-const thumbnail = { contentType: "image/png", size: image.byteLength };
-const send = (app: ReturnType<typeof createApp>, method: string, path: string, { user, body }: { user?: string; body?: unknown } = {}) =>
+const send = (app: ReturnType<typeof createApp>, method: string, path: string, { editKey, body, ip }: { editKey?: string; body?: unknown; ip?: string } = {}) =>
   app.request(path, {
     method,
-    headers: { "Content-Type": "application/json", ...(user ? { "x-test-user": user } : {}) },
+    headers: { "Content-Type": "application/json", ...(editKey ? { [EDIT_KEY_HEADER]: editKey } : {}), ...(ip ? { "CF-Connecting-IP": ip } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-interface Created { id: string; status: string; thumbnailUpload: { url: string; method: string; headers: Record<string, string> } }
-const createPending = async (app: ReturnType<typeof createApp>, user = "user_a", overrides: Record<string, unknown> = {}) => {
-  const res = await send(app, "POST", "/api/models", { user, body: { ...input, thumbnail, ...overrides } });
+/** 投稿して作品IDと編集用の鍵を返す */
+const create = async (app: ReturnType<typeof createApp>, overrides: Record<string, unknown> = {}) => {
+  const res = await send(app, "POST", "/api/models", { body: { ...input, turnstileToken: "human", ...overrides } });
   expect(res.status).toBe(201);
-  return (await res.json()) as Created;
-};
-const upload = (app: ReturnType<typeof createApp>, target: Created["thumbnailUpload"], body: Uint8Array = image) =>
-  app.request(target.url, { method: target.method, headers: target.headers, body });
-/** 投稿・サムネイルのアップロード・公開までを行う */
-const create = async (app: ReturnType<typeof createApp>, user = "user_a", overrides: Record<string, unknown> = {}) => {
-  const { id, thumbnailUpload } = await createPending(app, user, overrides);
-  expect((await upload(app, thumbnailUpload)).status).toBe(200);
-  expect((await send(app, "POST", `/api/models/${id}/publish`, { user })).status).toBe(200);
-  return id;
+  return (await res.json()) as { id: string; editKey: string };
 };
 
 describe("POST /api/models", () => {
-  it("未ログインは401", async () => {
-    const res = await send(createApp({ auth }), "POST", "/api/models", { body: input });
-    expect(res.status).toBe(401);
-    expect(await res.json()).toMatchObject({ error: { code: "unauthorized" } });
+  it("ログインなしで投稿でき、編集用の鍵を1回だけ返す", async () => {
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(editKey).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    const res = await app.request(`/api/models/${id}`);
+    expect(await res.json()).toMatchObject({ id, name: "テストの鶴" });
+    expect(JSON.stringify(await (await app.request(`/api/models/${id}`)).json())).not.toContain(editKey);
+  });
+
+  it("人であることを確かめられなければ403", async () => {
+    for (const turnstileToken of ["bot", ""]) {
+      const res = await send(appWith(), "POST", "/api/models", { body: { ...input, turnstileToken } });
+      expect(res.status).toBe(403);
+      expect(await res.json()).toMatchObject({ error: { code: "verification_failed" } });
+    }
+    // トークンが無い投稿は形式の誤り
+    expect((await send(appWith(), "POST", "/api/models", { body: input })).status).toBe(400);
+  });
+
+  it("検証の設定が無ければ投稿をすべて拒否する", async () => {
+    const res = await send(createApp(), "POST", "/api/models", { body: { ...input, turnstileToken: "human" } });
+    expect(res.status).toBe(403);
+  });
+
+  it("検証には接続元の IP を渡す", async () => {
+    const verify = vi.fn(async () => true);
+    await send(appWith({ human: { verify } }), "POST", "/api/models", { body: { ...input, turnstileToken: "t" }, ip: "203.0.113.1" });
+    expect(verify).toHaveBeenCalledWith("t", "203.0.113.1");
+  });
+
+  it("接続元ごとの上限を超えたら429にし、作品を作らない", async () => {
+    const counts = new Map<string, number>();
+    const postLimiter = { limit: async (key: string) => { counts.set(key, (counts.get(key) ?? 0) + 1); return (counts.get(key) ?? 0) <= 1; } };
+    const app = appWith({ postLimiter });
+    const body = { ...input, name: "連投の鶴", turnstileToken: "human" };
+    expect((await send(app, "POST", "/api/models", { body, ip: "203.0.113.1" })).status).toBe(201);
+    const limited = await send(app, "POST", "/api/models", { body, ip: "203.0.113.1" });
+    expect(limited.status).toBe(429);
+    expect(await limited.json()).toMatchObject({ error: { code: "rate_limited" } });
+    expect((await send(app, "POST", "/api/models", { body, ip: "203.0.113.2" })).status).toBe(201);
+    const list = (await (await app.request(`/api/models?q=${encodeURIComponent("連投")}`)).json()) as { total: number };
+    expect(list.total).toBe(2);
   });
 
   it("作品の内容が不正なら400", async () => {
-    const res = await send(createApp({ auth }), "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, procedure: { ...craneProcedure, size: 0 } } });
+    const res = await send(appWith(), "POST", "/api/models", { body: { ...input, turnstileToken: "human", procedure: { ...craneProcedure, size: 0 } } });
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: { code: "invalid_request" } });
   });
 
   it("完成形を見せる向きを保存して返し、単位クォータニオンでなければ400", async () => {
-    const app = createApp({ auth });
+    const app = appWith();
     const rotation = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
-    const bad = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, presentation: { rotation: [0, 0, 0, 2] } } });
+    const bad = await send(app, "POST", "/api/models", { body: { ...input, turnstileToken: "human", presentation: { rotation: [0, 0, 0, 2] } } });
     expect(bad.status).toBe(400);
-    const res = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, presentation: { rotation } } });
-    const { id, thumbnailUpload } = (await res.json()) as Created;
-    await upload(app, thumbnailUpload);
-    await send(app, "POST", `/api/models/${id}/publish`, { user: "user_a" });
+    const { id } = await create(app, { presentation: { rotation } });
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ presentation: { rotation } });
   });
 
-  it("サムネイルの形式・サイズが不正なら400", async () => {
-    const app = createApp({ auth });
-    for (const bad of [undefined, { contentType: "image/svg+xml", size: 10 }, { contentType: "image/png", size: 512 * 1024 + 1 }, { contentType: "image/png", size: 0 }]) {
-      const res = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail: bad } });
-      expect(res.status).toBe(400);
-    }
-  });
-
-  it("IDをサーバーで決めて保存し、公開後に取得できる", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect(id).toMatch(/^[0-9a-f-]{36}$/);
-    const res = await app.request(`/api/models/${id}`);
-    expect(await res.json()).toMatchObject({ id, name: "テストの鶴" });
-  });
-
   it("クライアントが送ったIDは使わない", async () => {
-    const app = createApp({ auth });
-    const res = await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, id: "crane" } });
-    const { id } = (await res.json()) as { id: string };
+    const app = appWith();
+    const { id } = await create(app, { id: "crane" });
     expect(id).not.toBe("crane");
     expect(await (await app.request("/api/models/crane")).json()).toMatchObject({ name: "鶴" });
   });
 
   it("他サイトからのフォーム送信はOriginで拒否する", async () => {
-    const res = await createApp({ auth }).request("/api/models", {
+    const res = await appWith().request("/api/models", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", Origin: "https://evil.example", "x-test-user": "user_a" },
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Origin: "https://evil.example" },
       body: "name=x",
     });
     expect(res.status).toBe(403);
@@ -91,181 +101,92 @@ describe("POST /api/models", () => {
 });
 
 describe("PUT・DELETE /api/models/:id", () => {
-  it("所有者だけが更新できる", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect((await send(app, "PUT", `/api/models/${id}`, { body: { ...input, name: "x" } })).status).toBe(401);
-    const other = await send(app, "PUT", `/api/models/${id}`, { user: "user_b", body: { ...input, name: "乗っ取り" } });
+  it("編集用の鍵を持つ人だけが更新できる", async () => {
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    const missing = await send(app, "PUT", `/api/models/${id}`, { body: { ...input, name: "x" } });
+    expect(missing.status).toBe(401);
+    expect(await missing.json()).toMatchObject({ error: { code: "unauthorized" } });
+    const other = await send(app, "PUT", `/api/models/${id}`, { editKey: (await create(app)).editKey, body: { ...input, name: "乗っ取り" } });
     expect(other.status).toBe(403);
     expect(await other.json()).toMatchObject({ error: { code: "forbidden" } });
-    expect((await send(app, "PUT", `/api/models/${id}`, { user: "user_a", body: { ...input, name: "更新した鶴" } })).status).toBe(200);
+    expect((await send(app, "PUT", `/api/models/${id}`, { editKey, body: { ...input, name: "更新した鶴" } })).status).toBe(200);
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, name: "更新した鶴" });
   });
 
-  it("所有者だけが削除でき、削除後は404", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_b" })).status).toBe(403);
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_a" })).status).toBe(204);
+  it("編集用の鍵を持つ人だけが削除でき、削除後は404", async () => {
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey: "wrong" })).status).toBe(403);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(204);
     expect((await app.request(`/api/models/${id}`)).status).toBe(404);
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_a" })).status).toBe(404);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(404);
   });
 
-  it("所有者のいないモックは誰も変更・削除できない", async () => {
-    const app = createApp({ auth });
-    expect((await send(app, "PUT", "/api/models/crane", { user: "user_a", body: input })).status).toBe(403);
-    expect((await send(app, "DELETE", "/api/models/crane", { user: "user_a" })).status).toBe(403);
+  it("鍵の無いモックは誰も変更・削除できない", async () => {
+    const app = appWith();
+    expect((await send(app, "PUT", "/api/models/crane", { editKey: "any", body: input })).status).toBe(403);
+    expect((await send(app, "DELETE", "/api/models/crane", { editKey: "any" })).status).toBe(403);
+  });
+
+  it("更新・削除も接続元ごとの上限を超えたら429", async () => {
+    const app = appWith({ writeLimiter: { limit: async () => false } });
+    const { id, editKey } = await create(app);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(429);
+    expect((await app.request(`/api/models/${id}`)).status).toBe(200);
   });
 });
 
-describe("サムネイルのアップロードと公開", () => {
-  it("公開するまでは取得・一覧・作品ページに出さない", async () => {
-    const app = createApp({ auth });
-    const { id, status } = await createPending(app);
-    expect(status).toBe("pending");
-    expect((await app.request(`/api/models/${id}`)).status).toBe(404);
-    const list = (await (await app.request("/api/models")).json()) as { items: { id: string }[] };
-    expect(list.items.map((item) => item.id)).not.toContain(id);
-  });
-
-  it("サムネイルを置く前の公開は409", async () => {
-    const app = createApp({ auth });
-    const { id } = await createPending(app);
-    const res = await send(app, "POST", `/api/models/${id}/publish`, { user: "user_a" });
-    expect(res.status).toBe(409);
-    expect(await res.json()).toMatchObject({ error: { code: "conflict" } });
-  });
-
-  it("申告と違う形式・サイズの画像はアップロード先が拒否する", async () => {
-    const app = createApp({ auth });
-    const { thumbnailUpload } = await createPending(app);
-    expect((await upload(app, thumbnailUpload, image.slice(1))).status).toBe(400);
-    expect((await app.request(thumbnailUpload.url, { method: "PUT", headers: { "Content-Type": "image/webp" }, body: image })).status).toBe(400);
-    expect((await app.request("/api/mock-storage/uploads/unknown", { method: "PUT", headers: thumbnailUpload.headers, body: image })).status).toBe(403);
-  });
-
-  it("アップロード先は期限が切れると使えない", async () => {
-    let now = 0;
-    const app = createApp({ auth, storage: createMemoryThumbnailStorage({ now: () => now }) });
-    const { thumbnailUpload } = await createPending(app);
-    now = 10 * 60 * 1000 + 1;
-    expect((await upload(app, thumbnailUpload)).status).toBe(403);
-  });
-
-  it("公開後は一覧にサムネイル付きで並び、画像を返す。公開は再試行できる", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    expect(await (await send(app, "POST", `/api/models/${id}/publish`, { user: "user_a" })).json()).toEqual({ id, status: "published" });
-    const { items } = (await (await app.request("/api/models")).json()) as { items: { id: string; name: string; thumbnailUrl: string | null }[] };
-    expect(items[0]).toMatchObject({ id, name: "テストの鶴" });
-    expect(items.find((item) => item.id === "crane")).toMatchObject({ thumbnailUrl: null });
-    const res = await app.request(items[0].thumbnailUrl ?? "");
+describe("GET /api/models/:id/thumbnail.png", () => {
+  it("投稿した作品の完成形を手順から描いて PNG で返す", async () => {
+    const app = appWith();
+    const { id } = await create(app);
+    const res = await app.request(`/api/models/${id}/thumbnail.png`);
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("image/png");
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
-    expect(new Uint8Array(await res.arrayBuffer())).toEqual(image);
+    expect([...new Uint8Array(await res.arrayBuffer()).slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
   });
 
-  it("公開前ならアップロード先を作り直せる。古い画像は消える", async () => {
-    const app = createApp({ auth });
-    const first = await createPending(app);
-    expect((await upload(app, first.thumbnailUpload)).status).toBe(200);
-    expect((await send(app, "POST", `/api/models/${first.id}/thumbnail-upload`, { user: "user_b", body: thumbnail })).status).toBe(403);
-    const res = await send(app, "POST", `/api/models/${first.id}/thumbnail-upload`, { user: "user_a", body: thumbnail });
-    expect(res.status).toBe(200);
-    const second = (await res.json()) as Created;
-    expect(second.thumbnailUpload.url).not.toBe(first.thumbnailUpload.url);
-    // 作り直した先に置くまでは公開できない
-    expect((await send(app, "POST", `/api/models/${first.id}/publish`, { user: "user_a" })).status).toBe(409);
-    expect((await upload(app, second.thumbnailUpload)).status).toBe(200);
-    expect((await send(app, "POST", `/api/models/${first.id}/publish`, { user: "user_a" })).status).toBe(200);
-    // 公開後のアップロード先は、PUT /thumbnail で差し替えるまで今のサムネイルを変えない（下の差し替え）
-    expect(await (await send(app, "POST", `/api/models/${first.id}/thumbnail-upload`, { user: "user_a", body: thumbnail })).json()).toMatchObject({ status: "published" });
+  it("Cache API があれば、描いた画像を使い回す", async () => {
+    const stored = new Map<string, Response>();
+    vi.stubGlobal("caches", { open: async () => ({ match: async (key: string) => stored.get(key)?.clone(), put: async (key: string, res: Response) => { stored.set(key, res); } }) });
+    const repository = createMockOrigamiRepository();
+    const findById = vi.spyOn(repository, "findById");
+    const app = createApp({ repository });
+    const pending: Promise<unknown>[] = [];
+    const ctx = { waitUntil: (promise: Promise<unknown>) => pending.push(promise), passThroughOnException: () => {}, props: {} };
+    const first = await app.request("/api/models/crane/thumbnail.png", {}, undefined, ctx);
+    await Promise.all(pending);
+    const second = await app.request("/api/models/crane/thumbnail.png", {}, undefined, ctx);
+    expect(new Uint8Array(await second.arrayBuffer())).toEqual(new Uint8Array(await first.arrayBuffer()));
+    expect(second.headers.get("Cache-Control")).toBe("public, max-age=3600");
+    expect(findById).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
   });
 
-  it("他人の作品は公開できない", async () => {
-    const app = createApp({ auth });
-    const { id, thumbnailUpload } = await createPending(app);
-    await upload(app, thumbnailUpload);
-    expect((await send(app, "POST", `/api/models/${id}/publish`)).status).toBe(401);
-    expect((await send(app, "POST", `/api/models/${id}/publish`, { user: "user_b" })).status).toBe(403);
-  });
-
-  it("作品を削除するとサムネイルも消える", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    const { items } = (await (await app.request("/api/models")).json()) as { items: { id: string; thumbnailUrl: string }[] };
-    const url = items.find((item) => item.id === id)?.thumbnailUrl ?? "";
-    expect((await send(app, "DELETE", `/api/models/${id}`, { user: "user_a" })).status).toBe(204);
-    expect((await app.request(url)).status).toBe(404);
+  it("無い作品・削除した作品は404", async () => {
+    const app = appWith();
+    const { id, editKey } = await create(app);
+    expect((await send(app, "DELETE", `/api/models/${id}`, { editKey })).status).toBe(204);
+    expect((await app.request(`/api/models/${id}/thumbnail.png`)).status).toBe(404);
+    expect((await app.request("/api/models/unknown/thumbnail.png")).status).toBe(404);
   });
 });
 
 describe("公開範囲", () => {
   it("限定公開の作品はURLで見られるが、一覧と検索には出ない", async () => {
-    const app = createApp({ auth });
-    const id = await create(app, "user_a", { name: "ひみつの鶴", visibility: "unlisted" });
+    const app = appWith();
+    const { id } = await create(app, { name: "ひみつの鶴", visibility: "unlisted" });
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ id, visibility: "unlisted" });
     const list = (await (await app.request("/api/models?q=ひみつ")).json()) as { items: unknown[]; total: number };
     expect(list.total).toBe(0);
   });
 
   it("公開範囲を省略すると公開にし、不正な値は400にする", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
+    const app = appWith();
+    const { id } = await create(app);
     expect(await (await app.request(`/api/models/${id}`)).json()).toMatchObject({ visibility: "public" });
-    expect((await send(app, "POST", "/api/models", { user: "user_a", body: { ...input, thumbnail, visibility: "private" } })).status).toBe(400);
-  });
-});
-
-describe("自分の作品", () => {
-  it("ログインした人の作品だけを、限定公開・公開前も含めて新しい順に返す", async () => {
-    const app = createApp({ auth });
-    const older = await create(app, "user_a", { name: "古い作品" });
-    const unlisted = await create(app, "user_a", { name: "限定の作品", visibility: "unlisted" });
-    const { id: pending } = await createPending(app, "user_a", { name: "公開前の作品" });
-    await create(app, "user_b", { name: "他人の作品" });
-    expect((await app.request("/api/me/models")).status).toBe(401);
-    const { items } = (await (await send(app, "GET", "/api/me/models", { user: "user_a" })).json()) as { items: { id: string; name: string; visibility: string; status: string; thumbnailUrl: string | null }[] };
-    expect(items.map((item) => [item.id, item.visibility, item.status])).toEqual([[pending, "public", "pending"], [unlisted, "unlisted", "published"], [older, "public", "published"]]);
-    expect(items[1].thumbnailUrl).toMatch(/^\/api\/mock-storage\/objects\/thumbnails\//);
-  });
-});
-
-describe("公開済みのサムネイルの差し替え", () => {
-  const thumbnailUrlOf = async (app: ReturnType<typeof createApp>, id: string) => {
-    const { items } = (await (await send(app, "GET", "/api/me/models", { user: "user_a" })).json()) as { items: { id: string; thumbnailUrl: string }[] };
-    return items.find((item) => item.id === id)?.thumbnailUrl ?? "";
-  };
-
-  it("置いた画像に差し替え、古い画像を消す。置くまでは今のサムネイルのまま", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    const before = await thumbnailUrlOf(app, id);
-    const res = await send(app, "POST", `/api/models/${id}/thumbnail-upload`, { user: "user_a", body: { contentType: "image/webp", size: 4 } });
-    const { thumbnailKey, thumbnailUpload } = (await res.json()) as Created & { thumbnailKey: string };
-    expect(await thumbnailUrlOf(app, id)).toBe(before);
-    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(409);
-    expect((await upload(app, thumbnailUpload, image.slice(0, 4))).status).toBe(200);
-    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(200);
-    const after = await thumbnailUrlOf(app, id);
-    expect(after).toContain(thumbnailKey);
-    expect((await app.request(after)).headers.get("Content-Type")).toBe("image/webp");
-    expect((await app.request(before)).status).toBe(404);
-    // 同じキーで再試行しても成功する
-    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(200);
-  });
-
-  it("他の作品のキー・形の違うキー・他人・公開前の作品は差し替えられない", async () => {
-    const app = createApp({ auth });
-    const id = await create(app);
-    const other = await create(app);
-    const { thumbnailKey } = (await (await send(app, "POST", `/api/models/${other}/thumbnail-upload`, { user: "user_a", body: thumbnail })).json()) as { thumbnailKey: string };
-    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(400);
-    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_a", body: { key: `thumbnails/${id}/../x.png` } })).status).toBe(400);
-    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { user: "user_b", body: { key: thumbnailKey } })).status).toBe(403);
-    expect((await send(app, "PUT", `/api/models/${id}/thumbnail`, { body: { key: thumbnailKey } })).status).toBe(401);
-    const { id: pending } = await createPending(app);
-    expect((await send(app, "PUT", `/api/models/${pending}/thumbnail`, { user: "user_a", body: { key: thumbnailKey } })).status).toBe(409);
+    expect((await send(app, "POST", "/api/models", { body: { ...input, turnstileToken: "human", visibility: "private" } })).status).toBe(400);
   });
 });

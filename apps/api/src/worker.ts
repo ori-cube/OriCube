@@ -1,9 +1,9 @@
 import type { ExecutionContext } from "hono";
-import { verifierFromEnv } from "./auth";
 import { createD1OrigamiRepository, type D1Database } from "./d1Repository";
+import { humanVerifierFromEnv } from "./humanCheck";
 import { createServerApp } from "./pages";
+import { bindingRateLimiter, unlimited, type RateLimitBinding } from "./rateLimit";
 import { createMockOrigamiRepository, withMockFallback } from "./repository";
-import { createMemoryThumbnailStorage, createR2ThumbnailStorage, type ObjectStore } from "./storage";
 
 /** wrangler.jsonc で定義するバインディングと環境変数 */
 interface Env {
@@ -12,13 +12,11 @@ interface Env {
   DB?: D1Database;
   /** OGPの絶対URLに使う公開オリジン。未設定ならリクエストのオリジン */
   APP_ORIGIN?: string;
-  /** サムネイルを保存する R2。未設定ならメモリ上の実装（画像は永続化されない） */
-  THUMBNAILS?: ObjectStore;
-  /** サムネイルのアップロード先の署名に使う秘密の値（wrangler secret で設定する） */
-  THUMBNAIL_UPLOAD_SECRET?: string;
-  /** Clerk のキー（シークレットは wrangler secret で設定する） */
-  CLERK_SECRET_KEY?: string;
-  CLERK_PUBLISHABLE_KEY?: string;
+  /** Turnstile の秘密鍵（wrangler secret で設定する）。未設定なら投稿をすべて拒否する */
+  TURNSTILE_SECRET_KEY?: string;
+  /** 投稿と、更新・削除の回数の上限（wrangler.jsonc の ratelimits） */
+  POST_LIMITER?: RateLimitBinding;
+  WRITE_LIMITER?: RateLimitBinding;
 }
 
 let app: ReturnType<typeof createServerApp> | undefined;
@@ -31,9 +29,10 @@ const getApp = async (request: Request, env: Env) => {
   app = createServerApp({
     template: await index.text(),
     origin: env.APP_ORIGIN || undefined,
-    auth: verifierFromEnv(env),
+    human: humanVerifierFromEnv(env),
+    postLimiter: env.POST_LIMITER ? bindingRateLimiter(env.POST_LIMITER) : unlimited,
+    writeLimiter: env.WRITE_LIMITER ? bindingRateLimiter(env.WRITE_LIMITER) : unlimited,
     repository: env.DB ? withMockFallback(createD1OrigamiRepository(env.DB)) : createMockOrigamiRepository(),
-    storage: env.THUMBNAILS ? createR2ThumbnailStorage(env.THUMBNAILS, env.THUMBNAIL_UPLOAD_SECRET) : createMemoryThumbnailStorage(),
   });
   return app;
 };

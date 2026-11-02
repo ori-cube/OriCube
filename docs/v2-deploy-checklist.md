@@ -16,62 +16,49 @@ v2（`apps/web` + `apps/api`）を Cloudflare Workers に公開する前に、�
   ```
 
 - [x] 表示された `database_id` を `apps/api/wrangler.jsonc` の `d1_databases[0].database_id` に設定する
-- [ ] テーブルを作る（`apps/api/migrations` の 0001〜0003 が順に適用される）
+- [ ] テーブルを作る（`apps/api/migrations` の 0001〜0006 が順に適用される）
 
   ```bash
   pnpm --filter @oricube/api db:migrate:remote
   ```
 
-## 3. Cloudflare R2（サムネイルの保存先）
+## 3. Cloudflare Turnstile（bot による投稿を防ぐ）
 
-- [ ] バケットを作る（公開バケットにはしない。画像は Worker が返す）
+ログインは無く、投稿のたびに Turnstile で人であることを確かめる。サムネイルはサーバーが手順から描くため、画像の保存先（R2）は要らない。
 
-  ```bash
-  pnpm --filter @oricube/api exec wrangler r2 bucket create oricube-thumbnails
-  ```
-
-- [ ] アップロード先の署名に使う秘密の値（32文字以上）を登録する。未設定だと投稿だけが失敗する
+- [ ] Cloudflare のダッシュボードで Turnstile のウィジェットを作り、公開ドメイン（5. で割り当てるもの）を登録する
+- [ ] Worker に秘密鍵を登録する。未設定だと本番の投稿はすべて拒否される
 
   ```bash
-  openssl rand -base64 48 | pnpm --filter @oricube/api exec wrangler secret put THUMBNAIL_UPLOAD_SECRET
+  pnpm --filter @oricube/api exec wrangler secret put TURNSTILE_SECRET_KEY
   ```
 
-## 4. Clerk（ログイン）
+- [ ] 画面のビルド時に `VITE_TURNSTILE_SITE_KEY`（サイトキー）を環境変数で渡す（6. のコマンドの実行時）
 
-- [ ] Clerk でアプリを作り、ログイン方式（Google など）を選ぶ
-- [ ] 本番インスタンスに公開ドメイン（6. で割り当てるもの）を登録する
-- [ ] Worker にキーを登録する
+## 4. 環境変数（任意）
 
-  ```bash
-  pnpm --filter @oricube/api exec wrangler secret put CLERK_SECRET_KEY
-  pnpm --filter @oricube/api exec wrangler secret put CLERK_PUBLISHABLE_KEY
-  ```
+- [ ] OGP の絶対URLを固定したい場合は、`apps/api/wrangler.jsonc` の `vars` か Cloudflare のダッシュボードで `APP_ORIGIN`（例: `https://oricube.example`）を設定する。未設定ならリクエストのオリジンを使う。設定すると、Turnstile のトークンを発行したホスト名もこの値と照らし合わせる
 
-- [ ] 画面のビルド時に `VITE_CLERK_PUBLISHABLE_KEY`（Publishable key と同じ値）を環境変数で渡す（7. のコマンドの実行時）。無いと画面はログインなしの表示になる
+## 5. 公開ドメイン
 
-## 5. 環境変数（任意）
+- [ ] Worker（`oricube`）にカスタムドメインを割り当てる（Cloudflare ダッシュボード → Workers → Settings → Domains & Routes）。Turnstile に登録したドメインと合わせる
 
-- [ ] OGP の絶対URLを固定したい場合は、`apps/api/wrangler.jsonc` の `vars` か Cloudflare のダッシュボードで `APP_ORIGIN`（例: `https://oricube.example`）を設定する。未設定ならリクエストのオリジンを使う
-
-## 6. 公開ドメイン
-
-- [ ] Worker（`oricube`）にカスタムドメインを割り当てる（Cloudflare ダッシュボード → Workers → Settings → Domains & Routes）。Clerk に登録したドメインと合わせる
-
-## 7. デプロイと確認
+## 6. デプロイと確認
 
 - [ ] デプロイする（画面のビルド → Worker の公開）
 
   ```bash
-  VITE_CLERK_PUBLISHABLE_KEY=pk_live_... pnpm deploy:worker
+  VITE_TURNSTILE_SITE_KEY=<サイトキー> pnpm deploy:worker
   ```
 
 - [ ] 公開後に確認する
   - [ ] `/` と `/view/crane` が表示され、`/view/存在しないID` が HTTP 404 になる
-  - [ ] ログインして `/post` から投稿でき、作品一覧にサムネイル付きで出る
+  - [ ] `/post` から投稿でき（Turnstile の確認が出る）、作品一覧にサムネイル付きで出る
+  - [ ] 投稿したブラウザの「自分の作品」（`/me`）に出て、編集・削除できる
   - [ ] 限定公開で投稿した作品が一覧・検索に出ず、URL では見られる
   - [ ] 作品ページを SNS のカード確認ツールで開き、タイトル・説明・画像が出る
 
-## 8. 切り替え後（v1 の削除と合わせて）
+## 7. 切り替え後（v1 の削除と合わせて）
 
 - [ ] Vercel の v1 プロジェクトを止める（v1 の削除 PR のマージ後）
 - [ ] Storybook の置き先を決める（今は Vercel の `ori-cube-storybook`。Cloudflare Pages などへ移すか、Vercel を続けるか）

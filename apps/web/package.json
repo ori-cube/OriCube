@@ -10,7 +10,6 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@clerk/react": "^6.17.8",
     "@oricube/design-system": "workspace:*",
     "@oricube/engine": "workspace:*",
     "@tanstack/react-query": "^5.104.3",
