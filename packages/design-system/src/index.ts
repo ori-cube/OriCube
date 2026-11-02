@@ -13,3 +13,4 @@ export * from "./components/Checkbox";
 export * from "./components/FileButton";
 export * from "./components/SidePanel";
 export * from "./components/SegmentedControl";
+export * from "./components/ConfirmDialog";

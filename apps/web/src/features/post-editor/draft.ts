@@ -2,11 +2,15 @@ import * as THREE from "three";
 import type { PointV2, EditorStep } from "@oricube/engine";
 import { exportProcedureV2, isUnitQuaternion } from "@oricube/engine";
 import type { OrigamiModelV2 } from "@oricube/engine";
+import type { Visibility } from "../../apiClient";
 
 // 以前の下書きを引き継ぐため、キーは変えない
 export const DRAFT_KEY = "oricube.v2.crane-draft";
-/** ブラウザに自動保存する折りかけの作品。viewFront は編集を再開するときの表裏 */
-export interface Draft { model: OrigamiModelV2; viewFront: boolean }
+/** 再編集している公開済みの作品。投稿するとこの作品を同じIDのまま上書きする */
+export interface EditingTarget { id: string; visibility: Visibility }
+
+/** ブラウザに自動保存する折りかけの作品。viewFront は編集を再開するときの表裏、editing は再編集中の作品 */
+export interface Draft { model: OrigamiModelV2; viewFront: boolean; editing?: EditingTarget }
 
 const record = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const point = (value: unknown): value is PointV2 => Array.isArray(value) && value.length === 3 && value.every((axis) => typeof axis === "number" && Number.isFinite(axis));
@@ -53,7 +57,12 @@ export const parseDraft = (text: string): Draft => {
       ...(record(value.presentation) && isUnitQuaternion(value.presentation.rotation) ? { presentation: { rotation: value.presentation.rotation } } : {}),
     },
     viewFront: typeof value.editorViewFront === "boolean" ? value.editorViewFront : steps.at(-1)?.viewFront ?? true,
+    // 再編集の対象が壊れていても手順は復元し、新しい作品の下書きとして扱う
+    ...(editingTarget(value.editing) ? { editing: { id: value.editing.id, visibility: value.editing.visibility } } : {}),
   };
 };
 
-export const serializeDraft = ({ model, viewFront }: Draft) => JSON.stringify({ ...model, editorViewFront: viewFront }, null, 2);
+const editingTarget = (value: unknown): value is EditingTarget =>
+  record(value) && typeof value.id === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(value.id) && (value.visibility === "public" || value.visibility === "unlisted");
+
+export const serializeDraft = ({ model, viewFront, editing }: Draft) => JSON.stringify({ ...model, editorViewFront: viewFront, ...(editing ? { editing } : {}) }, null, 2);

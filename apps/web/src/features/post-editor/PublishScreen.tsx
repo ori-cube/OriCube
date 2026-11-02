@@ -7,8 +7,9 @@ import { apiClient, createOrigami, type Visibility } from "../../apiClient";
 import { OrigamiThumbnail } from "../../components/OrigamiThumbnail";
 import { Turnstile } from "../../components/Turnstile";
 import { OrigamiCanvas, type OrigamiCanvasHandle } from "../../components/OrigamiViewer/Canvas";
+import type { EditingTarget } from "./draft";
 import { saveEditKey } from "./editKeys";
-import { submitErrorMessage } from "./publish";
+import { submitErrorMessage, submitUpdate } from "./publish";
 import styles from "./PostEditor.module.css";
 
 export interface PublishScreenProps {
@@ -25,6 +26,10 @@ export interface PublishScreenProps {
   onStartNew: () => void;
   /** Turnstile のサイトキー。未設定なら確認を出さない（開発用の API は確認を省く） */
   turnstileSiteKey?: string;
+  /** 再編集中の公開中の作品。あれば新しく作らず、同じIDのまま上書きする */
+  editing?: EditingTarget;
+  /** 上書きしたときに、公開範囲を下書きの再編集の情報へ反映する */
+  onEditingChange?: (editing: EditingTarget) => void;
 }
 
 /**
@@ -66,17 +71,18 @@ const ROTATE_STEP = Math.PI / 12;
  * 完成形を好きな向きに回して、見せる向きを決めてから投稿する。
  * 一覧・OGP のサムネイルは、サーバーがこの向きで手順から描く（画像は送らない）。プレビューは同じ図を画面で描く
  */
-export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onPresentationChange, onBack, onStartNew, turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY }: PublishScreenProps) {
+export function PublishScreen({ model, name, onNameChange, description, onDescriptionChange, onPresentationChange, onBack, onStartNew, turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY, editing, onEditingChange }: PublishScreenProps) {
   // 開いたときの見せる向きから始める。決めた向きを表示に重ねないよう、開いたときの値に固定する
   const [initialPresentation] = useState(model.presentation);
   const timeline = useMemo(() => createViewerTimeline(model.procedure, initialPresentation), [model.procedure, initialPresentation]);
   const zoom = useMemo(() => fitZoom(model.procedure.size, timeline.finalBoards), [model.procedure.size, timeline.finalBoards]);
   const canvas = useRef<OrigamiCanvasHandle>(null);
   const [resetKey, setResetKey] = useState(0);
-  const [decided, setDecided] = useState(false);
+  // 再編集では、決め直さなければ今の向き（読み込んだ作品の向き）のまま
+  const [decided, setDecided] = useState(editing !== undefined);
   const [orientationError, setOrientationError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [visibility, setVisibility] = useState<Visibility>("public");
+  const [visibility, setVisibility] = useState<Visibility>(editing?.visibility ?? "public");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   // トークンは1回しか使えないため、投稿に失敗したら確認を作り直す
   const [turnstileKey, setTurnstileKey] = useState(0);
@@ -87,7 +93,10 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   const queryClient = useQueryClient();
   const submit = useMutation({
     mutationFn: async () => {
-      const { id, editKey } = await createOrigami(apiClient, { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, visibility, ...(model.presentation ? { presentation: model.presentation } : {}) }, turnstileToken ?? "");
+      const input = { name: name.trim(), description: description.trim(), color: model.color, procedure: model.procedure, visibility, ...(model.presentation ? { presentation: model.presentation } : {}) };
+      // 更新は編集用の鍵で確かめるため、Turnstile の確認は要らない
+      if (editing) return { id: await submitUpdate({ client: apiClient, id: editing.id, input }), editKeySaved: true };
+      const { id, editKey } = await createOrigami(apiClient, input, turnstileToken ?? "");
       return { id, editKeySaved: saveEditKey(id, editKey) };
     },
     onError: () => {
@@ -95,12 +104,17 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
       setTurnstileKey((value) => value + 1);
     },
     onSuccess: async ({ id }) => {
+      if (editing) onEditingChange?.({ id, visibility });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["origami", id] }),
         queryClient.invalidateQueries({ queryKey: ["origami-list"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-origami"] }),
       ]);
     },
   });
+  const action = editing ? "更新" : "投稿";
+  // 更新は編集用の鍵で確かめるため、Turnstile は新しい投稿だけに出す
+  const turnstile = editing ? undefined : turnstileSiteKey;
 
   const decide = () => {
     setOrientationError("");
@@ -113,7 +127,7 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   const publish = () => {
     if (!name.trim()) { setNameError("作品名を入力してください。"); return; }
     if (!decided) { setOrientationError("先にサムネイルの向きを決めてください。"); return; }
-    if (turnstileSiteKey && !turnstileToken) { setTurnstileError("ロボットでないことの確認が終わってから投稿してください。"); return; }
+    if (turnstile && !turnstileToken) { setTurnstileError("ロボットでないことの確認が終わってから投稿してください。"); return; }
     submit.mutate();
   };
   const preview = <div className={styles.thumbnail} role="img" aria-label={`${name.trim() || model.name}のサムネイル`}>
@@ -121,9 +135,9 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
   </div>;
 
   if (submit.isSuccess) return <main id="origami-viewer" className={styles.published}>
-    <h1 className={styles.publishedTitle}>投稿しました</h1>
-    <p className={styles.hint}>「{name.trim()}」を公開しました。折った手順はこのブラウザにも残っています。</p>
-    {submit.data.editKeySaved
+    <h1 className={styles.publishedTitle}>{action}しました</h1>
+    <p className={styles.hint}>「{name.trim()}」を{editing ? "同じURLのまま上書きし、" : ""}{visibility === "unlisted" ? "限定公開" : "公開"}しました。折った手順はこのブラウザにも残っています。</p>
+    {editing ? null : submit.data.editKeySaved
       ? <p className={styles.hint}>この作品を編集・削除するための鍵を、このブラウザに保存しました。ブラウザのデータを消すと、この作品は編集・削除できなくなります。</p>
       : <p className={styles.alert} role="alert">このブラウザに編集用の鍵を保存できませんでした。この作品はあとから編集・削除できません。</p>}
     <div className={styles.publishedImage}>{preview}</div>
@@ -156,7 +170,8 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
         </div>
       </div>
       <form className={styles.publishForm} aria-label="投稿の内容" onSubmit={(event) => { event.preventDefault(); publish(); }}>
-        <h1 className={styles.publishTitle}>投稿する</h1>
+        <h1 className={styles.publishTitle}>{editing ? "作品を更新する" : "投稿する"}</h1>
+        {editing && <p className={styles.hint}>公開中の作品を、同じURLのまま上書きします。過去の版は残りません。</p>}
         <TextInput label="作品名" required value={name} onChange={(value) => { onNameChange(value); setNameError(""); }} placeholder="例：鶴" errorMessage={nameError || undefined} />
         <TextArea label="説明" value={description} onChange={onDescriptionChange} placeholder="例：羽を広げた鶴です。" rows={3} />
         <div className={styles.visibility}>
@@ -174,14 +189,14 @@ export function PublishScreen({ model, name, onNameChange, description, onDescri
           </div>
           {orientationError && <p className={styles.alert} role="alert">{orientationError}</p>}
         </section>
-        {turnstileSiteKey && <Turnstile
-          key={turnstileKey} siteKey={turnstileSiteKey}
+        {turnstile && <Turnstile
+          key={turnstileKey} siteKey={turnstile}
           onToken={(token) => { setTurnstileToken(token); if (token) setTurnstileError(""); }}
           onLoadError={() => setTurnstileError("ロボットでないことの確認を読み込めませんでした。通信状況を確認して、ページを読み込み直してください。")}
         />}
         {turnstileError && <p className={styles.alert} role="alert">{turnstileError}</p>}
-        <Button type="submit" text={submit.isPending ? "投稿しています…" : "投稿する"} disabled={submit.isPending} />
-        <p className={styles.hint}>ログインは要りません。投稿した作品の編集・削除に使う鍵は、このブラウザに保存されます。</p>
+        <Button type="submit" text={submit.isPending ? `${action}しています…` : `${action}する`} disabled={submit.isPending} />
+        <p className={styles.hint}>{editing ? "このブラウザに保存した編集用の鍵で更新します。" : "ログインは要りません。投稿した作品の編集・削除に使う鍵は、このブラウザに保存されます。"}</p>
         {submit.isError && <p className={styles.alert} role="alert">{submitErrorMessage(submit.error)}</p>}
       </form>
     </main>

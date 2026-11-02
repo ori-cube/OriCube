@@ -34,7 +34,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("投稿画面", () => {
   it("確定した手順を自動保存し、同じデータで確認できる", async () => {
-    render(<PostEditor />);
+    render(<MemoryRouter><PostEditor /></MemoryRouter>);
     fireEvent.click(await screen.findByRole("button", { name: "頂点を折る" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録"));
     const saved: unknown = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null");
@@ -49,14 +49,14 @@ describe("投稿画面", () => {
     expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
   });
   it("折り操作のフェーズに合わせて次にすることを案内する", async () => {
-    render(<PostEditor />);
+    render(<MemoryRouter><PostEditor /></MemoryRouter>);
     expect(await screen.findByText("頂点をドラッグして、重ねたい位置で離すと折れます")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "折り方を選ぶ" }));
     expect(screen.getByText("折り方を選んで「折る」を押します")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("操作中");
   });
   it("引き出しで選んだ紙の色を折る画面に反映し、空にしても直前の色を保つ", async () => {
-    render(<PostEditor />);
+    render(<MemoryRouter><PostEditor /></MemoryRouter>);
     await screen.findByRole("button", { name: "頂点を折る" });
     openPanel();
     const input = screen.getByRole("textbox", { name: "折り紙の色" });
@@ -71,7 +71,7 @@ describe("投稿画面", () => {
     const procedure = exportProcedureV2({ size: 100, steps: [] });
     if (!procedure) throw new Error("白紙のデータがありません");
     localStorage.setItem(DRAFT_KEY, serializeDraft({ model: { id: "draft", name: "私の鶴", description: "", color: "#44aabb", procedure }, viewFront: true }));
-    render(<PostEditor />);
+    render(<MemoryRouter><PostEditor /></MemoryRouter>);
     await screen.findByRole("button", { name: "頂点を折る" });
     expect(screen.getByRole("status")).toHaveTextContent("前回の続きから再開");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("私の鶴");
@@ -80,7 +80,7 @@ describe("投稿画面", () => {
   });
   it("読み込めない保存済み下書きを白紙で上書きしない", async () => {
     localStorage.setItem(DRAFT_KEY, "invalid");
-    render(<PostEditor />);
+    render(<MemoryRouter><PostEditor /></MemoryRouter>);
     expect(await screen.findByRole("alert")).toHaveTextContent("自動保存を止めています");
     expect(localStorage.getItem(DRAFT_KEY)).toBe("invalid");
     openPanel();
@@ -246,6 +246,82 @@ describe("投稿", () => {
     await openPublish();
     fireEvent.click(screen.getByRole("button", { name: "この向きに決める" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("向きを読み取れませんでした");
+  });
+});
+
+describe("公開中の作品の再編集", () => {
+  const EDIT_KEY = "mine-key";
+  let repository: Awaited<ReturnType<typeof seed>>;
+  const sha256 = async (value: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const seed = async () => {
+    const [{ createMemoryOrigamiRepository }, { models }] = await Promise.all([import("@oricube/api/repository"), import("@oricube/api/mocks/models")]);
+    return createMemoryOrigamiRepository([{ editKeyHash: await sha256(EDIT_KEY), model: { ...models[0], id: "mine", name: "私の鶴", description: "最初の説明", visibility: "unlisted" } }]);
+  };
+  beforeEach(async () => {
+    repository = await seed();
+    // 更新は鍵で確かめるので、Turnstile はすべて拒否する設定のままにする
+    const app = createApp({ repository });
+    getModelRotation.mockReturnValue([0, 0, 0, 1]);
+    localStorage.setItem(EDIT_KEYS_KEY, JSON.stringify({ mine: EDIT_KEY }));
+    vi.stubGlobal("fetch", (url: string | URL | Request, init?: RequestInit) => {
+      const request = new Request(new URL(url instanceof Request ? url.url : url, window.location.origin), init);
+      if (request.method !== "GET") request.headers.set("Origin", window.location.origin);
+      return app.request(request);
+    });
+  });
+  const renderAt = (path: string) => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
+    <MemoryRouter initialEntries={[path]}><PostEditor /></MemoryRouter>
+  </QueryClientProvider>);
+
+  it("?edit= で作品を読み込み、このブラウザの鍵で同じIDのまま上書きする", async () => {
+    renderAt("/post?edit=mine");
+    expect(await screen.findByText(/「私の鶴」を編集しています。/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("15回の折りを記録");
+    // 再読み込みしても続きから編集できるよう、編集中の作品を下書きに残す
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ name: "私の鶴", editing: { id: "mine", visibility: "unlisted" } }));
+    openPanel();
+    fireEvent.click(screen.getByRole("button", { name: "更新へ進む" }));
+    expect(screen.getByRole("heading", { name: "作品を更新する" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "限定公開" })).toBeChecked();
+    // 向きを決め直さなくても、今の向きのサムネイルで更新できる
+    expect(screen.getByRole("img", { name: "私の鶴のサムネイル" })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: /作品名/ }), { target: { value: "直した鶴" } });
+    fireEvent.click(screen.getByRole("button", { name: "更新する" }));
+    expect(await screen.findByRole("heading", { name: "更新しました" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "作品ページを見る" })).toHaveAttribute("href", "/view/mine");
+    expect(await repository.findById("mine")).toMatchObject({ model: { id: "mine", name: "直した鶴", visibility: "unlisted" } });
+  });
+
+  it("このブラウザに鍵が無い作品は読み込まない", async () => {
+    localStorage.removeItem(EDIT_KEYS_KEY);
+    renderAt("/post?edit=mine");
+    expect(await screen.findByText(/この作品の編集用の鍵がありません/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("0回の折りを記録");
+  });
+
+  it("折りかけの下書きがあれば、置き換える前に確かめる", async () => {
+    localStorage.setItem(DRAFT_KEY, serializeDraft({ model: { id: "draft", name: "折りかけ", description: "", color: "#ed7070", procedure: exportProcedureV2({ size: 100, steps: [{ kind: "fold", foldLine: { start: new THREE.Vector3(-50, -50, 0), end: new THREE.Vector3(50, 50, 0) }, dragVertex: new THREE.Vector3(-50, 50, 0), foldCount: 1, viewFront: true }] })! }, viewFront: true }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderAt("/post?edit=mine");
+    await waitFor(() => expect(confirm).toHaveBeenCalledWith("今の下書きを消して「私の鶴」を編集しますか？"));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("折りかけ");
+    expect(screen.getByRole("status")).toHaveTextContent("1回の折りを記録");
+  });
+
+  it("編集をやめると、新しい作品として投稿する", async () => {
+    renderAt("/post?edit=mine");
+    await screen.findByText(/「私の鶴」を編集しています。/);
+    openPanel();
+    fireEvent.click(screen.getByRole("button", { name: "編集をやめて新しい作品にする" }));
+    expect(screen.getByRole("button", { name: "投稿へ進む" })).toBeInTheDocument();
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")).not.toHaveProperty("editing"));
+  });
+
+  it("見つからない作品は、今の下書きを変えずに伝える", async () => {
+    localStorage.setItem(EDIT_KEYS_KEY, JSON.stringify({ missing: EDIT_KEY }));
+    renderAt("/post?edit=missing");
+    expect(await screen.findByText(/編集する作品が見つかりませんでした。/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("0回の折りを記録");
   });
 });
 

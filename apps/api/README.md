@@ -61,7 +61,7 @@ pnpm start:app   # http://localhost:8787 で画面とAPIを返す
 | `PUT /api/models/:id` | 作品の更新（`X-Edit-Key` ヘッダーに編集用の鍵が必要） |
 | `DELETE /api/models/:id` | 作品の削除（`X-Edit-Key` ヘッダーに編集用の鍵が必要） |
 | `GET /view/:id` | SPAの `index.html` に作品名・説明のタイトルとOGPを入れて返す。存在しない作品はHTTP 404 |
-| `GET /`・`/view`・`/post` | SPAの `index.html` |
+| `GET /`・`/view`・`/post`・`/me` | SPAの `index.html`（`/me` は `noindex`） |
 | `/assets/*` | ビルド済みの静的ファイル |
 | それ以外 | HTTP 404（画面はSPAの404表示、`/api/*` はJSON） |
 

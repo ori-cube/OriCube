@@ -63,3 +63,19 @@ export const createOrigami = async (client: ApiClient, input: OrigamiInput, turn
   const { id, editKey } = await res.json();
   return { id, editKey };
 };
+
+/** 編集用の鍵を送るヘッダー（API の EDIT_KEY_HEADER と同じ） */
+const EDIT_KEY_HEADER = "X-Edit-Key";
+
+/** 作品の内容を同じIDのまま上書きする（再編集）。editKey は投稿したときに受け取った編集用の鍵 */
+export const updateOrigami = async (client: ApiClient, id: string, input: OrigamiInput, editKey: string) => {
+  const res = await client.api.models[":id"].$put({ param: { id }, json: input }, { headers: { [EDIT_KEY_HEADER]: editKey } });
+  if (!res.ok) throw await toError(res, "作品を更新できませんでした");
+};
+
+/** 作品を削除する。editKey は投稿したときに受け取った編集用の鍵 */
+export const deleteOrigami = async (client: ApiClient, id: string, editKey: string) => {
+  const res = await client.api.models[":id"].$delete({ param: { id } }, { headers: { [EDIT_KEY_HEADER]: editKey } });
+  // 既に消えていれば目的は果たしている
+  if (!res.ok && res.status !== 404) throw await toError(res, "作品を削除できませんでした");
+};

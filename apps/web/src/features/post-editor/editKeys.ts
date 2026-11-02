@@ -28,3 +28,16 @@ export const saveEditKey = (id: string, key: string) => {
 
 /** このブラウザに残っている作品の編集用の鍵。無ければ null */
 export const loadEditKey = (id: string) => readAll()[id] ?? null;
+
+/** このブラウザに編集用の鍵がある作品のID。新しく保存した順 */
+export const listEditKeyIds = () => Object.keys(readAll()).reverse();
+
+/** 削除した作品の鍵を消す。消せなくても次の一覧で見つからない作品として除くので、失敗は無視する */
+export const removeEditKey = (id: string) => {
+  try {
+    const { [id]: _removed, ...rest } = readAll();
+    localStorage.setItem(EDIT_KEYS_KEY, JSON.stringify(rest));
+  } catch {
+    // 何もしない
+  }
+};

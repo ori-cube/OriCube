@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Button, Pagination, SearchField } from "@oricube/design-system";
 import { apiClient, fetchOrigamiList, type OrigamiSummary } from "../../apiClient";
-import { OrigamiThumbnail } from "../../components/OrigamiThumbnail";
+import { OrigamiCover } from "../../components/OrigamiCover";
 import styles from "./OrigamiList.module.css";
 
 /** 入力が止まってから検索するまでの時間 */
@@ -17,8 +17,7 @@ const parsePage = (value: string | null) => {
 function OrigamiCard({ origami }: { origami: OrigamiSummary }) {
   return <li className={styles.item}>
     <Link to={`/view/${origami.id}`} className={styles.card}>
-      {/* 手順から作る完成形の図を出す。名前を併記するので装飾扱い */}
-      <div className={styles.thumbnail}><OrigamiThumbnail thumbnail={origami.thumbnail} color={origami.color} /></div>
+      <OrigamiCover thumbnail={origami.thumbnail} color={origami.color} />
       <div className={styles.body}>
         <h2 className={styles.name}>{origami.name}</h2>
         <p className={styles.steps}>{origami.stepCount > 0 ? `${origami.stepCount}ステップ` : "折り手順なし"}</p>
