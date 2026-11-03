@@ -29,4 +29,4 @@
 - バージョン更新時は再審査する。バージョンなしの許可やワイルドカードに広げない。
 - `braces` の監査警告は `patches/braces@3.0.3.patch` と回帰テストで対処している。監査除外やパッチ削除で解消扱いにしない。公式修正版への置換時も `pnpm test:security` を実行する。
 
-根拠: [pnpm 10のサプライチェーン対策](https://pnpm.io/10.x/supply-chain-security)、[設定仕様](https://pnpm.io/10.x/settings)。
+根拠: [pnpmのサプライチェーン対策](https://pnpm.io/supply-chain-security)、[設定仕様](https://pnpm.io/settings)。
