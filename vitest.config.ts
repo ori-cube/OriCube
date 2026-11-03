@@ -17,6 +17,9 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "jsdom",
+          // Node.js 25 以降は組み込みの localStorage が既定で有効になり、jsdom のものを覆い隠す。
+          // （ファイル指定なしでは使えない）Node 22 でも通じるフラグ名で無効にする
+          execArgv: ["--no-experimental-webstorage"],
           setupFiles: ["./src/test/setup.ts"],
           include: [
             "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
