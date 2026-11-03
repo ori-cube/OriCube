@@ -22,7 +22,7 @@ overrides:
   "storybook>@vitest/mocker": 4.1.11
   "tmp@<0.2.7": 0.2.7
   "vite@7": 7.3.5
-packageManagerStrictVersion: true
+pmOnFail: error
 patchedDependencies:
   braces@3.0.3: patches/braces@3.0.3.patch
   vite-plugin-storybook-nextjs@3.3.0: patches/vite-plugin-storybook-nextjs@3.3.0.patch
