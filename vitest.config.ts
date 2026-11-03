@@ -17,6 +17,10 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "jsdom",
+          // Node.js 25 以降は組み込みの localStorage が既定で globalThis に現れる（--localstorage-file がないと中身は undefined）。
+          // Vitest は既にあるグローバルを jsdom で上書きしないため、テストから jsdom の localStorage が見えなくなる。
+          // 組み込み側を無効にする。--no-webstorage は Node 22 で不明なオプションになるので旧名を使う
+          execArgv: ["--no-experimental-webstorage"],
           setupFiles: ["./src/test/setup.ts"],
           include: [
             "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
